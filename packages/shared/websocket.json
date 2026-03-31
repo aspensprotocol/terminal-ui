@@ -1,0 +1,445 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "WebSocketMessages",
+  "oneOf": [
+    {
+      "type": "object",
+      "properties": {
+        "Client": {
+          "$ref": "#/$defs/ClientMessage"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "Client"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "Server": {
+          "$ref": "#/$defs/ServerMessage"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "Server"
+      ]
+    }
+  ],
+  "$defs": {
+    "ClientMessage": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "channel": {
+              "$ref": "#/$defs/SubscriptionChannel"
+            },
+            "market_id": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "type": {
+              "type": "string",
+              "const": "subscribe"
+            },
+            "user_address": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "type",
+            "channel"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "channel": {
+              "$ref": "#/$defs/SubscriptionChannel"
+            },
+            "market_id": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "type": {
+              "type": "string",
+              "const": "unsubscribe"
+            },
+            "user_address": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "type",
+            "channel"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "ping"
+            }
+          },
+          "required": [
+            "type"
+          ]
+        }
+      ]
+    },
+    "OrderbookData": {
+      "type": "object",
+      "properties": {
+        "asks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/PriceLevel"
+          }
+        },
+        "bids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/PriceLevel"
+          }
+        },
+        "market_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "market_id",
+        "bids",
+        "asks"
+      ]
+    },
+    "PriceLevel": {
+      "type": "object",
+      "properties": {
+        "price": {
+          "type": "string"
+        },
+        "size": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "price",
+        "size"
+      ]
+    },
+    "ServerMessage": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "channel": {
+              "$ref": "#/$defs/SubscriptionChannel"
+            },
+            "market_id": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "type": {
+              "type": "string",
+              "const": "subscribed"
+            },
+            "user_address": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "type",
+            "channel"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "channel": {
+              "$ref": "#/$defs/SubscriptionChannel"
+            },
+            "market_id": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "type": {
+              "type": "string",
+              "const": "unsubscribed"
+            },
+            "user_address": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "type",
+            "channel"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "trade": {
+              "$ref": "#/$defs/TradeData"
+            },
+            "type": {
+              "type": "string",
+              "const": "trade"
+            }
+          },
+          "required": [
+            "type",
+            "trade"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "orderbook": {
+              "$ref": "#/$defs/OrderbookData"
+            },
+            "type": {
+              "type": "string",
+              "const": "orderbook"
+            }
+          },
+          "required": [
+            "type",
+            "orderbook"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "close": {
+              "type": "string"
+            },
+            "high": {
+              "type": "string"
+            },
+            "low": {
+              "type": "string"
+            },
+            "market_id": {
+              "type": "string"
+            },
+            "open": {
+              "type": "string"
+            },
+            "timestamp": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "type": {
+              "type": "string",
+              "const": "candle"
+            },
+            "volume": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "market_id",
+            "timestamp",
+            "open",
+            "high",
+            "low",
+            "close",
+            "volume"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "trade": {
+              "$ref": "#/$defs/TradeData"
+            },
+            "type": {
+              "type": "string",
+              "const": "user_fill"
+            }
+          },
+          "required": [
+            "type",
+            "trade"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "filled_size": {
+              "type": "string"
+            },
+            "order_id": {
+              "type": "string"
+            },
+            "status": {
+              "type": "string"
+            },
+            "type": {
+              "type": "string",
+              "const": "user_order"
+            }
+          },
+          "required": [
+            "type",
+            "order_id",
+            "status",
+            "filled_size"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "available": {
+              "type": "string"
+            },
+            "locked": {
+              "type": "string"
+            },
+            "token_ticker": {
+              "type": "string"
+            },
+            "type": {
+              "type": "string",
+              "const": "user_balance"
+            },
+            "updated_at": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "user_address": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "user_address",
+            "token_ticker",
+            "available",
+            "locked",
+            "updated_at"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "message": {
+              "type": "string"
+            },
+            "type": {
+              "type": "string",
+              "const": "error"
+            }
+          },
+          "required": [
+            "type",
+            "message"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "pong"
+            }
+          },
+          "required": [
+            "type"
+          ]
+        }
+      ]
+    },
+    "Side": {
+      "type": "string",
+      "enum": [
+        "buy",
+        "sell"
+      ]
+    },
+    "SubscriptionChannel": {
+      "description": "Channel types for WebSocket subscriptions",
+      "type": "string",
+      "enum": [
+        "trades",
+        "orderbook",
+        "user_fills",
+        "user_orders",
+        "user_balances"
+      ]
+    },
+    "TradeData": {
+      "description": "Trade data for WebSocket messages (API layer with String fields)",
+      "type": "object",
+      "properties": {
+        "buyer_address": {
+          "type": "string"
+        },
+        "buyer_order_id": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "market_id": {
+          "type": "string"
+        },
+        "price": {
+          "type": "string"
+        },
+        "seller_address": {
+          "type": "string"
+        },
+        "seller_order_id": {
+          "type": "string"
+        },
+        "side": {
+          "$ref": "#/$defs/Side"
+        },
+        "size": {
+          "type": "string"
+        },
+        "timestamp": {
+          "type": "integer",
+          "format": "int64"
+        }
+      },
+      "required": [
+        "id",
+        "market_id",
+        "buyer_address",
+        "seller_address",
+        "buyer_order_id",
+        "seller_order_id",
+        "price",
+        "size",
+        "side",
+        "timestamp"
+      ]
+    }
+  }
+}

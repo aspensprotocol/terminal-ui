@@ -1,0 +1,26 @@
+# node
+**/node_modules
+node_modules
+**/.next/
+**/out/
+**/build/
+**/dist/
+**/*.tsbuildinfo
+**/vercel
+**/next-env.d.ts
+
+# bun
+bun.lockb
+
+# python
+**/.venv/
+**/__pycache__/
+
+# rust
+**/target/
+.cargo/
+
+# misc
+.DS_Store
+*.pem
+.env

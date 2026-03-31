@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  frontend:
+    name: Frontend
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup development environment
+        uses: ./.github/actions/setup
+
+      - name: Install dependencies
+        run: just install
+
+      - name: Build SDK
+        run: just build-sdk
+
+      - name: Format check
+        run: |
+          just fmt
+          if ! git diff --exit-code; then
+            echo "::error::Code is not formatted!"
+            echo "Please run 'just fmt' locally and commit the changes."
+            git diff
+            exit 1
+          fi
+
+      - name: Lint
+        run: just lint
+
+      - name: Type check
+        run: just typecheck
+
+      - name: Build
+        run: just build

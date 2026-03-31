@@ -1,0 +1,1494 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Exchange API",
+    "description": "API for the Exchange",
+    "license": {
+      "name": ""
+    },
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/api/admin": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Admin endpoint for test/dev operations",
+        "description": "POST /api/admin\n\nHandles administrative operations like creating tokens, markets, and funding accounts.\nIn production, this endpoint should be protected or disabled.",
+        "operationId": "admin_handler",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Admin operation successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/candles": {
+      "post": {
+        "tags": [
+          "candles"
+        ],
+        "summary": "Get OHLCV candles for a market",
+        "description": "POST /api/candles",
+        "operationId": "candles",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CandlesRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Candles retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandlesResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid parameters"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/api/drip": {
+      "post": {
+        "tags": [
+          "drip"
+        ],
+        "summary": "Drip tokens to users (testing/development faucet)",
+        "operationId": "drip",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DripRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Tokens dripped successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DripResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request parameters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid signature",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Token not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/health": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "operationId": "health_check",
+        "responses": {
+          "200": {
+            "description": "Health check response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/info": {
+      "post": {
+        "tags": [
+          "info"
+        ],
+        "summary": "Get information about tokens, markets, etc.",
+        "operationId": "info",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InfoRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InfoResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/trade": {
+      "post": {
+        "tags": [
+          "trade"
+        ],
+        "summary": "Execute trades (place/cancel orders)",
+        "operationId": "trade",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TradeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TradeResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request parameters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid signature",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Order not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/user": {
+      "post": {
+        "tags": [
+          "user"
+        ],
+        "summary": "Get user-specific data (orders, balances, trades)",
+        "operationId": "user",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "User or resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AdminRequest": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "ticker",
+              "decimals",
+              "name",
+              "type"
+            ],
+            "properties": {
+              "decimals": {
+                "type": "integer",
+                "format": "int32",
+                "minimum": 0
+              },
+              "name": {
+                "type": "string"
+              },
+              "ticker": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "create_token"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "base_ticker",
+              "quote_ticker",
+              "tick_size",
+              "lot_size",
+              "min_size",
+              "maker_fee_bps",
+              "taker_fee_bps",
+              "type"
+            ],
+            "properties": {
+              "base_ticker": {
+                "type": "string"
+              },
+              "lot_size": {
+                "type": "string"
+              },
+              "maker_fee_bps": {
+                "type": "integer",
+                "format": "int32"
+              },
+              "min_size": {
+                "type": "string"
+              },
+              "quote_ticker": {
+                "type": "string"
+              },
+              "taker_fee_bps": {
+                "type": "integer",
+                "format": "int32"
+              },
+              "tick_size": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "create_market"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "user_address",
+              "token_ticker",
+              "amount",
+              "signature",
+              "type"
+            ],
+            "properties": {
+              "amount": {
+                "type": "string"
+              },
+              "signature": {
+                "type": "string"
+              },
+              "token_ticker": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "faucet"
+                ]
+              },
+              "user_address": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "description": "Admin request with type discriminator"
+      },
+      "AdminResponse": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "token",
+              "type"
+            ],
+            "properties": {
+              "token": {
+                "$ref": "#/components/schemas/Token"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "create_token"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "market",
+              "type"
+            ],
+            "properties": {
+              "market": {
+                "$ref": "#/components/schemas/ApiMarket"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "create_market"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "user_address",
+              "token_ticker",
+              "amount",
+              "new_balance",
+              "type"
+            ],
+            "properties": {
+              "amount": {
+                "type": "string"
+              },
+              "new_balance": {
+                "type": "string"
+              },
+              "token_ticker": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "faucet"
+                ]
+              },
+              "user_address": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "description": "Admin response with type discriminator"
+      },
+      "ApiBalance": {
+        "type": "object",
+        "description": "API representation of Balance with String fields for JSON compatibility",
+        "required": [
+          "user_address",
+          "token_ticker",
+          "amount",
+          "open_interest",
+          "updated_at"
+        ],
+        "properties": {
+          "amount": {
+            "type": "string"
+          },
+          "open_interest": {
+            "type": "string"
+          },
+          "token_ticker": {
+            "type": "string"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "user_address": {
+            "type": "string"
+          }
+        }
+      },
+      "ApiCandle": {
+        "type": "object",
+        "description": "OHLCV candle data",
+        "required": [
+          "timestamp",
+          "open",
+          "high",
+          "low",
+          "close",
+          "volume"
+        ],
+        "properties": {
+          "close": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "high": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "low": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "open": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "timestamp": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "volume": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "ApiMarket": {
+        "type": "object",
+        "description": "API representation of Market with String fields for JSON compatibility",
+        "required": [
+          "id",
+          "base_ticker",
+          "quote_ticker",
+          "tick_size",
+          "lot_size",
+          "min_size",
+          "maker_fee_bps",
+          "taker_fee_bps"
+        ],
+        "properties": {
+          "base_ticker": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "lot_size": {
+            "type": "string"
+          },
+          "maker_fee_bps": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "min_size": {
+            "type": "string"
+          },
+          "quote_ticker": {
+            "type": "string"
+          },
+          "taker_fee_bps": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "tick_size": {
+            "type": "string"
+          }
+        }
+      },
+      "ApiOrder": {
+        "type": "object",
+        "description": "API representation of Order with String fields for JSON compatibility",
+        "required": [
+          "id",
+          "user_address",
+          "market_id",
+          "price",
+          "size",
+          "side",
+          "order_type",
+          "status",
+          "filled_size",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "filled_size": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "market_id": {
+            "type": "string"
+          },
+          "order_type": {
+            "$ref": "#/components/schemas/OrderType"
+          },
+          "price": {
+            "type": "string"
+          },
+          "side": {
+            "$ref": "#/components/schemas/Side"
+          },
+          "size": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/OrderStatus"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "user_address": {
+            "type": "string"
+          }
+        }
+      },
+      "ApiResponse": {
+        "type": "object",
+        "required": [
+          "message",
+          "timestamp"
+        ],
+        "properties": {
+          "message": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          }
+        }
+      },
+      "ApiTrade": {
+        "type": "object",
+        "description": "API representation of Trade with String fields for JSON compatibility",
+        "required": [
+          "id",
+          "market_id",
+          "buyer_address",
+          "seller_address",
+          "buyer_order_id",
+          "seller_order_id",
+          "price",
+          "size",
+          "side",
+          "timestamp"
+        ],
+        "properties": {
+          "buyer_address": {
+            "type": "string"
+          },
+          "buyer_order_id": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "market_id": {
+            "type": "string"
+          },
+          "price": {
+            "type": "string"
+          },
+          "seller_address": {
+            "type": "string"
+          },
+          "seller_order_id": {
+            "type": "string"
+          },
+          "side": {
+            "$ref": "#/components/schemas/Side"
+          },
+          "size": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CandlesRequest": {
+        "type": "object",
+        "description": "Request for OHLCV candles",
+        "required": [
+          "market_id",
+          "interval",
+          "from",
+          "to"
+        ],
+        "properties": {
+          "count_back": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0
+          },
+          "from": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "interval": {
+            "type": "string"
+          },
+          "market_id": {
+            "type": "string"
+          },
+          "to": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "CandlesResponse": {
+        "type": "object",
+        "description": "Response containing candles",
+        "required": [
+          "candles"
+        ],
+        "properties": {
+          "candles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApiCandle"
+            }
+          }
+        }
+      },
+      "DripRequest": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "user_address",
+              "token_ticker",
+              "amount",
+              "signature",
+              "type"
+            ],
+            "properties": {
+              "amount": {
+                "type": "string"
+              },
+              "signature": {
+                "type": "string"
+              },
+              "token_ticker": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "faucet"
+                ]
+              },
+              "user_address": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "description": "Drip request with type discriminator"
+      },
+      "DripResponse": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "user_address",
+              "token_ticker",
+              "amount",
+              "new_balance",
+              "type"
+            ],
+            "properties": {
+              "amount": {
+                "type": "string"
+              },
+              "new_balance": {
+                "type": "string"
+              },
+              "token_ticker": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "faucet"
+                ]
+              },
+              "user_address": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "description": "Drip response with type discriminator"
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "required": [
+          "error",
+          "code"
+        ],
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "InfoRequest": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "ticker",
+              "type"
+            ],
+            "properties": {
+              "ticker": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "token_details"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "market_id",
+              "type"
+            ],
+            "properties": {
+              "market_id": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "market_details"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "type"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "all_markets"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "type"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "all_tokens"
+                ]
+              }
+            }
+          }
+        ],
+        "description": "Info request with type discriminator"
+      },
+      "InfoResponse": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "token",
+              "type"
+            ],
+            "properties": {
+              "token": {
+                "$ref": "#/components/schemas/Token"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "token_details"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "market",
+              "type"
+            ],
+            "properties": {
+              "market": {
+                "$ref": "#/components/schemas/ApiMarket"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "market_details"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "markets",
+              "type"
+            ],
+            "properties": {
+              "markets": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ApiMarket"
+                }
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "all_markets"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "tokens",
+              "type"
+            ],
+            "properties": {
+              "tokens": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Token"
+                }
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "all_tokens"
+                ]
+              }
+            }
+          }
+        ],
+        "description": "Info response with type discriminator"
+      },
+      "OrderStatus": {
+        "type": "string",
+        "enum": [
+          "pending",
+          "filled",
+          "partially_filled",
+          "cancelled"
+        ]
+      },
+      "OrderType": {
+        "type": "string",
+        "enum": [
+          "limit",
+          "market"
+        ]
+      },
+      "Side": {
+        "type": "string",
+        "enum": [
+          "buy",
+          "sell"
+        ]
+      },
+      "Token": {
+        "type": "object",
+        "required": [
+          "ticker",
+          "decimals",
+          "name"
+        ],
+        "properties": {
+          "decimals": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "name": {
+            "type": "string"
+          },
+          "ticker": {
+            "type": "string"
+          }
+        }
+      },
+      "TradeRequest": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "user_address",
+              "market_id",
+              "side",
+              "order_type",
+              "price",
+              "size",
+              "signature",
+              "type"
+            ],
+            "properties": {
+              "market_id": {
+                "type": "string"
+              },
+              "order_type": {
+                "$ref": "#/components/schemas/OrderType"
+              },
+              "price": {
+                "type": "string"
+              },
+              "side": {
+                "$ref": "#/components/schemas/Side"
+              },
+              "signature": {
+                "type": "string"
+              },
+              "size": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "place_order"
+                ]
+              },
+              "user_address": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "user_address",
+              "order_id",
+              "signature",
+              "type"
+            ],
+            "properties": {
+              "order_id": {
+                "type": "string"
+              },
+              "signature": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "cancel_order"
+                ]
+              },
+              "user_address": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "user_address",
+              "signature",
+              "type"
+            ],
+            "properties": {
+              "market_id": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "signature": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "cancel_all_orders"
+                ]
+              },
+              "user_address": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "description": "Trade request with type discriminator"
+      },
+      "TradeResponse": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "order",
+              "trades",
+              "type"
+            ],
+            "properties": {
+              "order": {
+                "$ref": "#/components/schemas/ApiOrder"
+              },
+              "trades": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ApiTrade"
+                }
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "place_order"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "order_id",
+              "type"
+            ],
+            "properties": {
+              "order_id": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "cancel_order"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "cancelled_order_ids",
+              "count",
+              "type"
+            ],
+            "properties": {
+              "cancelled_order_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "count": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "cancel_all_orders"
+                ]
+              }
+            }
+          }
+        ],
+        "description": "Trade response with type discriminator"
+      },
+      "UserRequest": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "user_address",
+              "type"
+            ],
+            "properties": {
+              "limit": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "format": "int32",
+                "minimum": 0
+              },
+              "market_id": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "status": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "orders"
+                ]
+              },
+              "user_address": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "user_address",
+              "type"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "balances"
+                ]
+              },
+              "user_address": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "user_address",
+              "type"
+            ],
+            "properties": {
+              "limit": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "format": "int32",
+                "minimum": 0
+              },
+              "market_id": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "trades"
+                ]
+              },
+              "user_address": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "description": "User request with type discriminator"
+      },
+      "UserResponse": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "orders",
+              "type"
+            ],
+            "properties": {
+              "orders": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ApiOrder"
+                }
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "orders"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "balances",
+              "type"
+            ],
+            "properties": {
+              "balances": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ApiBalance"
+                }
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "balances"
+                ]
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": [
+              "trades",
+              "type"
+            ],
+            "properties": {
+              "trades": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ApiTrade"
+                }
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "trades"
+                ]
+              }
+            }
+          }
+        ],
+        "description": "User response with type discriminator"
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "api",
+      "description": "General API endpoints"
+    },
+    {
+      "name": "info",
+      "description": "Information endpoints"
+    },
+    {
+      "name": "user",
+      "description": "User data endpoints"
+    },
+    {
+      "name": "trade",
+      "description": "Trading endpoints"
+    },
+    {
+      "name": "drip",
+      "description": "Get free money"
+    },
+    {
+      "name": "admin",
+      "description": "Admin operations (test/dev only)"
+    },
+    {
+      "name": "candles",
+      "description": "OHLCV candle data"
+    }
+  ]
+}

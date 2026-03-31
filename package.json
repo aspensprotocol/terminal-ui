@@ -1,0 +1,22 @@
+{
+  "name": "terminal-ui",
+  "version": "0.0.0",
+  "private": true,
+  "workspaces": [
+    "ui",
+    "packages/sdk-typescript"
+  ],
+  "scripts": {
+    "dev": "cd ui && bun run dev",
+    "build": "bun run build:sdk && cd ui && bun run build",
+    "build:sdk": "cd packages/sdk-typescript && bun run build",
+    "format": "prettier --write .",
+    "lint": "cd ui && bun run lint",
+    "typecheck": "bun run build:sdk && cd ui && bun run typecheck",
+    "clean": "rm -rf ui/.next ui/node_modules packages/sdk-typescript/dist packages/sdk-typescript/node_modules node_modules"
+  },
+  "devDependencies": {
+    "prettier": "^3.4.2",
+    "typescript": "^5"
+  }
+}
