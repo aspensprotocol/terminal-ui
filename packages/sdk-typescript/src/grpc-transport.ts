@@ -90,6 +90,38 @@ export function getConfigClient() {
   return _configClient;
 }
 
+/**
+ * Collect entries from a server stream, returning once no new entry
+ * arrives within `idleMs`. This prevents hanging on the live broadcast
+ * portion of streams that chain historical + live data.
+ */
+async function collectStreamWithIdleTimeout<T>(
+  stream: AsyncIterable<T>,
+  idleMs: number
+): Promise<T[]> {
+  const entries: T[] = [];
+  const iterator = stream[Symbol.asyncIterator]();
+
+  while (true) {
+    const nextPromise = iterator.next();
+    const idlePromise = new Promise<"idle">((resolve) =>
+      setTimeout(() => resolve("idle"), idleMs)
+    );
+
+    const result = await Promise.race([nextPromise, idlePromise]);
+
+    if (result === "idle") {
+      // No new entry within idle window — historical batch is done
+      break;
+    }
+
+    if (result.done) break;
+    entries.push(result.value);
+  }
+
+  return entries;
+}
+
 // Configuration service functions
 export const configService = {
   async getConfig(): Promise<GetConfigResponse> {
@@ -178,28 +210,8 @@ export const arborterService = {
         filterByTrader,
       });
 
-      const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => {
-          reject(new Error("Orderbook request timed out after 30 seconds"));
-        }, 30000);
-      });
-
-      const response = await Promise.race([getArborterClient().orderbook(request), timeoutPromise]);
-
-      const entries: OrderbookEntry[] = [];
-
-      try {
-        for await (const entry of response) {
-          entries.push(entry);
-        }
-        return entries;
-      } catch (streamError) {
-        // If we collected some entries before the error, return them
-        if (entries.length > 0) {
-          return entries;
-        }
-        return [];
-      }
+      const response = await getArborterClient().orderbook(request);
+      return await collectStreamWithIdleTimeout(response, 500);
     } catch (error) {
       console.error("[gRPC] Failed to fetch orderbook:", error);
       return [];
@@ -221,20 +233,7 @@ export const arborterService = {
       });
 
       const response = await getArborterClient().trades(request);
-
-      const trades: Trade[] = [];
-
-      try {
-        for await (const trade of response) {
-          trades.push(trade);
-        }
-        return trades;
-      } catch {
-        if (trades.length > 0) {
-          return trades;
-        }
-        return [];
-      }
+      return await collectStreamWithIdleTimeout(response, 500);
     } catch (error) {
       console.error("[gRPC] Failed to fetch trades:", error);
       throw error;
