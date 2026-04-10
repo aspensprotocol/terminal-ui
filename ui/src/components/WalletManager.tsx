@@ -1,10 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useConnect, useDisconnect } from "wagmi";
-import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 import { useExchangeStore } from "@/lib/store";
 import { walletRegistry } from "@/lib/wallet";
+import { useWalletConnect } from "@/lib/hooks/useWalletConnect";
 import { Button } from "@/components/ui/button";
 import { Copy, CheckCircle2, LogOut, Wallet, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
@@ -27,34 +26,22 @@ function ecosystemLabel(ecosystem: ChainEcosystem): string {
 }
 
 export function WalletManager() {
-  const { connect, connectors } = useConnect();
-  const { disconnect: wagmiDisconnect } = useDisconnect();
-  const { setVisible: setSolanaModalVisible } = useWalletModal();
+  const { connectEvm: handleConnectEvm, connectSolana: handleConnectSolana } =
+    useWalletConnect();
 
   const connectedWallets = useExchangeStore((state) => state.connectedWallets);
   const activeWalletId = useExchangeStore((state) => state.activeWalletId);
   const setActiveWallet = useExchangeStore((state) => state.setActiveWallet);
   const disconnectWallet = useExchangeStore((state) => state.disconnectWallet);
 
-  const walletList = useMemo(() => Object.values(connectedWallets), [connectedWallets]);
+  const walletList = useMemo(
+    () => Object.values(connectedWallets),
+    [connectedWallets],
+  );
   const activeWallet = activeWalletId ? connectedWallets[activeWalletId] : null;
 
   const [copied, setCopied] = useState(false);
   const [showWalletList, setShowWalletList] = useState(false);
-
-  const handleConnectEvm = () => {
-    const injectedConnector = connectors.find((c) => c.id === "injected");
-    const connector = injectedConnector || connectors[0];
-    if (connector) {
-      connect({ connector });
-    } else {
-      toast.error("No EVM wallet connector available");
-    }
-  };
-
-  const handleConnectSolana = () => {
-    setSolanaModalVisible(true);
-  };
 
   const handleDisconnect = async (walletId: string) => {
     const wallet = connectedWallets[walletId];
@@ -152,7 +139,9 @@ export function WalletManager() {
         >
           <ChevronDown className="h-3.5 w-3.5" />
           {walletList.length > 1 && (
-            <span className="text-xs text-muted-foreground">{walletList.length}</span>
+            <span className="text-xs text-muted-foreground">
+              {walletList.length}
+            </span>
           )}
         </Button>
 
@@ -160,7 +149,10 @@ export function WalletManager() {
         {showWalletList && (
           <>
             {/* Backdrop to close */}
-            <div className="fixed inset-0 z-40" onClick={() => setShowWalletList(false)} />
+            <div
+              className="fixed inset-0 z-40"
+              onClick={() => setShowWalletList(false)}
+            />
             <div className="absolute right-0 top-full mt-1 z-50 min-w-[280px] bg-card/95 backdrop-blur-xl border border-border rounded-md shadow-lg p-2 space-y-1">
               {/* Connected wallets */}
               {walletList.map((wallet) => (
@@ -171,19 +163,30 @@ export function WalletManager() {
                       ? "bg-primary/10 border border-primary/30"
                       : "hover:bg-muted/50 cursor-pointer"
                   }`}
-                  onClick={() => wallet.id !== activeWalletId && handleSwitchWallet(wallet.id)}
+                  onClick={() =>
+                    wallet.id !== activeWalletId &&
+                    handleSwitchWallet(wallet.id)
+                  }
                 >
                   <div className="flex items-center gap-2 min-w-0">
                     {wallet.icon && (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={wallet.icon} alt="" className="h-4 w-4 rounded" />
+                      <img
+                        src={wallet.icon}
+                        alt=""
+                        className="h-4 w-4 rounded"
+                      />
                     )}
                     <span className="font-semibold text-primary/60 uppercase text-[10px]">
                       {ecosystemLabel(wallet.ecosystem)}
                     </span>
-                    <span className="font-mono truncate">{shortenAddress(wallet.address)}</span>
+                    <span className="font-mono truncate">
+                      {shortenAddress(wallet.address)}
+                    </span>
                     {wallet.id === activeWalletId && (
-                      <span className="text-[10px] text-primary font-medium">Active</span>
+                      <span className="text-[10px] text-primary font-medium">
+                        Active
+                      </span>
                     )}
                   </div>
                   <button

@@ -3,6 +3,7 @@ import { useExchangeStore } from "@/lib/store";
 import { useExchangeClient } from "@/lib/hooks/useExchangeClient";
 import { signOrder, type OrderSigningData } from "@exchange/sdk";
 import { createActiveSigningAdapter } from "@/lib/signing-adapter";
+import { marketEcosystem } from "@/lib/wallet";
 import type { Market, Token } from "@/lib/types/exchange";
 
 interface TradeFormData {
@@ -36,6 +37,7 @@ export function useTradeFormSubmit({
   const client = useExchangeClient();
   const isAuthenticated = useExchangeStore((state) => state.isAuthenticated);
   const userAddress = useExchangeStore((state) => state.userAddress);
+  const setActiveWallet = useExchangeStore((state) => state.setActiveWallet);
 
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState<string | null>(null);
@@ -59,7 +61,10 @@ export function useTradeFormSubmit({
       }
 
       // Simple validation
-      if (data.orderType === "limit" && (!data.price.trim() || parseFloat(data.price) <= 0)) {
+      if (
+        data.orderType === "limit" &&
+        (!data.price.trim() || parseFloat(data.price) <= 0)
+      ) {
         setError("Invalid price");
         return;
       }
@@ -72,7 +77,10 @@ export function useTradeFormSubmit({
       // Check balance
       const sizeNum = parseFloat(data.size);
       if (data.side === "buy") {
-        const priceNum = data.orderType === "limit" ? parseFloat(data.price) : bestAsk || lastTradePrice || 0;
+        const priceNum =
+          data.orderType === "limit"
+            ? parseFloat(data.price)
+            : bestAsk || lastTradePrice || 0;
         const requiredQuote = sizeNum * priceNum;
         if (requiredQuote > availableQuote) {
           setError(`Insufficient ${quoteToken.ticker} balance`);
@@ -85,16 +93,58 @@ export function useTradeFormSubmit({
         }
       }
 
+      // Resolve which wallet ecosystem this market needs to sign with.
+      const requiredEcosystem = marketEcosystem(selectedMarket);
+      if (!requiredEcosystem) {
+        setError(
+          "This market's chains aren't supported by any connected wallet yet",
+        );
+        return;
+      }
+
+      // Pick the signing wallet: prefer the active one if it matches,
+      // otherwise switch to a connected wallet of the required ecosystem.
+      const { connectedWallets, activeWalletId } = useExchangeStore.getState();
+      const activeWallet = activeWalletId
+        ? connectedWallets[activeWalletId]
+        : null;
+      let signingWallet =
+        activeWallet?.ecosystem === requiredEcosystem ? activeWallet : null;
+      if (!signingWallet) {
+        const match = Object.values(connectedWallets).find(
+          (w) => w.ecosystem === requiredEcosystem,
+        );
+        if (match) {
+          setActiveWallet(match.id);
+          signingWallet = match;
+        }
+      }
+      if (!signingWallet) {
+        setError(
+          requiredEcosystem === "solana"
+            ? "Connect a Solana wallet to trade this market"
+            : "Connect an EVM wallet to trade this market",
+        );
+        return;
+      }
+
       setLoading(true);
 
       try {
-        const finalPrice = data.orderType === "limit" ? parseFloat(data.price) : 0;
+        const finalPrice =
+          data.orderType === "limit" ? parseFloat(data.price) : 0;
         const finalSize = parseFloat(data.size);
         const pairDecimals = selectedMarket.pairDecimals ?? 8;
 
         // Convert to raw integer strings for protobuf
-        const priceRaw = BigInt(Math.round(finalPrice * Math.pow(10, pairDecimals))).toString();
-        const sizeRaw = BigInt(Math.round(finalSize * Math.pow(10, pairDecimals))).toString();
+        const priceRaw = BigInt(
+          Math.round(finalPrice * Math.pow(10, pairDecimals)),
+        ).toString();
+        const sizeRaw = BigInt(
+          Math.round(finalSize * Math.pow(10, pairDecimals)),
+        ).toString();
+
+        const signerAddress = signingWallet.address;
 
         // Create order signing data
         const orderData: OrderSigningData = {
@@ -102,29 +152,31 @@ export function useTradeFormSubmit({
           quantity: sizeRaw,
           price: data.orderType === "limit" ? priceRaw : undefined,
           marketId: selectedMarket.id,
-          baseAccountAddress: userAddress,
-          quoteAccountAddress: userAddress,
+          baseAccountAddress: signerAddress,
+          quoteAccountAddress: signerAddress,
         };
 
-        // Sign the order using active wallet
+        // Sign the order using the matched wallet
         const signingAdapter = createActiveSigningAdapter();
         const signature = await signOrder(orderData, signingAdapter);
 
         // Place the order via SDK
         const result = await client.placeOrder({
-          userAddress,
+          userAddress: signerAddress,
           marketId: selectedMarket.id,
           side: data.side,
           orderType: data.orderType,
           priceDecimal: finalPrice.toString(),
           sizeDecimal: finalSize.toString(),
           signature,
-          baseAccountAddress: userAddress,
-          quoteAccountAddress: userAddress,
+          baseAccountAddress: signerAddress,
+          quoteAccountAddress: signerAddress,
         });
 
         const successMessage = `Order placed! ${
-          result.trades && result.trades.length > 0 ? `Filled ${result.trades.length} trade(s)` : "Order in book"
+          result.trades && result.trades.length > 0
+            ? `Filled ${result.trades.length} trade(s)`
+            : "Order in book"
         }`;
         setSuccess(successMessage);
 
@@ -138,7 +190,10 @@ export function useTradeFormSubmit({
         let errorMessage = "Failed to place order";
 
         if (err instanceof Error) {
-          if (err.message.includes("rejected") || err.message.includes("denied")) {
+          if (
+            err.message.includes("rejected") ||
+            err.message.includes("denied")
+          ) {
             errorMessage = "Transaction rejected by wallet";
           } else if (err.message.includes("unavailable")) {
             errorMessage = "Trading service temporarily unavailable";
@@ -162,9 +217,10 @@ export function useTradeFormSubmit({
       lastTradePrice,
       isAuthenticated,
       userAddress,
+      setActiveWallet,
       client,
       onSuccess,
-    ]
+    ],
   );
 
   return {

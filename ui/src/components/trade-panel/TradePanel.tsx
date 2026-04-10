@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useExchangeStore } from "@/lib/store";
+import { marketEcosystem } from "@/lib/wallet";
+import { useWalletConnect } from "@/lib/hooks/useWalletConnect";
 import { Card, CardContent } from "@/components/ui/card";
 import { OrderTypeSelector } from "./OrderTypeSelector";
 import { SideSelector } from "./SideSelector";
@@ -13,7 +15,12 @@ import { SubmitButton } from "./SubmitButton";
 import { FaucetDialog } from "@/components/FaucetDialog";
 import { AvailableBalance } from "./AvailableBalance";
 import { MessageDisplay } from "./MessageDisplay";
-import { useMarketData, useOrderEstimate, useTradeFormSubmit, usePriceSelection } from "./hooks";
+import {
+  useMarketData,
+  useOrderEstimate,
+  useTradeFormSubmit,
+  usePriceSelection,
+} from "./hooks";
 
 type OrderSide = "buy" | "sell";
 type OrderType = "limit" | "market";
@@ -28,6 +35,8 @@ interface TradeFormData {
 export function TradePanel() {
   const selectedMarketId = useExchangeStore((state) => state.selectedMarketId);
   const isAuthenticated = useExchangeStore((state) => state.isAuthenticated);
+  const connectedWallets = useExchangeStore((state) => state.connectedWallets);
+  const { connectEvm, connectSolana } = useWalletConnect();
   const [faucetOpen, setFaucetOpen] = useState(false);
 
   // React Hook Form
@@ -101,6 +110,27 @@ export function TradePanel() {
       ? parseFloat(formData.price) || null
       : (formData.side === "buy" ? bestAsk : bestBid) || lastTradePrice;
 
+  // If the selected market needs a wallet ecosystem the user hasn't connected,
+  // surface a connect-wallet CTA in place of the submit button.
+  // Hooks must run unconditionally — compute before any early returns.
+  const requiredEcosystem = useMemo(
+    () => (selectedMarket ? marketEcosystem(selectedMarket) : null),
+    [selectedMarket],
+  );
+  const hasMatchingWallet = useMemo(
+    () =>
+      Object.values(connectedWallets).some(
+        (w) => w.ecosystem === requiredEcosystem,
+      ),
+    [connectedWallets, requiredEcosystem],
+  );
+  const missingEcosystem =
+    requiredEcosystem && !hasMatchingWallet ? requiredEcosystem : null;
+  const handleConnectMissing = () => {
+    if (missingEcosystem === "solana") connectSolana();
+    else if (missingEcosystem === "evm") connectEvm();
+  };
+
   // Form submission handler
   const onSubmit = (data: TradeFormData) => {
     submitOrder(data);
@@ -111,7 +141,9 @@ export function TradePanel() {
     return (
       <Card className="h-full min-h-[400px]">
         <CardContent className="flex items-center justify-center h-full">
-          <p className="text-muted-foreground text-sm">Select a market to trade</p>
+          <p className="text-muted-foreground text-sm">
+            Select a market to trade
+          </p>
         </CardContent>
       </Card>
     );
@@ -121,23 +153,37 @@ export function TradePanel() {
     return (
       <Card className="h-full min-h-[400px]">
         <CardContent className="flex items-center justify-center h-full">
-          <p className="text-muted-foreground text-sm">Loading token information...</p>
+          <p className="text-muted-foreground text-sm">
+            Loading token information...
+          </p>
         </CardContent>
       </Card>
     );
   }
 
   // Calculate fee bps based on order type
-  const feeBps = formData.orderType === "market" ? selectedMarket.taker_fee_bps : selectedMarket.maker_fee_bps;
+  const feeBps =
+    formData.orderType === "market"
+      ? selectedMarket.taker_fee_bps
+      : selectedMarket.maker_fee_bps;
 
   return (
     <Card className="h-full flex flex-col gap-0 py-0 overflow-hidden border-border/40 bg-card min-w-0">
-      <OrderTypeSelector value={formData.orderType} onChange={(value) => setValue("orderType", value)} />
+      <OrderTypeSelector
+        value={formData.orderType}
+        onChange={(value) => setValue("orderType", value)}
+      />
 
-      <form onSubmit={rhfHandleSubmit(onSubmit)} className="flex-1 flex flex-col min-h-0">
+      <form
+        onSubmit={rhfHandleSubmit(onSubmit)}
+        className="flex-1 flex flex-col min-h-0"
+      >
         <CardContent className="p-3 space-y-3 flex-1 overflow-y-auto">
           {/* Buy/Sell Buttons */}
-          <SideSelector value={formData.side} onChange={(value) => setValue("side", value)} />
+          <SideSelector
+            value={formData.side}
+            onChange={(value) => setValue("side", value)}
+          />
 
           {/* Available Balance */}
           <AvailableBalance
@@ -195,6 +241,8 @@ export function TradePanel() {
             baseToken={baseToken}
             isAuthenticated={isAuthenticated}
             loading={loading}
+            missingEcosystem={missingEcosystem}
+            onConnectMissing={handleConnectMissing}
           />
         </div>
       </form>

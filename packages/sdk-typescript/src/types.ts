@@ -2,7 +2,11 @@
 
 export type Side = "buy" | "sell";
 export type OrderType = "limit" | "market";
-export type OrderStatus = "pending" | "filled" | "partially_filled" | "cancelled";
+export type OrderStatus =
+  | "pending"
+  | "filled"
+  | "partially_filled"
+  | "cancelled";
 
 export interface Token {
   ticker: string;
@@ -28,6 +32,10 @@ export interface Market {
   quoteChainNetwork?: string;
   baseChainTokenDecimals?: number;
   quoteChainTokenDecimals?: number;
+  /** Chain architecture of the base chain, e.g. "EVM", "Solana", "Hedera". */
+  baseChainArchitecture?: string;
+  /** Chain architecture of the quote chain, e.g. "EVM", "Solana", "Hedera". */
+  quoteChainArchitecture?: string;
   name?: string;
 }
 

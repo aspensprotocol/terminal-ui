@@ -11,9 +11,16 @@ import type {
 import type { Market, Token } from "../types.js";
 
 /**
- * Convert a protobuf Market to SDK Market type
+ * Convert a protobuf Market to SDK Market type.
+ * Pass `chainByNetwork` to populate the base/quote chain architecture fields.
  */
-export function toMarket(protoMarket: ProtoMarket): Market {
+export function toMarket(
+  protoMarket: ProtoMarket,
+  chainByNetwork?: Map<string, ProtoChain>,
+): Market {
+  const baseChain = chainByNetwork?.get(protoMarket.baseChainNetwork);
+  const quoteChain = chainByNetwork?.get(protoMarket.quoteChainNetwork);
+
   return {
     id: protoMarket.marketId,
     base_ticker: protoMarket.baseChainTokenSymbol,
@@ -32,6 +39,8 @@ export function toMarket(protoMarket: ProtoMarket): Market {
     quoteChainNetwork: protoMarket.quoteChainNetwork,
     baseChainTokenDecimals: protoMarket.baseChainTokenDecimals,
     quoteChainTokenDecimals: protoMarket.quoteChainTokenDecimals,
+    baseChainArchitecture: baseChain?.architecture,
+    quoteChainArchitecture: quoteChain?.architecture,
     name: protoMarket.name,
   };
 }
@@ -40,7 +49,8 @@ export function toMarket(protoMarket: ProtoMarket): Market {
  * Convert Configuration to an array of SDK Markets
  */
 export function toMarkets(config: Configuration): Market[] {
-  return config.markets.map(toMarket);
+  const chainByNetwork = new Map(config.chains.map((c) => [c.network, c]));
+  return config.markets.map((m) => toMarket(m, chainByNetwork));
 }
 
 /**
@@ -111,7 +121,7 @@ export function toChains(config: Configuration): ChainInfo[] {
  */
 export function findChainByNetwork(
   config: Configuration,
-  network: string
+  network: string,
 ): ProtoChain | undefined {
   return config.chains.find((chain) => chain.network === network);
 }
@@ -119,7 +129,10 @@ export function findChainByNetwork(
 /**
  * Get pair decimals for a market from config
  */
-export function getPairDecimals(config: Configuration, marketId: string): number {
+export function getPairDecimals(
+  config: Configuration,
+  marketId: string,
+): number {
   const market = config.markets.find((m) => m.marketId === marketId);
   return market?.pairDecimals ?? 8; // Default to 8 decimals
 }
