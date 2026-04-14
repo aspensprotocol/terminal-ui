@@ -39,13 +39,13 @@ All communication with arborter uses **gRPC-Web** via the Connect RPC library (`
 
 ### gRPC Services
 
-| Service | Purpose |
-|---------|---------|
-| `ConfigService.GetConfig` | Returns chains, tokens, and markets |
-| `ArborterService.SendOrder` / `CancelOrder` | Order management |
-| `ArborterService.Orderbook` | Server-streaming orderbook entries |
-| `ArborterService.Trades` | Server-streaming trade history |
-| `AuthService` | JWT auth (admin-console only) |
+| Service                                     | Purpose                             |
+| ------------------------------------------- | ----------------------------------- |
+| `ConfigService.GetConfig`                   | Returns chains, tokens, and markets |
+| `ArborterService.SendOrder` / `CancelOrder` | Order management                    |
+| `ArborterService.Orderbook`                 | Server-streaming orderbook entries  |
+| `ArborterService.Trades`                    | Server-streaming trade history      |
+| `AuthService`                               | JWT auth (admin-console only)       |
 
 ### Cross-chain Market Model
 
@@ -64,17 +64,17 @@ Market {
 
 ## Key Files
 
-| File | Purpose |
-|------|---------|
-| `ui/src/lib/store.ts` | Zustand store — markets, orderbook, trades, wallet state |
-| `ui/src/lib/api.ts` | `getExchangeClient()` singleton |
-| `ui/src/lib/signing-adapter.ts` | Signing for order submission |
-| `ui/src/lib/wallet/` | Multi-wallet adapter abstraction |
-| `ui/src/lib/providers/` | React context providers |
-| `ui/src/components/trade-panel/hooks/useTradeFormSubmit.ts` | Trade form submission logic |
-| `packages/sdk-typescript/src/grpc-transport.ts` | gRPC-Web transport + service clients |
-| `packages/sdk-typescript/src/client.ts` | `ExchangeClient` — markets, orders, orderbook polling |
-| `ui/.env.local` | `NEXT_PUBLIC_GRPC_URL=http://localhost:8811` |
+| File                                                        | Purpose                                                  |
+| ----------------------------------------------------------- | -------------------------------------------------------- |
+| `ui/src/lib/store.ts`                                       | Zustand store — markets, orderbook, trades, wallet state |
+| `ui/src/lib/api.ts`                                         | `getExchangeClient()` singleton                          |
+| `ui/src/lib/signing-adapter.ts`                             | Signing for order submission                             |
+| `ui/src/lib/wallet/`                                        | Multi-wallet adapter abstraction                         |
+| `ui/src/lib/providers/`                                     | React context providers                                  |
+| `ui/src/components/trade-panel/hooks/useTradeFormSubmit.ts` | Trade form submission logic                              |
+| `packages/sdk-typescript/src/grpc-transport.ts`             | gRPC-Web transport + service clients                     |
+| `packages/sdk-typescript/src/client.ts`                     | `ExchangeClient` — markets, orders, orderbook polling    |
+| `ui/.env.local`                                             | `NEXT_PUBLIC_GRPC_URL=http://localhost:8811`             |
 
 ## Development
 

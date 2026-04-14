@@ -6,6 +6,9 @@
     "ui",
     "packages/sdk-typescript"
   ],
+  "engines": {
+    "bun": ">=1.2.0"
+  },
   "scripts": {
     "dev": "cd ui && bun run dev",
     "build": "bun run build:sdk && cd ui && bun run build",
