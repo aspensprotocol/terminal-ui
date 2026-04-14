@@ -7,6 +7,49 @@ on:
     branches: [main]
 
 jobs:
+  # Fast (~10s) drift check: catches the common failure mode of someone bumping
+  # one place (e.g. Dockerfile) but not the matching pin (.bun-version), and
+  # catches anyone re-introducing a floating base-image tag.
+  verify-pins:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Compare Bun major in the builder image against .bun-version, so local
+      # dev and the production build can't drift onto different runtimes.
+      - name: Bun major matches across Dockerfile and .bun-version
+        run: |
+          DF=$(grep -oE 'oven/bun:[0-9]+' Dockerfile | head -1 | cut -d: -f2)
+          BV=$(cut -d. -f1 .bun-version)
+          echo "Dockerfile bun=$DF  .bun-version major=$BV"
+          [ "$DF" = "$BV" ] || { echo "::error::Bun major mismatch"; exit 1; }
+
+      # Reproducibility requires every base image to be pinned by digest.
+      # Floating tags can be silently mutated upstream, so refuse any FROM
+      # line that lacks an @sha256:... suffix.
+      - name: All FROM lines pin to @sha256 digests
+        run: |
+          if grep -E '^FROM ' Dockerfile | grep -v '@sha256:'; then
+            echo "::error::Found FROM line(s) without @sha256 digest pin"; exit 1
+          fi
+
+  # Main-only: confirms bun.lock is in sync with package.json. Skipped on PRs
+  # to keep PR latency low; lockfile drift surfaces on the next main build.
+  verify-deps:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: .bun-version
+
+      # --frozen-lockfile makes bun refuse to mutate bun.lock; if the lockfile
+      # would need updating to satisfy package.json, this step fails. That
+      # means any unrecorded dep change is caught before reaching a release.
+      - name: bun.lock is consistent with package.json
+        run: bun install --frozen-lockfile
+
   frontend:
     name: Frontend
     runs-on: ubuntu-latest
