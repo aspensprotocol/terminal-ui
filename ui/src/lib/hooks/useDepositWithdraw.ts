@@ -1,13 +1,13 @@
 /**
- * Deposit / withdraw hooks — EVM path.
+ * Deposit / withdraw hooks covering both chain ecosystems.
  *
- * Today:
  *   - EVM: ERC-20.approve (if allowance insufficient) + MidribV2.deposit /
- *     MidribV2.withdraw via wagmi writeContract. Waits for receipts,
- *     triggers a balance refresh, and surfaces errors via sonner.
- *   - Solana: TODO. The hook throws when called on a Solana chain. Solana
- *     deposit/withdraw will go through the Midrib program's deposit_ix /
- *     withdraw_ix via @solana/web3.js in a follow-up commit.
+ *     MidribV2.withdraw via wagmi writeContract. Waits for receipts.
+ *   - Solana: Midrib program deposit_ix / withdraw_ix via
+ *     @solana/web3.js Transaction + wallet-adapter sendTransaction.
+ *
+ * Dispatches on the chain's `architecture` field; errors surface via
+ * sonner.
  */
 
 import { useCallback, useState } from "react";
@@ -17,9 +17,20 @@ import {
   writeContract,
 } from "wagmi/actions";
 import { parseAbi, type Address } from "viem";
+import {
+  Connection,
+  PublicKey,
+  Transaction,
+  type TransactionInstruction,
+} from "@solana/web3.js";
+import {
+  depositIx as buildDepositIx,
+  withdrawIx as buildWithdrawIx,
+} from "@exchange/sdk";
 import { toast } from "sonner";
 
 import { getWagmiConfig } from "@/lib/web3modal-config";
+import { getSolanaWalletContext } from "@/lib/wallet/solana-adapter";
 import { useExchangeClient } from "./useExchangeClient";
 
 const ERC20_ABI = parseAbi([
@@ -43,6 +54,68 @@ export interface UseDepositWithdrawResult {
   deposit: (params: DepositParams) => Promise<void>;
   withdraw: (params: DepositParams) => Promise<void>;
   pending: boolean;
+}
+
+interface BuildIxOpts {
+  programId: PublicKey;
+  instance: PublicKey;
+  user: PublicKey;
+  mint: PublicKey;
+  amount: bigint;
+}
+
+/**
+ * Shared Solana submit path: build the ix from `buildIx`, pack into a
+ * single-instruction Transaction, send via the wallet adapter's
+ * sendTransaction, and wait for confirmation. Keeps the deposit /
+ * withdraw call sites identical apart from the ix builder.
+ */
+async function submitSolanaIx(opts: {
+  chainRpcUrl: string;
+  programIdStr: string;
+  instanceStr: string;
+  mintStr: string;
+  amount: bigint;
+  buildIx: (opts: BuildIxOpts) => TransactionInstruction;
+  pendingLabel: string;
+  successLabel: string;
+}): Promise<void> {
+  const wallet = getSolanaWalletContext();
+  if (!wallet?.publicKey || !wallet.sendTransaction) {
+    throw new Error("Connect a Solana wallet to continue");
+  }
+  if (!opts.programIdStr) {
+    throw new Error(
+      "Solana chain is missing a trade-program id (factory_address)",
+    );
+  }
+  if (!opts.instanceStr) {
+    throw new Error(
+      "Solana chain is missing a trading-instance address (trade_contract.address)",
+    );
+  }
+
+  const connection = new Connection(opts.chainRpcUrl, "confirmed");
+  const programId = new PublicKey(opts.programIdStr);
+  const instance = new PublicKey(opts.instanceStr);
+  const mint = new PublicKey(opts.mintStr);
+  const user = wallet.publicKey;
+
+  const ix = opts.buildIx({
+    programId,
+    instance,
+    user,
+    mint,
+    amount: opts.amount,
+  });
+  const tx = new Transaction().add(ix);
+  tx.feePayer = user;
+  tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+
+  toast.info(opts.pendingLabel);
+  const sig = await wallet.sendTransaction(tx, connection);
+  await connection.confirmTransaction(sig, "confirmed");
+  toast.success(opts.successLabel);
 }
 
 export function useDepositWithdraw(): UseDepositWithdrawResult {
@@ -78,14 +151,27 @@ export function useDepositWithdraw(): UseDepositWithdrawResult {
         params.chainNetwork,
         params.tokenTicker,
       );
-      if (!chain.architecture.match(/^evm$/i)) {
-        throw new Error(
-          `Solana deposit UI is not wired yet — use the arborter's dedicated flow`,
-        );
-      }
 
       setPending(true);
       try {
+        if (chain.architecture.match(/^solana$/i)) {
+          await submitSolanaIx({
+            chainRpcUrl: chain.rpcUrl,
+            // For Solana: `factory_address` is the program id, and
+            // `trade_contract.address` is the instance PDA. Both are
+            // required to build deposit_ix.
+            programIdStr:
+              chain.factoryAddress || chain.tradeContract?.contractId || "",
+            instanceStr: midrib,
+            mintStr: token.address,
+            amount: params.amount,
+            buildIx: ({ programId, instance, user, mint, amount }) =>
+              buildDepositIx({ programId, instance, user, mint, amount }),
+            pendingLabel: "Depositing…",
+            successLabel: `Deposit confirmed on ${chain.network}`,
+          });
+          return;
+        }
         const wagmi = getWagmiConfig();
         const tokenAddr = token.address as Address;
         const midribAddr = midrib as Address;
@@ -147,14 +233,24 @@ export function useDepositWithdraw(): UseDepositWithdrawResult {
         params.chainNetwork,
         params.tokenTicker,
       );
-      if (!chain.architecture.match(/^evm$/i)) {
-        throw new Error(
-          `Solana withdraw UI is not wired yet — use the arborter's dedicated flow`,
-        );
-      }
 
       setPending(true);
       try {
+        if (chain.architecture.match(/^solana$/i)) {
+          await submitSolanaIx({
+            chainRpcUrl: chain.rpcUrl,
+            programIdStr:
+              chain.factoryAddress || chain.tradeContract?.contractId || "",
+            instanceStr: midrib,
+            mintStr: token.address,
+            amount: params.amount,
+            buildIx: ({ programId, instance, user, mint, amount }) =>
+              buildWithdrawIx({ programId, instance, user, mint, amount }),
+            pendingLabel: "Withdrawing…",
+            successLabel: `Withdraw confirmed on ${chain.network}`,
+          });
+          return;
+        }
         const wagmi = getWagmiConfig();
         toast.info("Withdrawing…");
         const hash = await writeContract(wagmi, {

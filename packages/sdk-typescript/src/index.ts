@@ -106,6 +106,20 @@ export {
   type ChainBalanceSlice,
 } from "./balances.js";
 
+// Solana Midrib instruction builders (deposit / withdraw).
+export {
+  depositIx,
+  withdrawIx,
+  deriveAssociatedTokenAccount,
+  deriveUserBalancePda,
+  deriveInstanceVaultPda,
+  deriveVaultAuthorityPda,
+  anchorIxDiscriminator,
+  SPL_TOKEN_PROGRAM_ID,
+  ATA_PROGRAM_ID,
+  type DepositWithdrawIxOpts,
+} from "./solana-ix.js";
+
 // Utility functions
 import type { Token } from "./types.js";
 

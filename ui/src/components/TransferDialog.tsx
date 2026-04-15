@@ -4,13 +4,11 @@
  * Deposit / withdraw dialog.
  *
  * Single entry point for moving tokens between the user's wallet and
- * the arborter's trade contract, covering the two flows the UI has to
- * support end-to-end before trading is fully functional. Tabs split
- * the flows; a chain + token picker drives the balances / button text.
- *
- * Solana chains are filtered out for now — their deposit / withdraw
- * goes through the Midrib program via @solana/web3.js instead of
- * viem's writeContract and will ship in a follow-up.
+ * the arborter's trade contract. The underlying hook dispatches on
+ * chain architecture (EVM: wagmi + MidribV2 calls, Solana: web3.js +
+ * Midrib program instructions), so the dialog itself is
+ * ecosystem-agnostic — the (chain, token) picker simply enumerates
+ * every chain the arborter exposes.
  */
 
 import { useMemo, useState } from "react";
@@ -79,8 +77,9 @@ export function TransferDialog({
     if (!config) return [];
     const out: TokenChoice[] = [];
     for (const chain of config.chains) {
-      // Filter to EVM until the Solana UI wire-up lands.
-      if (!chain.architecture.match(/^evm$/i)) continue;
+      // Only list chains whose architecture we can actually drive.
+      // Hedera (and anything else) doesn't have a Transfer wire-up yet.
+      if (!chain.architecture.match(/^(evm|solana)$/i)) continue;
       for (const [ticker, token] of Object.entries(chain.tokens)) {
         out.push({
           chainNetwork: chain.network,
