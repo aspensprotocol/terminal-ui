@@ -1,6 +1,10 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { toDisplayValue, roundToTickSize, getDecimalPlaces } from "@exchange/sdk";
+import {
+  toDisplayValue,
+  roundToTickSize,
+  getDecimalPlaces,
+} from "@exchange/sdk";
 import type { Token, Market } from "@/lib/types/exchange";
 
 interface PriceInputProps {
@@ -10,14 +14,23 @@ interface PriceInputProps {
   quoteToken: Token;
 }
 
-export function PriceInput({ value, onChange, market, quoteToken }: PriceInputProps) {
+export function PriceInput({
+  value,
+  onChange,
+  market,
+  quoteToken,
+}: PriceInputProps) {
   const priceDecimals = getDecimalPlaces(market.tick_size, quoteToken.decimals);
 
   const handleBlur = () => {
     if (value) {
       const numPrice = parseFloat(value);
       if (!isNaN(numPrice) && numPrice > 0) {
-        const rounded = roundToTickSize(numPrice, market.tick_size, quoteToken.decimals);
+        const rounded = roundToTickSize(
+          numPrice,
+          market.tick_size,
+          quoteToken.decimals,
+        );
         onChange(rounded.toFixed(priceDecimals));
       }
     }
@@ -25,7 +38,9 @@ export function PriceInput({ value, onChange, market, quoteToken }: PriceInputPr
 
   return (
     <div className="space-y-1.5">
-      <Label className="text-xs font-medium text-muted-foreground">Price ({quoteToken.ticker})</Label>
+      <Label className="text-xs font-medium text-muted-foreground">
+        Price ({quoteToken.ticker})
+      </Label>
       <Input
         type="number"
         value={value}

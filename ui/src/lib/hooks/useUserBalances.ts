@@ -19,7 +19,10 @@ export function useUserBalances() {
   const balancesRecord = useExchangeStore((state) => state.userBalances);
 
   // Convert Record to array with useMemo to avoid recreating on every render
-  const balances = useMemo(() => Object.values(balancesRecord), [balancesRecord]);
+  const balances = useMemo(
+    () => Object.values(balancesRecord),
+    [balancesRecord],
+  );
 
   useEffect(() => {
     if (!userAddress || !isAuthenticated) {
@@ -42,7 +45,11 @@ export function useUserBalances() {
 
     // Subscribe to WebSocket balance updates
     const unsubscribe = client.onUserBalances(userAddress, (balanceUpdate) => {
-      updateBalance(balanceUpdate.token_ticker, balanceUpdate.available, balanceUpdate.locked);
+      updateBalance(
+        balanceUpdate.token_ticker,
+        balanceUpdate.available,
+        balanceUpdate.locked,
+      );
     });
 
     return () => {

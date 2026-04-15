@@ -10,7 +10,10 @@ export { toDisplayValue, formatNumber } from "@exchange/sdk";
  * Format a number with a maximum number of decimals, removing trailing zeros
  * Simple wrapper around parseFloat
  */
-export function formatWithoutTrailingZeros(value: number, maxDecimals: number): string {
+export function formatWithoutTrailingZeros(
+  value: number,
+  maxDecimals: number,
+): string {
   const fixed = value.toFixed(maxDecimals);
   return parseFloat(fixed).toString();
 }

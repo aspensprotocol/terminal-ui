@@ -73,8 +73,12 @@ export function resetTransport(): void {
 }
 
 // Lazy client creation
-let _arborterClient: ReturnType<typeof createClient<typeof ArborterService>> | null = null;
-let _configClient: ReturnType<typeof createClient<typeof ConfigService>> | null = null;
+let _arborterClient: ReturnType<
+  typeof createClient<typeof ArborterService>
+> | null = null;
+let _configClient: ReturnType<
+  typeof createClient<typeof ConfigService>
+> | null = null;
 
 export function getArborterClient() {
   if (!_arborterClient) {
@@ -97,7 +101,7 @@ export function getConfigClient() {
  */
 async function collectStreamWithIdleTimeout<T>(
   stream: AsyncIterable<T>,
-  idleMs: number
+  idleMs: number,
 ): Promise<T[]> {
   const entries: T[] = [];
   const iterator = stream[Symbol.asyncIterator]();
@@ -105,7 +109,7 @@ async function collectStreamWithIdleTimeout<T>(
   while (true) {
     const nextPromise = iterator.next();
     const idlePromise = new Promise<"idle">((resolve) =>
-      setTimeout(() => resolve("idle"), idleMs)
+      setTimeout(() => resolve("idle"), idleMs),
     );
 
     const result = await Promise.race([nextPromise, idlePromise]);
@@ -138,7 +142,10 @@ export const configService = {
 
 // Arborter service functions
 export const arborterService = {
-  async sendOrder(order: Order, signatureHash: Uint8Array): Promise<SendOrderResponse> {
+  async sendOrder(
+    order: Order,
+    signatureHash: Uint8Array,
+  ): Promise<SendOrderResponse> {
     try {
       const request: SendOrderRequest = create(SendOrderRequestSchema, {
         order,
@@ -164,16 +171,36 @@ export const arborterService = {
       if (error instanceof Error) {
         const message = error.message.toLowerCase();
 
-        if (message.includes("503") || message.includes("service unavailable")) {
-          throw new Error("Trading service is temporarily overloaded. Please wait and try again.");
-        } else if (message.includes("upstream connect error") || message.includes("reset before headers")) {
-          throw new Error("Connection to trading service was reset. Please try again.");
+        if (
+          message.includes("503") ||
+          message.includes("service unavailable")
+        ) {
+          throw new Error(
+            "Trading service is temporarily overloaded. Please wait and try again.",
+          );
+        } else if (
+          message.includes("upstream connect error") ||
+          message.includes("reset before headers")
+        ) {
+          throw new Error(
+            "Connection to trading service was reset. Please try again.",
+          );
         } else if (message.includes("unavailable")) {
-          throw new Error("Trading service is currently unavailable. Please check back later.");
-        } else if (message.includes("timeout") || message.includes("deadline_exceeded")) {
+          throw new Error(
+            "Trading service is currently unavailable. Please check back later.",
+          );
+        } else if (
+          message.includes("timeout") ||
+          message.includes("deadline_exceeded")
+        ) {
           throw new Error("Request timed out. Please try again.");
-        } else if (message.includes("network error") || message.includes("fetch")) {
-          throw new Error("Network error occurred. Please check your connection.");
+        } else if (
+          message.includes("network error") ||
+          message.includes("fetch")
+        ) {
+          throw new Error(
+            "Network error occurred. Please check your connection.",
+          );
         }
       }
 
@@ -181,14 +208,18 @@ export const arborterService = {
     }
   },
 
-  async cancelOrder(order: OrderToCancel, signatureHash: Uint8Array): Promise<CancelOrderResponse> {
+  async cancelOrder(
+    order: OrderToCancel,
+    signatureHash: Uint8Array,
+  ): Promise<CancelOrderResponse> {
     try {
       const request: CancelOrderRequest = create(CancelOrderRequestSchema, {
         order,
         signatureHash,
       });
 
-      const response: CancelOrderResponse = await getArborterClient().cancelOrder(request);
+      const response: CancelOrderResponse =
+        await getArborterClient().cancelOrder(request);
       return response;
     } catch (error) {
       console.error("[gRPC] Error canceling order:", error);
@@ -200,7 +231,7 @@ export const arborterService = {
     marketId: string,
     continueStream = false,
     historicalOpenOrders?: boolean,
-    filterByTrader?: string
+    filterByTrader?: string,
   ): Promise<OrderbookEntry[]> {
     try {
       const request: OrderbookRequest = create(OrderbookRequestSchema, {
@@ -222,7 +253,7 @@ export const arborterService = {
     marketId: string,
     continueStream = false,
     historicalClosedTrades?: boolean,
-    filterByTrader?: string
+    filterByTrader?: string,
   ): Promise<Trade[]> {
     try {
       const request: TradeRequest = create(TradeRequestSchema, {
@@ -242,11 +273,7 @@ export const arborterService = {
 };
 
 // Export protobuf types and schemas for use in other modules
-export {
-  create,
-  OrderSchema,
-  OrderToCancelSchema,
-};
+export { create, OrderSchema, OrderToCancelSchema };
 
 export type {
   Order,

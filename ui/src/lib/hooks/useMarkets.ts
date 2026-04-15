@@ -23,13 +23,20 @@ export function useMarkets() {
     async function fetchData() {
       try {
         // getMarkets() and getTokens() now return from cache if available
-        const [marketsData, tokensData] = await Promise.all([client.getMarkets(), client.getTokens()]);
+        const [marketsData, tokensData] = await Promise.all([
+          client.getMarkets(),
+          client.getTokens(),
+        ]);
 
         if (mounted) {
           // Enrich markets with decimal information from tokens
           const enrichedMarkets = marketsData.map((market) => {
-            const baseToken = tokensData.find((t) => t.ticker === market.base_ticker);
-            const quoteToken = tokensData.find((t) => t.ticker === market.quote_ticker);
+            const baseToken = tokensData.find(
+              (t) => t.ticker === market.base_ticker,
+            );
+            const quoteToken = tokensData.find(
+              (t) => t.ticker === market.quote_ticker,
+            );
 
             return {
               ...market,

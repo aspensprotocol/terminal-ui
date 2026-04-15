@@ -22,7 +22,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // Hide loading screen once we have markets and tokens loaded AND minimum time elapsed
-    if (Object.keys(markets).length > 0 && Object.keys(tokens).length > 0 && minTimeElapsed) {
+    if (
+      Object.keys(markets).length > 0 &&
+      Object.keys(tokens).length > 0 &&
+      minTimeElapsed
+    ) {
       // Add a small delay to ensure smooth transition
       const timer = setTimeout(() => {
         setIsInitialLoad(false);
@@ -32,11 +36,14 @@ export function Providers({ children }: { children: React.ReactNode }) {
   }, [markets, tokens, minTimeElapsed]);
 
   return (
-    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} disableTransitionOnChange>
+    <ThemeProvider
+      attribute="class"
+      defaultTheme="dark"
+      enableSystem={false}
+      disableTransitionOnChange
+    >
       <LoadingScreen isLoading={isInitialLoad} />
-      <WagmiProvider>
-        {children}
-      </WagmiProvider>
+      <WagmiProvider>{children}</WagmiProvider>
     </ThemeProvider>
   );
 }

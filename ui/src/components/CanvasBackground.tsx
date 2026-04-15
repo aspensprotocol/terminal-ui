@@ -55,10 +55,15 @@ export function CanvasBackground({
       for (let x = 0; x < canvas.width; x += spacing) {
         for (let y = 0; y < canvas.height; y += spacing) {
           // Calculate wave effect
-          const distance = Math.sqrt(Math.pow(x - canvas.width / 2, 2) + Math.pow(y - canvas.height / 2, 2));
+          const distance = Math.sqrt(
+            Math.pow(x - canvas.width / 2, 2) +
+              Math.pow(y - canvas.height / 2, 2),
+          );
 
           const wave = Math.sin(distance * 0.01 - time) * 0.5 + 0.5;
-          const opacity = parseFloat(dotColor.match(/[\d.]+\)$/)?.[0].slice(0, -1) || "0.3");
+          const opacity = parseFloat(
+            dotColor.match(/[\d.]+\)$/)?.[0].slice(0, -1) || "0.3",
+          );
           const finalOpacity = opacity * wave;
 
           // Extract RGB values
@@ -90,5 +95,7 @@ export function CanvasBackground({
     };
   }, [dotSize, dotColor, spacing, animationSpeed, isAnimating]);
 
-  return <canvas ref={canvasRef} className="absolute inset-0 pointer-events-none" />;
+  return (
+    <canvas ref={canvasRef} className="absolute inset-0 pointer-events-none" />
+  );
 }

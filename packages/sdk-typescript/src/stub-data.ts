@@ -131,7 +131,7 @@ export function generateCandles(
   interval: string,
   from: number,
   to: number,
-  countBack?: number
+  countBack?: number,
 ): Candle[] {
   const basePrice = BASE_PRICES[marketId] ?? 1000;
   const intervalSeconds = INTERVAL_SECONDS[interval] ?? 3600;
@@ -150,19 +150,21 @@ export function generateCandles(
   const candles: Candle[] = [];
 
   // Use a seed based on marketId and from timestamp for reproducibility
-  const seed = marketId.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0) + from;
+  const seed =
+    marketId.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0) + from;
   const random = seededRandom(seed);
 
   // Volatility based on interval (shorter intervals = smaller moves)
-  const volatility = intervalSeconds < 3600 ? 0.002 : intervalSeconds < 86400 ? 0.005 : 0.015;
+  const volatility =
+    intervalSeconds < 3600 ? 0.002 : intervalSeconds < 86400 ? 0.005 : 0.015;
 
   let currentPrice = basePrice;
 
   // Generate candles from oldest to newest
-  const startTime = to - (numCandles * intervalSeconds);
+  const startTime = to - numCandles * intervalSeconds;
 
   for (let i = 0; i < numCandles; i++) {
-    const timestamp = startTime + (i * intervalSeconds);
+    const timestamp = startTime + i * intervalSeconds;
 
     // Generate OHLC with realistic price movement
     const trend = (random() - 0.48) * volatility; // Slight upward bias
@@ -176,7 +178,11 @@ export function generateCandles(
     const low = Math.min(open, close) - lowExtra;
 
     // Volume varies randomly (higher volume for lower-priced assets)
-    const baseVolume = marketId.includes("BTC") ? 50 : marketId.includes("ETH") ? 500 : 50000;
+    const baseVolume = marketId.includes("BTC")
+      ? 50
+      : marketId.includes("ETH")
+        ? 500
+        : 50000;
     const volume = baseVolume * (0.5 + random() * 1.5);
 
     candles.push({
@@ -199,12 +205,12 @@ export function generateCandles(
  * Get token by ticker
  */
 export function getToken(ticker: string): Token | undefined {
-  return STUB_TOKENS.find(t => t.ticker === ticker);
+  return STUB_TOKENS.find((t) => t.ticker === ticker);
 }
 
 /**
  * Get market by ID
  */
 export function getMarket(marketId: string): Market | undefined {
-  return STUB_MARKETS.find(m => m.id === marketId);
+  return STUB_MARKETS.find((m) => m.id === marketId);
 }

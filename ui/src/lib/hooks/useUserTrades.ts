@@ -33,7 +33,10 @@ export function useUserTrades() {
     // Fetch initial trades via REST (returns enhanced trades from SDK)
     const fetchInitialTrades = async () => {
       try {
-        const result = await client.getTrades(userAddress, selectedMarketId || undefined);
+        const result = await client.getTrades(
+          userAddress,
+          selectedMarketId || undefined,
+        );
         // Limit to 50 most recent trades
         setUserTrades(result.slice(0, 50));
       } catch (err) {
@@ -61,7 +64,7 @@ export function useUserTrades() {
           {
             description: `Market: ${trade.market_id}`,
             duration: 4000,
-          }
+          },
         );
       }
     });
@@ -70,8 +73,17 @@ export function useUserTrades() {
       clearTimeout(timer);
       unsubscribe();
     };
-  }, [userAddress, isAuthenticated, selectedMarketId, client, setUserTrades, addUserTrade]);
+  }, [
+    userAddress,
+    isAuthenticated,
+    selectedMarketId,
+    client,
+    setUserTrades,
+    addUserTrade,
+  ]);
 
   // Filter trades by selected market if market is selected
-  return selectedMarketId ? userTrades.filter((t) => t.market_id === selectedMarketId) : userTrades;
+  return selectedMarketId
+    ? userTrades.filter((t) => t.market_id === selectedMarketId)
+    : userTrades;
 }

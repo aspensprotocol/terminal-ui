@@ -6,7 +6,12 @@
  */
 
 import { create, toBinary } from "@bufbuild/protobuf";
-import { OrderSchema, OrderToCancelSchema, Side, ExecutionType } from "./protos/arborter_pb.js";
+import {
+  OrderSchema,
+  OrderToCancelSchema,
+  Side,
+  ExecutionType,
+} from "./protos/arborter_pb.js";
 import type { Order, OrderToCancel } from "./protos/arborter_pb.js";
 
 /**
@@ -59,7 +64,7 @@ export function normalizeWalletSignature(sig: Uint8Array): Uint8Array {
   if (sig.length === 65) return sig.slice(0, 64);
   if (sig.length === 64) return sig;
   throw new Error(
-    `unexpected wallet signature length ${sig.length}; expected 65 (EVM ECDSA) or 64 (Solana Ed25519)`
+    `unexpected wallet signature length ${sig.length}; expected 65 (EVM ECDSA) or 64 (Solana Ed25519)`,
   );
 }
 
@@ -138,7 +143,7 @@ export function serializeCancelOrder(order: OrderToCancel): Uint8Array {
  */
 export async function signOrder(
   orderData: OrderSigningData,
-  adapter: SigningAdapter
+  adapter: SigningAdapter,
 ): Promise<Uint8Array> {
   // Create the protobuf Order message
   const order = createOrderMessage(orderData);
@@ -168,7 +173,7 @@ export async function signOrder(
  */
 export async function signCancelOrder(
   cancelData: CancelSigningData,
-  adapter: SigningAdapter
+  adapter: SigningAdapter,
 ): Promise<Uint8Array> {
   // Create the protobuf OrderToCancel message
   const order = createCancelMessage(cancelData);
@@ -199,6 +204,8 @@ export function getOrderForSigning(data: OrderSigningData): Order {
 /**
  * Get the protobuf OrderToCancel object for inspection or manual submission
  */
-export function getCancelOrderForSigning(data: CancelSigningData): OrderToCancel {
+export function getCancelOrderForSigning(
+  data: CancelSigningData,
+): OrderToCancel {
   return createCancelMessage(data);
 }

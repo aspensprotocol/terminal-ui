@@ -65,11 +65,11 @@ they can be ignored or pruned.)
 The UI is a client-side bundle; all public config is prefixed with
 `NEXT_PUBLIC_` and baked in at build time.
 
-| Variable | Default | Purpose |
-|----------|---------|---------|
-| `NEXT_PUBLIC_GRPC_URL` | `/api` (Next.js proxy) | Arborter gRPC-Web endpoint |
-| `NEXT_PUBLIC_SOLANA_RPC_URL` | devnet | Solana RPC used by the wallet-adapter context |
-| `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` | fallback | WalletConnect / Reown project id |
+| Variable                               | Default                | Purpose                                       |
+| -------------------------------------- | ---------------------- | --------------------------------------------- |
+| `NEXT_PUBLIC_GRPC_URL`                 | `/api` (Next.js proxy) | Arborter gRPC-Web endpoint                    |
+| `NEXT_PUBLIC_SOLANA_RPC_URL`           | devnet                 | Solana RPC used by the wallet-adapter context |
+| `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` | fallback               | WalletConnect / Reown project id              |
 
 Additional vars (`NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_WS_URL`,
 `NEXT_PUBLIC_ORGANIZATION_ID`, `NEXT_PUBLIC_AUTH_PROXY_CONFIG_ID`) are

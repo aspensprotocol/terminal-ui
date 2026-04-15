@@ -1,17 +1,33 @@
 import { type Config, createConfig, http } from "wagmi";
-import { base, baseSepolia, mainnet, optimism, optimismSepolia, sepolia } from "wagmi/chains";
+import {
+  base,
+  baseSepolia,
+  mainnet,
+  optimism,
+  optimismSepolia,
+  sepolia,
+} from "wagmi/chains";
 import { coinbaseWallet, injected, walletConnect } from "wagmi/connectors";
 import { type Chain as ViemChain, defineChain } from "viem";
 
 // WalletConnect project ID - you should get your own at https://cloud.walletconnect.com
-const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || "c3690594c774dccbd4a0272ae38f1953";
+const projectId =
+  process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID ||
+  "c3690594c774dccbd4a0272ae38f1953";
 
 // Default chains that are always available
-const defaultChains = [mainnet, sepolia, base, baseSepolia, optimism, optimismSepolia] as const;
+const defaultChains = [
+  mainnet,
+  sepolia,
+  base,
+  baseSepolia,
+  optimism,
+  optimismSepolia,
+] as const;
 
 // Create initial wagmi config with default chains only
 const createWagmiConfig = (
-  customChains: ReturnType<typeof defineChain>[] = []
+  customChains: ReturnType<typeof defineChain>[] = [],
 ): Config => {
   const allChains = [...defaultChains, ...customChains] as const;
 
@@ -39,8 +55,15 @@ const createWagmiConfig = (
         metadata: {
           name: "Terminal Exchange",
           description: "Terminal Exchange Trading Platform",
-          url: typeof window !== "undefined" ? window.location.origin : "https://terminal.exchange",
-          icons: [typeof window !== "undefined" ? `${window.location.origin}/favicon.png` : ""],
+          url:
+            typeof window !== "undefined"
+              ? window.location.origin
+              : "https://terminal.exchange",
+          icons: [
+            typeof window !== "undefined"
+              ? `${window.location.origin}/favicon.png`
+              : "",
+          ],
         },
       }),
       // Coinbase Wallet
@@ -93,7 +116,7 @@ export const createDynamicChains = (grpcChains: GrpcChain[]): ViemChain[] => {
             default: { name: "Explorer", url: chain.explorerUrl },
           }
         : undefined,
-    })
+    }),
   );
 };
 

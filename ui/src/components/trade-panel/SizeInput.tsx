@@ -1,7 +1,12 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { toDisplayValue, calculatePercentageSize, roundToLotSize, getDecimalPlaces } from "@exchange/sdk";
+import {
+  toDisplayValue,
+  calculatePercentageSize,
+  roundToLotSize,
+  getDecimalPlaces,
+} from "@exchange/sdk";
 import type { Token, Market } from "@/lib/types/exchange";
 
 type OrderSide = "buy" | "sell";
@@ -37,7 +42,11 @@ export function SizeInput({
     if (value) {
       const numSize = parseFloat(value);
       if (!isNaN(numSize) && numSize > 0) {
-        const rounded = roundToLotSize(numSize, market.lot_size, baseToken.decimals);
+        const rounded = roundToLotSize(
+          numSize,
+          market.lot_size,
+          baseToken.decimals,
+        );
         onChange(rounded.toFixed(sizeDecimals));
       }
     }
@@ -61,7 +70,9 @@ export function SizeInput({
 
   return (
     <div className="space-y-1.5">
-      <Label className="text-xs font-medium text-muted-foreground">Size ({baseToken.ticker})</Label>
+      <Label className="text-xs font-medium text-muted-foreground">
+        Size ({baseToken.ticker})
+      </Label>
       <Input
         type="number"
         value={value}

@@ -13,7 +13,7 @@ import type {
 export function getChartConfig(
   symbol: string,
   datafeed: ExchangeDatafeed,
-  container: HTMLElement
+  container: HTMLElement,
 ): ChartingLibraryWidgetOptions {
   return {
     symbol,
@@ -55,11 +55,31 @@ export function getChartConfig(
       "volume.volume.transparency": 60,
     },
     time_frames: [
-      { text: "1m", resolution: "1" as ResolutionString, description: "1 Minute" },
-      { text: "5m", resolution: "5" as ResolutionString, description: "5 Minutes" },
-      { text: "15m", resolution: "15" as ResolutionString, description: "15 Minutes" },
-      { text: "1h", resolution: "60" as ResolutionString, description: "1 Hour" },
-      { text: "4h", resolution: "240" as ResolutionString, description: "4 Hours" },
+      {
+        text: "1m",
+        resolution: "1" as ResolutionString,
+        description: "1 Minute",
+      },
+      {
+        text: "5m",
+        resolution: "5" as ResolutionString,
+        description: "5 Minutes",
+      },
+      {
+        text: "15m",
+        resolution: "15" as ResolutionString,
+        description: "15 Minutes",
+      },
+      {
+        text: "1h",
+        resolution: "60" as ResolutionString,
+        description: "1 Hour",
+      },
+      {
+        text: "4h",
+        resolution: "240" as ResolutionString,
+        description: "4 Hours",
+      },
       { text: "1D", resolution: "D" as ResolutionString, description: "1 Day" },
     ],
   };

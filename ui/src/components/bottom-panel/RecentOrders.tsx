@@ -15,7 +15,8 @@ export function RecentOrders() {
   const userAddress = useExchangeStore((state) => state.userAddress);
   const isAuthenticated = useExchangeStore((state) => state.isAuthenticated);
   const orders = useUserOrders();
-  const { cancelOrder, cancelAllOrders, cancellingOrders, cancellingAll } = useCancelOrder();
+  const { cancelOrder, cancelAllOrders, cancellingOrders, cancellingAll } =
+    useCancelOrder();
 
   const handleCancelOrder = useCallback(
     async (orderId: string) => {
@@ -26,7 +27,7 @@ export function RecentOrders() {
         // Error is already logged in the hook
       }
     },
-    [userAddress, cancelOrder]
+    [userAddress, cancelOrder],
   );
 
   const handleCancelAll = useCallback(async () => {
@@ -38,7 +39,9 @@ export function RecentOrders() {
     }
   }, [userAddress, selectedMarketId, cancelAllOrders]);
 
-  const hasOpenOrders = orders.some((o) => o.status === "pending" || o.status === "partially_filled");
+  const hasOpenOrders = orders.some(
+    (o) => o.status === "pending" || o.status === "partially_filled",
+  );
 
   const columns = useMemo<ColumnDef<Order>[]>(
     () => [
@@ -55,14 +58,20 @@ export function RecentOrders() {
       {
         accessorKey: "market_id",
         header: "Market",
-        cell: ({ row }) => <div className="font-medium text-foreground/90">{row.getValue("market_id")}</div>,
+        cell: ({ row }) => (
+          <div className="font-medium text-foreground/90">
+            {row.getValue("market_id")}
+          </div>
+        ),
         size: 100,
       },
       {
         accessorKey: "side",
         header: "Side",
         cell: ({ row }) => (
-          <span className={`font-semibold ${row.getValue("side") === "buy" ? "text-green-500" : "text-red-500"}`}>
+          <span
+            className={`font-semibold ${row.getValue("side") === "buy" ? "text-green-500" : "text-red-500"}`}
+          >
             {row.getValue("side") === "buy" ? "Buy" : "Sell"}
           </span>
         ),
@@ -82,14 +91,20 @@ export function RecentOrders() {
         accessorKey: "priceDisplay",
         header: () => <div className="text-right">Price</div>,
         cell: ({ row }) => (
-          <div className="text-right font-medium text-foreground/90">{row.getValue("priceDisplay")}</div>
+          <div className="text-right font-medium text-foreground/90">
+            {row.getValue("priceDisplay")}
+          </div>
         ),
         size: 120,
       },
       {
         accessorKey: "sizeDisplay",
         header: () => <div className="text-right">Size</div>,
-        cell: ({ row }) => <div className="text-right text-muted-foreground/80">{row.getValue("sizeDisplay")}</div>,
+        cell: ({ row }) => (
+          <div className="text-right text-muted-foreground/80">
+            {row.getValue("sizeDisplay")}
+          </div>
+        ),
         size: 120,
       },
       {
@@ -101,7 +116,11 @@ export function RecentOrders() {
           const usdValue = order.priceValue * order.sizeValue;
           return (
             <div className="text-right font-medium text-foreground/90">
-              ${usdValue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              $
+              {usdValue.toLocaleString("en-US", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
             </div>
           );
         },
@@ -110,12 +129,20 @@ export function RecentOrders() {
       },
       {
         id: "filled",
-        accessorFn: (row) => (row.sizeValue > 0 ? (row.filledValue / row.sizeValue) * 100 : 0),
+        accessorFn: (row) =>
+          row.sizeValue > 0 ? (row.filledValue / row.sizeValue) * 100 : 0,
         header: () => <div className="text-right">Filled</div>,
         cell: ({ row }) => {
           const order = row.original;
-          const filledPercent = order.sizeValue > 0 ? (order.filledValue / order.sizeValue) * 100 : 0;
-          return <div className="text-right text-muted-foreground/80">{filledPercent.toFixed(1)}%</div>;
+          const filledPercent =
+            order.sizeValue > 0
+              ? (order.filledValue / order.sizeValue) * 100
+              : 0;
+          return (
+            <div className="text-right text-muted-foreground/80">
+              {filledPercent.toFixed(1)}%
+            </div>
+          );
         },
         size: 80,
         enableSorting: true,
@@ -168,7 +195,8 @@ export function RecentOrders() {
         ),
         cell: ({ row }) => {
           const order = row.original;
-          const canCancel = order.status === "pending" || order.status === "partially_filled";
+          const canCancel =
+            order.status === "pending" || order.status === "partially_filled";
           const isCancelling = cancellingOrders.has(order.id);
 
           return (
@@ -188,13 +216,21 @@ export function RecentOrders() {
         size: 80,
       },
     ],
-    [cancellingOrders, hasOpenOrders, cancellingAll, handleCancelAll, handleCancelOrder]
+    [
+      cancellingOrders,
+      hasOpenOrders,
+      cancellingAll,
+      handleCancelAll,
+      handleCancelOrder,
+    ],
   );
 
   if (!selectedMarketId || !selectedMarket) {
     return (
       <div className="h-full flex items-center justify-center">
-        <p className="text-muted-foreground text-sm">Select a market to view orders</p>
+        <p className="text-muted-foreground text-sm">
+          Select a market to view orders
+        </p>
       </div>
     );
   }
@@ -202,14 +238,20 @@ export function RecentOrders() {
   if (!isAuthenticated || !userAddress) {
     return (
       <div className="h-full flex pt-20 justify-center">
-        <p className="text-muted-foreground text-sm">Connect your wallet to view orders</p>
+        <p className="text-muted-foreground text-sm">
+          Connect your wallet to view orders
+        </p>
       </div>
     );
   }
 
   return (
     <div className="h-full">
-      <DataTable columns={columns} data={orders} emptyMessage="No orders found" />
+      <DataTable
+        columns={columns}
+        data={orders}
+        emptyMessage="No orders found"
+      />
     </div>
   );
 }

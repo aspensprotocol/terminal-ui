@@ -19,13 +19,22 @@ export const metadata = {
   description: "Trading exchange application",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <Script src="/vendor/trading-view/charting_library.standalone.js" strategy="beforeInteractive" />
+        <Script
+          src="/vendor/trading-view/charting_library.standalone.js"
+          strategy="beforeInteractive"
+        />
       </head>
-      <body className={`${geistSans.className} ${geistMono.className} font-sans antialiased`}>
+      <body
+        className={`${geistSans.className} ${geistMono.className} font-sans antialiased`}
+      >
         <Providers>{children}</Providers>
         <Toaster richColors position="bottom-right" />
       </body>

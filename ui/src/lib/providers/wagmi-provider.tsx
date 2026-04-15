@@ -25,7 +25,7 @@ export function WagmiProvider({ children }: WagmiProviderProps) {
             refetchOnWindowFocus: false,
           },
         },
-      })
+      }),
   );
 
   // Defer wagmi config creation to client-side only,

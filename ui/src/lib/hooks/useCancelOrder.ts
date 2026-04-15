@@ -10,7 +10,9 @@ import { useExchangeClient } from "./useExchangeClient";
 
 export function useCancelOrder() {
   const client = useExchangeClient();
-  const [cancellingOrders, setCancellingOrders] = useState<Set<string>>(new Set());
+  const [cancellingOrders, setCancellingOrders] = useState<Set<string>>(
+    new Set(),
+  );
   const [cancellingAll, setCancellingAll] = useState(false);
 
   const cancelOrder = useCallback(
@@ -27,10 +29,14 @@ export function useCancelOrder() {
         // 1. Market ID and side from the order
         // 2. Token address for the cancel
         // 3. Wallet signature via signCancelOrder
-        console.warn("[useCancelOrder] Using placeholder - real signing not implemented for this flow");
+        console.warn(
+          "[useCancelOrder] Using placeholder - real signing not implemented for this flow",
+        );
 
         // For now, just log the intent
-        console.log(`[useCancelOrder] Would cancel order ${orderId} for ${userAddress}`);
+        console.log(
+          `[useCancelOrder] Would cancel order ${orderId} for ${userAddress}`,
+        );
       } catch (err) {
         console.error("Failed to cancel order:", err);
         throw err;
@@ -42,7 +48,7 @@ export function useCancelOrder() {
         });
       }
     },
-    [client]
+    [client],
   );
 
   const cancelAllOrders = useCallback(
@@ -64,7 +70,7 @@ export function useCancelOrder() {
         setCancellingAll(false);
       }
     },
-    [client]
+    [client],
   );
 
   return {

@@ -11,7 +11,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Droplet } from "lucide-react";
@@ -47,7 +53,7 @@ export function FaucetDialog({
   const open = controlled ? (externalOpen ?? false) : internalOpen;
   const setOpen = useMemo(
     () => (controlled ? (externalOnOpenChange ?? (() => {})) : setInternalOpen),
-    [controlled, externalOnOpenChange, setInternalOpen]
+    [controlled, externalOnOpenChange, setInternalOpen],
   );
 
   const handleFaucet = async () => {
@@ -69,7 +75,8 @@ export function FaucetDialog({
     } catch (err) {
       console.error("Faucet error:", err);
       toast.error("Failed to get tokens", {
-        description: err instanceof Error ? err.message : "Please try again later",
+        description:
+          err instanceof Error ? err.message : "Please try again later",
       });
     } finally {
       setLoading(false);
@@ -90,7 +97,9 @@ export function FaucetDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      {!controlled && <DialogTrigger asChild>{trigger ?? defaultTrigger}</DialogTrigger>}
+      {!controlled && (
+        <DialogTrigger asChild>{trigger ?? defaultTrigger}</DialogTrigger>
+      )}
       <DialogContent
         className="sm:max-w-md bg-card/95 backdrop-blur-xl border-border/50"
         style={{
@@ -102,7 +111,9 @@ export function FaucetDialog({
         }}
       >
         <DialogHeader>
-          <DialogTitle className="text-xl text-foreground">Token Faucet</DialogTitle>
+          <DialogTitle className="text-xl text-foreground">
+            Token Faucet
+          </DialogTitle>
           <DialogDescription className="text-muted-foreground">
             {isAuthenticated
               ? "Choose a token and get test tokens"
@@ -113,7 +124,8 @@ export function FaucetDialog({
         {!isAuthenticated ? (
           <div className="flex flex-col items-center gap-4 py-6">
             <p className="text-sm text-muted-foreground text-center">
-              Connect a wallet using the wallet manager in the header to use the faucet.
+              Connect a wallet using the wallet manager in the header to use the
+              faucet.
             </p>
             <Button
               onClick={() => setOpen(false)}
@@ -137,10 +149,16 @@ export function FaucetDialog({
                 </SelectTrigger>
                 <SelectContent className="bg-muted/95 backdrop-blur-xl border-border/50">
                   {tokens.map((token) => (
-                    <SelectItem key={token.ticker} value={token.ticker} className="hover:bg-accent/50">
+                    <SelectItem
+                      key={token.ticker}
+                      value={token.ticker}
+                      className="hover:bg-accent/50"
+                    >
                       <div className="flex items-center gap-2">
                         <span className="font-semibold">{token.ticker}</span>
-                        <span className="text-muted-foreground text-xs">- {token.name}</span>
+                        <span className="text-muted-foreground text-xs">
+                          - {token.name}
+                        </span>
                       </div>
                     </SelectItem>
                   ))}
