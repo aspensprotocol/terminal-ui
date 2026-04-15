@@ -93,6 +93,15 @@ export {
 // Proto types consumers populate on PlaceOrderParams / SendOrderRequest.
 export type { GaslessAuthorization } from "./protos/arborter_pb.js";
 
+// On-chain balance queries (shared by the balances panel + deposit UI).
+export {
+  fetchOnChainBalances,
+  fetchChainBalanceSlices,
+  fetchWalletBalance,
+  type WalletBinding,
+  type ChainBalanceSlice,
+} from "./balances.js";
+
 // Utility functions
 import type { Token } from "./types.js";
 

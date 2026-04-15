@@ -32,6 +32,7 @@ import {
   getPairDecimals,
 } from "./adapters/index.js";
 import { Side as ProtoSide, ExecutionType } from "./protos/arborter_pb.js";
+import { fetchOnChainBalances, type WalletBinding } from "./balances.js";
 
 export interface ExchangeClientConfig {
   grpcUrl: string;
@@ -326,11 +327,35 @@ export class ExchangeClient {
   // USER METHODS - Implemented with gRPC
   // ============================================================================
 
-  async getBalances(userAddress: string): Promise<EnhancedBalance[]> {
-    // Arborter doesn't have a direct balance endpoint
-    // Balances are derived from orderbook entries or on-chain queries
-    // For now, return empty - this should be implemented with on-chain queries
-    return [];
+  /**
+   * Fetch the user's balances by doing per-chain on-chain queries
+   * (ERC-20 / MidribV2 on EVM, SPL token + UserBalance PDA on Solana)
+   * for every chain in the cached arborter config whose architecture
+   * matches a connected wallet.
+   *
+   * The arborter has no direct balance endpoint — it only sees in-flight
+   * orders. Real balances live on-chain.
+   *
+   * Backward-compat: callers that pass a plain address string get EVM-only
+   * lookups. Prefer passing the full `WalletBinding[]` so Solana balances
+   * are included.
+   */
+  async getBalances(
+    userOrWallets: string | WalletBinding[],
+  ): Promise<EnhancedBalance[]> {
+    const config = this.cache.getConfig();
+    if (!config) return [];
+    const wallets: WalletBinding[] =
+      typeof userOrWallets === "string"
+        ? [{ address: userOrWallets, ecosystem: "evm" }]
+        : userOrWallets;
+    if (wallets.length === 0) return [];
+    try {
+      return await fetchOnChainBalances({ wallets, config });
+    } catch (error) {
+      console.warn("[SDK] getBalances on-chain query failed:", error);
+      return [];
+    }
   }
 
   async getOrders(
