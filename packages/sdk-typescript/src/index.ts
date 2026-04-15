@@ -83,12 +83,16 @@ export {
   type OpenOrderArgs,
 } from "./gasless.js";
 
-// EVM gasless orchestrator: builds the GaslessAuthorization proto
-// end-to-end (chain config lookup + Permit2 nonce fetch + EIP-712 sign).
+// Chain-specific gasless orchestrators: build the GaslessAuthorization
+// proto end-to-end from a market + order + wallet.
 export {
   buildEvmGaslessAuthorization,
   type BuildEvmGaslessOpts,
 } from "./gasless-evm.js";
+export {
+  buildSolanaGaslessAuthorization,
+  type BuildSolanaGaslessOpts,
+} from "./gasless-solana.js";
 
 // Proto types consumers populate on PlaceOrderParams / SendOrderRequest.
 export type { GaslessAuthorization } from "./protos/arborter_pb.js";
