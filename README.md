@@ -1,189 +1,131 @@
-![banner](https://github.com/user-attachments/assets/07da9f14-c6dc-441f-a1d4-92f8264f0d5f)
-
 <div align="center">
 
-A full terminal UI for trading an Aspens Market Stack.
+# Aspens Terminal UI
+
+A full terminal UI for trading on an Aspens Market Stack.
 
 </div>
 
 ## Project Structure
 
 ```
-exchange/
-├── apps/
-│   ├── backend/              # Rust Axum API + matching engine
-│   │   └── db/               # PostgreSQL + ClickHouse
-│   ├── ui/             # Next.js trading interface
-│   └── bots/                 # Market-making bots
+terminal-ui/
+├── ui/                        # Next.js 16 trading interface (React 19, Tailwind 4)
 ├── packages/
-│   ├── shared/               # Shared schemas (OpenAPI, WebSocket)
-│   └── sdk/                  # Multi-language SDKs (TypeScript, Python, Rust)
-└── docker-compose.yaml       # Infra
+│   ├── sdk-typescript/        # @exchange/sdk — gRPC-Web client for the arborter
+│   └── shared/                # OpenAPI / WebSocket schemas (reference only)
+├── Dockerfile                 # Multi-stage Bun build
+├── docker-compose.yaml        # UI + backing services (Postgres, ClickHouse)
+├── justfile                   # Common dev commands
+└── LICENSE                    # GPL-3.0
 ```
 
-## Demo
+The UI is a single Next.js app that talks to the **arborter** gRPC stack
+(a separate repo) over gRPC-Web. All trading state — orderbook, trades,
+config, orders — comes from that backend. There is no local server
+or matching engine in this repo.
 
-One-click Railway deployment with live trading: authentication via Turnkey embedded wallet, real-time candle data after a few hours of market activity, and executing both market and limit orders.
-
-https://github.com/user-attachments/assets/cd2c3132-4aea-4137-b724-6d2ecf1a536b
-
-## Table of Contents
-
-- [Getting Started](#-getting-started)
-  - [Prerequisites](#prerequisites)
-  - [Quick Start](#quick-start)
-  - [Available Commands](#available-commands)
-  - [Environment Configuration](#environment-configuration)
-  - [API Documentation](#api-documentation)
-- [Architecture](#-architecture)
-  - [Exchange Overview](#exchange-overview)
-  - [Backend](#backend)
-    - [Matching Engine](#matching-engine)
-    - [Database](#database)
-    - [API](#api)
-  - [ui](#ui)
-  - [Bots](#bots)
-  - [Testing & Deployment](#testing--deployment)
-- [Improvements](#improvements)
-- [License](#license)
-
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org/) and [Bun](https://bun.sh/)
-- [Docker](https://www.docker.com/) and Docker Compose
-- [Just](https://github.com/casey/just)
+- [Bun](https://bun.sh/) (pinned via `.bun-version`)
+- [Just](https://github.com/casey/just) (optional; the `justfile` wraps the common bun commands)
+- [Docker](https://www.docker.com/) and Docker Compose — optional, for the containerised flow
+- A running arborter instance (local or remote) to point the UI at
 
-### Quick Start
+### Install and run
 
 ```bash
-# Clone the repository
-git clone git@github.com:aspensprotocol/terminal-ui.git
-cd exchange
+bun install                   # workspace-aware install
+bun run dev                   # or `just dev` — starts `next dev` in ui/
+```
 
-# Start everything with docker compose
+The app serves at http://localhost:3000 by default.
+
+### Build
+
+```bash
+bun run build:sdk             # compile the TypeScript SDK first
+bun run build                 # then build the Next.js app
+```
+
+### Docker
+
+```bash
 docker compose up -d
 ```
 
-### Start Services Individually
+Builds the multi-stage `Dockerfile` and serves the UI on port 3000.
+(`docker-compose.yaml` also declares Postgres and ClickHouse services
+held over from an earlier layout; the UI itself doesn't use them, and
+they can be ignored or pruned.)
+
+## Environment Variables
+
+The UI is a client-side bundle; all public config is prefixed with
+`NEXT_PUBLIC_` and baked in at build time.
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `NEXT_PUBLIC_GRPC_URL` | `/api` (Next.js proxy) | Arborter gRPC-Web endpoint |
+| `NEXT_PUBLIC_SOLANA_RPC_URL` | devnet | Solana RPC used by the wallet-adapter context |
+| `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` | fallback | WalletConnect / Reown project id |
+
+Additional vars (`NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_WS_URL`,
+`NEXT_PUBLIC_ORGANIZATION_ID`, `NEXT_PUBLIC_AUTH_PROXY_CONFIG_ID`) are
+consumed by optional integrations (embedded-wallet auth, REST shim) —
+see `ui/.env.example` for the full list.
+
+## Architecture
+
+### UI (`ui/`)
+
+Next.js 16 + React 19 + TypeScript + Tailwind CSS 4.
+
+- **State**: Zustand + immer; React Query for server state
+- **Tables / layout**: TanStack React Table, Radix UI primitives, Framer Motion
+- **Charting**: TradingView Advanced Charts (vendored assets under `ui/public/vendor/trading-view/`)
+- **Wallets**:
+  - **EVM** via `wagmi` / `viem` / `@reown/appkit` (WalletConnect, MetaMask, injected)
+  - **Solana** via `@solana/wallet-adapter-react` / `@solana/web3.js`
+  - Per-market dispatch picks the ecosystem matching the chain's
+    `architecture` field from the arborter config
+
+### TypeScript SDK (`packages/sdk-typescript/`, published as `@exchange/sdk`)
+
+gRPC-Web client for the arborter backend, with generated protobuf types.
+
+- **Transport**: `@connectrpc/connect` + `@connectrpc/connect-web`
+- **Protobuf runtime**: `@bufbuild/protobuf`
+- **Generated stubs**: `src/protos/arborter_pb.ts`,
+  `arborter_config_pb.ts`, `attestation_pb.ts`
+- **Services**: `ArborterService` (sendOrder, cancelOrder, streaming
+  orderbook / trades), `ConfigService` (getConfig)
+
+Consumed by the UI as a `workspace:*` dependency.
+
+### Shared (`packages/shared/`)
+
+Reference OpenAPI / WebSocket schemas. Not built, not published —
+kept alongside the SDK as source-of-truth snapshots.
+
+## Available `just` commands
 
 ```bash
-# Install dependencies
-just install
-
-# Start databases
-just db
-
-# Start the backend
-just backend
-
-# Start the ui
-just ui
-
-# Start market-making bots
-just bots
+just                          # list all recipes
+just install                  # bun install
+just dev                      # bun run dev (Next.js dev server)
+just build                    # bun run build (SDK + UI)
+just build-sdk                # bun run build:sdk (SDK only)
+just fmt                      # bun run format
+just lint                     # bun run lint
+just typecheck                # bun run typecheck
+just clean                    # bun run clean
+just ci                       # install + build-sdk + fmt + lint + typecheck
 ```
-
-Access the app at:
-
-- ui: http://localhost:3000
-- Backend: http://localhost:8888
-- Swagger UI: http://localhost:8888/api/docs
-- PostgreSQL: postgresql://localhost:5432
-- ClickHouse: http://localhost:8123
-
-## 🏗️ Architecture
-
-### Exchange Overview
-
-![Architecture](./.github/assets/architecture.png)
-
-This exchange is built as a modern, full-featured trading system with the following components:
-
-- **Backend**
-  - **API**: REST and WebSocket APIs with multi-language SDK support
-  - **Database**: Dual architecture with PostgreSQL (OLTP) and ClickHouse (OLAP)
-  - **Matching Engine**: In-memory orderbook with price-time priority matching
-- **ui**: Next.js application with TradingView integration and embedded wallet
-- **Bots**: Automated market makers with external market integration
-- **Testing & Deployment**: Containerized development and one-click deployment
-
----
-
-### Backend
-
-![Backend Architecture](./.github/assets/backend.png)
-
-#### Matching Engine
-
-The matching engine is the core of the exchange, handling order placement, matching, and execution.
-
-- **Orderbook**: In-memory B-tree implementation with price-time priority, O(log n) complexity
-- **Matcher**: Price-time priority algorithm with continuous matching and partial fills
-- **Executor**: Atomic trade execution with balance locking and transaction rollback
-
-#### Database
-
-The exchange uses a dual-database architecture optimized for different workloads:
-
-- **ClickHouse (OLAP)**: Materialized views for real-time candlestick aggregation and time-series analytics
-- **PostgreSQL (OLTP)**: Primary transactional database storing users, tokens, markets, orders, balances, and trades
-
-#### API
-
-- **REST & WebSocket**: OpenAPI-documented REST endpoints and real-time WebSocket subscriptions powered by Tokio
-- **Multi-language SDKs**: TypeScript, Python, and Rust clients auto-generated from OpenAPI and JSON Schema
-
----
-
-### ui
-
-![ui Architecture](./.github/assets/ui.png)
-
-Modern Next.js trading interface with professional features:
-
-- **Zustand**: Lightweight state management with real-time WebSocket synchronization
-- **TypeScript SDK**: Type-safe API client with WebSocket subscriptions
-- **TradingView**: Advanced charting with custom drawing tools and real-time updates
-- **Turnkey**: Embedded wallet with secure key management, no browser extension required
-  - Note: When deploying, ensure `NEXT_PUBLIC_ORGANIZATION_ID` and `NEXT_PUBLIC_AUTH_PROXY_CONFIG_ID` are set as build-time environment variables
-
----
-
-### Bots
-
-![Bots Architecture](./.github/assets/bots.png)
-
-Automated market-making bots to provide liquidity:
-
-- **BTC/USDC**: Hyperliquid mirror bot that replicates order book depth with configurable risk parameters
-- **BP/USDC**: LMSR (Logarithmic Market Scoring Rule) market maker with dynamic spread adjustment (planned)
-
----
-
-### Testing & Deployment
-
-- **Devcontainers**: Easily start dev enviornment with tools pre-installed
-- **Testcontainers**: Integration testing with isolated database instances and automated cleanup
-- **GitHub Actions**: Automated CI/CD pipeline for testing and deployment
-
-## Improvements
-
-Features and improvements to consider for production:
-
-- perps
-- pnl
-- deposits / withdrawals
-- helllaaa latency
-- write ahead log lmao
-- design for concurrency across multiple markets
-- metrics & alerting
-- backups & disaster recovery
-- scaling / k8s
-- mm channel prioritization
-- cancel prioritization
 
 ## License
 
-MIT
+This project is licensed under the GNU General Public License v3.0. See
+the [LICENSE](LICENSE) file for details.
