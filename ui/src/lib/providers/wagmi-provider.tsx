@@ -28,10 +28,13 @@ export function WagmiProvider({ children }: WagmiProviderProps) {
       }),
   );
 
-  // Defer wagmi config creation to client-side only,
-  // avoiding WalletConnect's indexedDB access during SSR.
+  // Defer wagmi config creation to client-side only, avoiding
+  // WalletConnect's indexedDB access during SSR. The setState-in-effect
+  // is intentional: initial render (server + client hydration) must
+  // match with config=null to avoid a hydration mismatch, and the
+  // config only becomes available after first client mount.
   useEffect(() => {
-    setConfig(getWagmiConfig());
+    setConfig(getWagmiConfig()); // eslint-disable-line react-hooks/set-state-in-effect
   }, []);
 
   // During SSR / before hydration, render nothing.

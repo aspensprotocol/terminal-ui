@@ -6,10 +6,8 @@
  */
 
 import { useState, useCallback } from "react";
-import { useExchangeClient } from "./useExchangeClient";
 
 export function useCancelOrder() {
-  const client = useExchangeClient();
   const [cancellingOrders, setCancellingOrders] = useState<Set<string>>(
     new Set(),
   );
@@ -48,11 +46,11 @@ export function useCancelOrder() {
         });
       }
     },
-    [client],
+    [],
   );
 
   const cancelAllOrders = useCallback(
-    async (userAddress: string, marketId?: string) => {
+    async (userAddress: string, _marketId?: string) => {
       if (!userAddress) {
         throw new Error("User address required");
       }
@@ -70,7 +68,7 @@ export function useCancelOrder() {
         setCancellingAll(false);
       }
     },
-    [client],
+    [],
   );
 
   return {

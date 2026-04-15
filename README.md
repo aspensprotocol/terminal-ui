@@ -14,7 +14,6 @@ terminal-ui/
 ├── packages/
 │   └── sdk-typescript/        # @exchange/sdk — gRPC-Web client for the arborter
 ├── Dockerfile                 # Multi-stage Bun build
-├── docker-compose.yaml        # UI + backing services (Postgres, ClickHouse)
 ├── justfile                   # Common dev commands
 └── LICENSE                    # GPL-3.0
 ```
@@ -30,7 +29,7 @@ or matching engine in this repo.
 
 - [Bun](https://bun.sh/) (pinned via `.bun-version`)
 - [Just](https://github.com/casey/just) (optional; the `justfile` wraps the common bun commands)
-- [Docker](https://www.docker.com/) and Docker Compose — optional, for the containerised flow
+- [Docker](https://www.docker.com/) — optional, if you want to build and run the container image directly
 - A running arborter instance (local or remote) to point the UI at
 
 ### Install and run
@@ -52,13 +51,12 @@ bun run build                 # then build the Next.js app
 ### Docker
 
 ```bash
-docker compose up -d
+docker build -t aspens-terminal-ui .
+docker run --rm -p 3000:3000 aspens-terminal-ui
 ```
 
-Builds the multi-stage `Dockerfile` and serves the UI on port 3000.
-(`docker-compose.yaml` also declares Postgres and ClickHouse services
-held over from an earlier layout; the UI itself doesn't use them, and
-they can be ignored or pruned.)
+The multi-stage `Dockerfile` produces a slim Bun runtime image serving
+the built Next.js app on port 3000.
 
 ## Environment Variables
 
