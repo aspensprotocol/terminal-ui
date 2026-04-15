@@ -12,7 +12,7 @@ A full terminal UI for trading on an Aspens Market Stack.
 terminal-ui/
 ├── ui/                        # Next.js 16 trading interface (React 19, Tailwind 4)
 ├── packages/
-│   └── sdk-typescript/        # @exchange/sdk — gRPC-Web client for the arborter
+│   └── sdk-typescript/        # Internal gRPC-Web client for the arborter
 ├── Dockerfile                 # Multi-stage Bun build
 ├── justfile                   # Common dev commands
 └── LICENSE                    # GPL-3.0
@@ -20,8 +20,8 @@ terminal-ui/
 
 The UI is a single Next.js app that talks to the **arborter** gRPC stack
 (a separate repo) over gRPC-Web. All trading state — orderbook, trades,
-config, orders — comes from that backend. There is no local server
-or matching engine in this repo.
+config, orders — comes from that backend. There is no local server in
+this repo.
 
 ## Getting Started
 
@@ -89,9 +89,10 @@ Next.js 16 + React 19 + TypeScript + Tailwind CSS 4.
   - Per-market dispatch picks the ecosystem matching the chain's
     `architecture` field from the arborter config
 
-### TypeScript SDK (`packages/sdk-typescript/`, published as `@exchange/sdk`)
+### TypeScript SDK (`packages/sdk-typescript/`)
 
-gRPC-Web client for the arborter backend, with generated protobuf types.
+Internal gRPC-Web client for the arborter backend, with generated
+protobuf types. Consumed by the UI only; not published.
 
 - **Transport**: `@connectrpc/connect` + `@connectrpc/connect-web`
 - **Protobuf runtime**: `@bufbuild/protobuf`
