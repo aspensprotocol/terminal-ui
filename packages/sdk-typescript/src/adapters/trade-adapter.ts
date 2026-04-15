@@ -41,7 +41,7 @@ function getTradeSide(buyerIs: TradeRole, sellerIs: TradeRole): Side {
 export function toEnhancedTrade(
   trade: ProtoTrade,
   marketId: string,
-  pairDecimals: number
+  pairDecimals: number,
 ): EnhancedTrade {
   const priceValue = rawToDecimal(trade.price, pairDecimals);
   const sizeValue = rawToDecimal(trade.qty, pairDecimals);
@@ -84,7 +84,7 @@ export function toEnhancedTrade(
 export function toEnhancedTrades(
   trades: ProtoTrade[],
   marketId: string,
-  pairDecimals: number
+  pairDecimals: number,
 ): EnhancedTrade[] {
   return trades.map((trade) => toEnhancedTrade(trade, marketId, pairDecimals));
 }

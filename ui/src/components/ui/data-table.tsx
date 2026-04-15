@@ -9,7 +9,13 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { useState, useRef, useEffect } from "react";
-import { TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -29,7 +35,10 @@ export function DataTable<TData, TValue>({
     if (!firstColumn) return "";
 
     // Check if column has accessorKey property (ColumnDef with accessor)
-    if ("accessorKey" in firstColumn && typeof firstColumn.accessorKey === "string") {
+    if (
+      "accessorKey" in firstColumn &&
+      typeof firstColumn.accessorKey === "string"
+    ) {
       return firstColumn.accessorKey;
     }
 
@@ -37,7 +46,9 @@ export function DataTable<TData, TValue>({
     return firstColumn.id || "";
   };
 
-  const [sorting, setSorting] = useState<SortingState>([{ id: getDefaultSortColumn(), desc: true }]);
+  const [sorting, setSorting] = useState<SortingState>([
+    { id: getDefaultSortColumn(), desc: true },
+  ]);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // eslint-disable-next-line react-hooks/incompatible-library
@@ -99,13 +110,19 @@ export function DataTable<TData, TValue>({
           }}
         >
           {table.getHeaderGroups().map((headerGroup) => (
-            <TableRow key={headerGroup.id} className="border-none hover:bg-transparent relative">
+            <TableRow
+              key={headerGroup.id}
+              className="border-none hover:bg-transparent relative"
+            >
               {headerGroup.headers.map((header) => {
                 return (
                   <TableHead
                     key={header.id}
                     className="font-semibold text-foreground px-3"
-                    style={{ width: header.getSize() !== 150 ? header.getSize() : undefined }}
+                    style={{
+                      width:
+                        header.getSize() !== 150 ? header.getSize() : undefined,
+                    }}
                   >
                     {header.isPlaceholder ? null : (
                       <div
@@ -116,26 +133,36 @@ export function DataTable<TData, TValue>({
                         }
                         onClick={header.column.getToggleSortingHandler()}
                       >
-                        <div className="flex-1">{flexRender(header.column.columnDef.header, header.getContext())}</div>
-                        {header.column.getCanSort() && header.column.getIsSorted() && (
-                          <span className="relative shrink-0 w-3 h-3 flex items-center justify-center">
-                            <span
-                              className={`absolute text-xs transition-all duration-300 ease-out ${
-                                header.column.getIsSorted() === "asc"
-                                  ? "rotate-0 text-primary"
-                                  : "rotate-180 text-primary"
-                              }`}
-                            >
-                              ↑
+                        <div className="flex-1">
+                          {flexRender(
+                            header.column.columnDef.header,
+                            header.getContext(),
+                          )}
+                        </div>
+                        {header.column.getCanSort() &&
+                          header.column.getIsSorted() && (
+                            <span className="relative shrink-0 w-3 h-3 flex items-center justify-center">
+                              <span
+                                className={`absolute text-xs transition-all duration-300 ease-out ${
+                                  header.column.getIsSorted() === "asc"
+                                    ? "rotate-0 text-primary"
+                                    : "rotate-180 text-primary"
+                                }`}
+                              >
+                                ↑
+                              </span>
                             </span>
-                          </span>
-                        )}
+                          )}
                       </div>
                     )}
                   </TableHead>
                 );
               })}
-              {headerAction && <div className="absolute right-3 top-0 h-full flex items-center">{headerAction}</div>}
+              {headerAction && (
+                <div className="absolute right-3 top-0 h-full flex items-center">
+                  {headerAction}
+                </div>
+              )}
             </TableRow>
           ))}
         </TableHeader>

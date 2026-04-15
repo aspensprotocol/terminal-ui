@@ -15,7 +15,9 @@ import type {
 declare global {
   interface Window {
     TradingView?: {
-      widget: new (options: ChartingLibraryWidgetOptions) => IChartingLibraryWidget;
+      widget: new (
+        options: ChartingLibraryWidgetOptions,
+      ) => IChartingLibraryWidget;
     };
   }
 }
@@ -47,7 +49,11 @@ export function TradingViewChart() {
       datafeedRef.current = new ExchangeDatafeed();
     }
 
-    const widgetOptions = getChartConfig(selectedMarketId, datafeedRef.current, containerRef.current);
+    const widgetOptions = getChartConfig(
+      selectedMarketId,
+      datafeedRef.current,
+      containerRef.current,
+    );
 
     try {
       const widget = new TradingView.widget(widgetOptions);

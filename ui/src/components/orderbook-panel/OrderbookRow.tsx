@@ -10,7 +10,15 @@ interface OrderbookRowProps {
   onClick: (price: number) => void;
 }
 
-export function OrderbookRow({ price, priceValue, size, cumulative, maxCumulative, type, onClick }: OrderbookRowProps) {
+export function OrderbookRow({
+  price,
+  priceValue,
+  size,
+  cumulative,
+  maxCumulative,
+  type,
+  onClick,
+}: OrderbookRowProps) {
   const depthPercentage = (cumulative / maxCumulative) * 100;
   const isBid = type === "bid";
   const colorClass = isBid ? "text-green-500" : "text-red-500";
@@ -27,8 +35,14 @@ export function OrderbookRow({ price, priceValue, size, cumulative, maxCumulativ
         className={`absolute left-0 top-0 bottom-0 ${bgClass} transition-all duration-300 ease-out`}
         style={{ width: `${depthPercentage}%` }}
       />
-      <span className={`relative z-10 ${colorClass} font-semibold whitespace-nowrap`}>{price}</span>
-      <span className="relative z-10 text-muted-foreground text-right whitespace-nowrap">{size}</span>
+      <span
+        className={`relative z-10 ${colorClass} font-semibold whitespace-nowrap`}
+      >
+        {price}
+      </span>
+      <span className="relative z-10 text-muted-foreground text-right whitespace-nowrap">
+        {size}
+      </span>
     </div>
   );
 }

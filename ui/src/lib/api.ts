@@ -20,7 +20,8 @@ export function getExchangeClient(): ExchangeClient {
     // Falls back to /api which can be proxied by Next.js
     const grpcUrl =
       typeof window !== "undefined"
-        ? (window as Window & { __NEXT_PUBLIC_GRPC_URL__?: string }).__NEXT_PUBLIC_GRPC_URL__ ||
+        ? (window as Window & { __NEXT_PUBLIC_GRPC_URL__?: string })
+            .__NEXT_PUBLIC_GRPC_URL__ ||
           process.env.NEXT_PUBLIC_GRPC_URL ||
           "/api"
         : "/api";

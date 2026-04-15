@@ -17,7 +17,9 @@ export function useSigningAdapter(): SigningAdapter | null {
     const wallet = connectedWallets[activeWalletId];
     if (!wallet) return null;
 
-    const adapter = walletRegistry.getAdapter(wallet.ecosystem as ChainEcosystem);
+    const adapter = walletRegistry.getAdapter(
+      wallet.ecosystem as ChainEcosystem,
+    );
     if (!adapter) return null;
 
     return adapter.createSigningAdapter(wallet.address);

@@ -13,7 +13,8 @@
   },
   "scripts": {
     "build": "tsc",
-    "dev": "tsc --watch"
+    "dev": "tsc --watch",
+    "test": "bun test"
   },
   "dependencies": {
     "@bufbuild/protobuf": "^2.6.3",

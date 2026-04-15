@@ -39,10 +39,16 @@ export function useOrderEstimate({
     if (orderType === "limit") {
       effectivePrice = priceNum;
     } else {
-      effectivePrice = (side === "buy" ? bestAsk : bestBid) || lastTradePrice || 0;
+      effectivePrice =
+        (side === "buy" ? bestAsk : bestBid) || lastTradePrice || 0;
     }
 
-    if (isNaN(effectivePrice) || effectivePrice <= 0 || isNaN(sizeNum) || sizeNum <= 0) {
+    if (
+      isNaN(effectivePrice) ||
+      effectivePrice <= 0 ||
+      isNaN(sizeNum) ||
+      sizeNum <= 0
+    ) {
       return null;
     }
 
@@ -58,5 +64,15 @@ export function useOrderEstimate({
       fee,
       finalAmount,
     };
-  }, [price, size, side, orderType, bestBid, bestAsk, lastTradePrice, makerFeeBps, takerFeeBps]);
+  }, [
+    price,
+    size,
+    side,
+    orderType,
+    bestBid,
+    bestAsk,
+    lastTradePrice,
+    makerFeeBps,
+    takerFeeBps,
+  ]);
 }

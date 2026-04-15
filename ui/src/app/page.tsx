@@ -28,7 +28,7 @@ export default function Home() {
 
   // Update browser tab title when market changes
   const selectedMarket = useExchangeStore((state) =>
-    state.selectedMarketId ? state.markets[state.selectedMarketId] : undefined
+    state.selectedMarketId ? state.markets[state.selectedMarketId] : undefined,
   );
   useEffect(() => {
     if (selectedMarket) {

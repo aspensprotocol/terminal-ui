@@ -74,7 +74,12 @@ export class ExchangeDatafeed implements IBasicDataFeed {
   /**
    * Search for symbols (markets)
    */
-  searchSymbols(userInput: string, _exchange: string, _symbolType: string, onResult: SearchSymbolsCallback): void {
+  searchSymbols(
+    userInput: string,
+    _exchange: string,
+    _symbolType: string,
+    onResult: SearchSymbolsCallback,
+  ): void {
     // Use SDK cache if available
     const markets = this.client.cache.getAllMarkets();
 
@@ -93,7 +98,11 @@ export class ExchangeDatafeed implements IBasicDataFeed {
   /**
    * Resolve symbol info
    */
-  resolveSymbol(symbolName: string, onResolve: ResolveCallback, onError: ErrorCallback): void {
+  resolveSymbol(
+    symbolName: string,
+    onResolve: ResolveCallback,
+    onError: ErrorCallback,
+  ): void {
     // Use SDK cache directly
     const market = this.client.cache.getMarket(symbolName);
 
@@ -152,7 +161,7 @@ export class ExchangeDatafeed implements IBasicDataFeed {
       countBack?: number;
     },
     onResult: HistoryCallback,
-    onError: ErrorCallback
+    onError: ErrorCallback,
   ): void {
     const { from, to, countBack: _countBack } = periodParams;
     const interval = resolutionMap[resolution] || "1m";
@@ -190,11 +199,21 @@ export class ExchangeDatafeed implements IBasicDataFeed {
 
         const bars: Bar[] = candles.map((candle: Candle) => ({
           time: candle.timestamp * 1000, // TradingView expects milliseconds
-          open: parseFloat(toDisplayValue(String(candle.open), quoteToken.decimals)),
-          high: parseFloat(toDisplayValue(String(candle.high), quoteToken.decimals)),
-          low: parseFloat(toDisplayValue(String(candle.low), quoteToken.decimals)),
-          close: parseFloat(toDisplayValue(String(candle.close), quoteToken.decimals)),
-          volume: parseFloat(toDisplayValue(String(candle.volume), baseToken.decimals)),
+          open: parseFloat(
+            toDisplayValue(String(candle.open), quoteToken.decimals),
+          ),
+          high: parseFloat(
+            toDisplayValue(String(candle.high), quoteToken.decimals),
+          ),
+          low: parseFloat(
+            toDisplayValue(String(candle.low), quoteToken.decimals),
+          ),
+          close: parseFloat(
+            toDisplayValue(String(candle.close), quoteToken.decimals),
+          ),
+          volume: parseFloat(
+            toDisplayValue(String(candle.volume), baseToken.decimals),
+          ),
         }));
 
         onResult(bars, { noData: false });
@@ -213,7 +232,7 @@ export class ExchangeDatafeed implements IBasicDataFeed {
     resolution: ResolutionString,
     onTick: SubscribeBarsCallback,
     listenerGuid: string,
-    _onResetCacheNeededCallback: () => void
+    _onResetCacheNeededCallback: () => void,
   ): void {
     const intervalSeconds = resolutionToSeconds[resolution];
     if (!intervalSeconds) {
@@ -235,7 +254,9 @@ export class ExchangeDatafeed implements IBasicDataFeed {
     // Subscribe to trades for this market if not already subscribed
     const marketId = symbolInfo.name;
     const isFirstSubscription =
-      Array.from(this.subscriptions.values()).filter((sub) => sub.symbolInfo.name === marketId).length === 1;
+      Array.from(this.subscriptions.values()).filter(
+        (sub) => sub.symbolInfo.name === marketId,
+      ).length === 1;
 
     if (isFirstSubscription) {
       // Subscribe using SDK convenience method (receives enhanced trades)
@@ -261,7 +282,7 @@ export class ExchangeDatafeed implements IBasicDataFeed {
 
     // If no more subscriptions for this market, unsubscribe from trades
     const hasOtherSubscriptions = Array.from(this.subscriptions.values()).some(
-      (sub) => sub.symbolInfo.name === marketId
+      (sub) => sub.symbolInfo.name === marketId,
     );
 
     if (!hasOtherSubscriptions) {
@@ -279,7 +300,9 @@ export class ExchangeDatafeed implements IBasicDataFeed {
   /**
    * Handle enhanced trade from SDK (WebSocket)
    */
-  private handleEnhancedTrade(trade: import("@exchange/sdk").EnhancedTrade): void {
+  private handleEnhancedTrade(
+    trade: import("@exchange/sdk").EnhancedTrade,
+  ): void {
     // SDK already enhanced the trade with display values!
     const price = trade.priceValue;
     const size = trade.sizeValue;
@@ -311,10 +334,17 @@ export class ExchangeDatafeed implements IBasicDataFeed {
           volume: size,
         };
       } else {
-        subscription.currentBar.high = Math.max(subscription.currentBar.high, price);
-        subscription.currentBar.low = Math.min(subscription.currentBar.low, price);
+        subscription.currentBar.high = Math.max(
+          subscription.currentBar.high,
+          price,
+        );
+        subscription.currentBar.low = Math.min(
+          subscription.currentBar.low,
+          price,
+        );
         subscription.currentBar.close = price;
-        subscription.currentBar.volume = (subscription.currentBar.volume || 0) + size;
+        subscription.currentBar.volume =
+          (subscription.currentBar.volume || 0) + size;
       }
 
       // Send the updated bar

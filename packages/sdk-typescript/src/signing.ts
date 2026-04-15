@@ -6,7 +6,12 @@
  */
 
 import { create, toBinary } from "@bufbuild/protobuf";
-import { OrderSchema, OrderToCancelSchema, Side, ExecutionType } from "./protos/arborter_pb.js";
+import {
+  OrderSchema,
+  OrderToCancelSchema,
+  Side,
+  ExecutionType,
+} from "./protos/arborter_pb.js";
 import type { Order, OrderToCancel } from "./protos/arborter_pb.js";
 
 /**
@@ -45,15 +50,22 @@ export interface CancelSigningData {
 }
 
 /**
- * Strip the EVM recovery byte (v) from a 65-byte signature.
- * EVM wallets produce 65-byte signatures (r[32] + s[32] + v[1]),
- * but arborter expects 64 bytes (r + s only).
+ * Normalize a wallet signature to the 64-byte wire format the arborter
+ * expects. Branches on input length:
+ *
+ * - **65 bytes** — EVM ECDSA (`r[32] || s[32] || v[1]`). Drop the trailing
+ *   recovery byte; arborter recovers the address from message + `r||s`.
+ * - **64 bytes** — Solana Ed25519 (already `r||s`). Passthrough.
+ * - Anything else — throw. A wallet adapter returned something this code
+ *   doesn't know how to hand off; fail loudly rather than ship a bogus
+ *   signature that the arborter will silently reject.
  */
-function stripRecoveryByte(sig: Uint8Array): Uint8Array {
-  if (sig.length === 65) {
-    return sig.slice(0, 64);
-  }
-  return sig;
+export function normalizeWalletSignature(sig: Uint8Array): Uint8Array {
+  if (sig.length === 65) return sig.slice(0, 64);
+  if (sig.length === 64) return sig;
+  throw new Error(
+    `unexpected wallet signature length ${sig.length}; expected 65 (EVM ECDSA) or 64 (Solana Ed25519)`,
+  );
 }
 
 /**
@@ -131,7 +143,7 @@ export function serializeCancelOrder(order: OrderToCancel): Uint8Array {
  */
 export async function signOrder(
   orderData: OrderSigningData,
-  adapter: SigningAdapter
+  adapter: SigningAdapter,
 ): Promise<Uint8Array> {
   // Create the protobuf Order message
   const order = createOrderMessage(orderData);
@@ -149,9 +161,7 @@ export async function signOrder(
 
   console.log("[Signing] Signature received:", signature);
 
-  // Convert signature hex to bytes, stripping the EVM recovery byte (v)
-  // EVM signatures are 65 bytes (r[32] + s[32] + v[1]), arborter expects 64 bytes (r + s)
-  return stripRecoveryByte(hexToBytes(signature));
+  return normalizeWalletSignature(hexToBytes(signature));
 }
 
 /**
@@ -163,7 +173,7 @@ export async function signOrder(
  */
 export async function signCancelOrder(
   cancelData: CancelSigningData,
-  adapter: SigningAdapter
+  adapter: SigningAdapter,
 ): Promise<Uint8Array> {
   // Create the protobuf OrderToCancel message
   const order = createCancelMessage(cancelData);
@@ -181,8 +191,7 @@ export async function signCancelOrder(
 
   console.log("[Signing] Cancel signature received:", signature);
 
-  // Convert signature hex to bytes, stripping the EVM recovery byte (v)
-  return stripRecoveryByte(hexToBytes(signature));
+  return normalizeWalletSignature(hexToBytes(signature));
 }
 
 /**
@@ -195,6 +204,8 @@ export function getOrderForSigning(data: OrderSigningData): Order {
 /**
  * Get the protobuf OrderToCancel object for inspection or manual submission
  */
-export function getCancelOrderForSigning(data: CancelSigningData): OrderToCancel {
+export function getCancelOrderForSigning(
+  data: CancelSigningData,
+): OrderToCancel {
   return createCancelMessage(data);
 }

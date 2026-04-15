@@ -128,7 +128,7 @@ class CacheManager {
 class RestClient {
   constructor(
     private config: ExchangeClientConfig,
-    private cache: CacheManager
+    private cache: CacheManager,
   ) {}
 
   async placeOrderDecimal(params: PlaceOrderParams): Promise<EnhancedOrder> {
@@ -168,7 +168,10 @@ class RestClient {
       orderId: BigInt(params.orderId),
     });
 
-    const response = await arborterService.cancelOrder(orderToCancel, params.signature);
+    const response = await arborterService.cancelOrder(
+      orderToCancel,
+      params.signature,
+    );
 
     return {
       order_id: params.orderId,
@@ -184,7 +187,7 @@ class RestClient {
   private responseToEnhancedOrder(
     response: SendOrderResponse,
     params: PlaceOrderParams,
-    pairDecimals: number
+    pairDecimals: number,
   ): EnhancedOrder {
     const priceDecimal = params.priceDecimal ?? params.price ?? "0";
     const sizeDecimal = params.sizeDecimal ?? params.size ?? "0";
@@ -221,7 +224,8 @@ export class ExchangeClient {
   public readonly cache: CacheManager;
   public readonly rest: RestClient;
   private config: ExchangeClientConfig;
-  private pollingIntervals: Map<string, ReturnType<typeof setInterval>> = new Map();
+  private pollingIntervals: Map<string, ReturnType<typeof setInterval>> =
+    new Map();
   private isConnected = false;
 
   constructor(configOrUrl: ExchangeClientConfig | string) {
@@ -256,7 +260,10 @@ export class ExchangeClient {
         return markets;
       }
     } catch (error) {
-      console.warn("[SDK] Failed to get markets from backend, using stub data:", error);
+      console.warn(
+        "[SDK] Failed to get markets from backend, using stub data:",
+        error,
+      );
     }
 
     // Fall back to stub data
@@ -279,7 +286,10 @@ export class ExchangeClient {
         return tokens;
       }
     } catch (error) {
-      console.warn("[SDK] Failed to get tokens from backend, using stub data:", error);
+      console.warn(
+        "[SDK] Failed to get tokens from backend, using stub data:",
+        error,
+      );
     }
 
     // Fall back to stub data
@@ -311,7 +321,7 @@ export class ExchangeClient {
 
   async getOrders(
     userAddress: string,
-    marketId?: string
+    marketId?: string,
   ): Promise<EnhancedOrder[]> {
     // Get user's orders from orderbook filtered by trader
     if (!marketId) return [];
@@ -322,7 +332,7 @@ export class ExchangeClient {
         marketId,
         false,
         true, // historicalOpenOrders
-        userAddress // filterByTrader
+        userAddress, // filterByTrader
       );
 
       // Convert orderbook entries to EnhancedOrder format
@@ -341,16 +351,16 @@ export class ExchangeClient {
         priceValue: parseFloat(entry.price) / Math.pow(10, pairDecimals),
         sizeValue: parseFloat(entry.quantity) / Math.pow(10, pairDecimals),
         filledValue: 0,
-        displayPrice: (parseFloat(entry.price) / Math.pow(10, pairDecimals)).toFixed(
-          pairDecimals
-        ),
+        displayPrice: (
+          parseFloat(entry.price) / Math.pow(10, pairDecimals)
+        ).toFixed(pairDecimals),
         displaySize: (
           parseFloat(entry.quantity) / Math.pow(10, pairDecimals)
         ).toFixed(pairDecimals),
         displayFilledSize: "0",
-        priceDisplay: (parseFloat(entry.price) / Math.pow(10, pairDecimals)).toFixed(
-          pairDecimals
-        ),
+        priceDisplay: (
+          parseFloat(entry.price) / Math.pow(10, pairDecimals)
+        ).toFixed(pairDecimals),
         sizeDisplay: (
           parseFloat(entry.quantity) / Math.pow(10, pairDecimals)
         ).toFixed(pairDecimals),
@@ -364,7 +374,7 @@ export class ExchangeClient {
 
   async getTrades(
     userAddress: string,
-    marketId?: string
+    marketId?: string,
   ): Promise<EnhancedTrade[]> {
     if (!marketId) return [];
 
@@ -374,7 +384,7 @@ export class ExchangeClient {
         marketId,
         false,
         true, // historicalClosedTrades
-        userAddress // filterByTrader
+        userAddress, // filterByTrader
       );
 
       return toEnhancedTrades(trades, marketId, pairDecimals);
@@ -390,7 +400,7 @@ export class ExchangeClient {
 
   onTrades(
     marketId: string,
-    callback: (trade: EnhancedTrade) => void
+    callback: (trade: EnhancedTrade) => void,
   ): UnsubscribeFn {
     const key = `trades:${marketId}`;
     let lastTradeTimestamp = 0n;
@@ -434,14 +444,18 @@ export class ExchangeClient {
     callback: (data: {
       bids: EnhancedOrderbookLevel[];
       asks: EnhancedOrderbookLevel[];
-    }) => void
+    }) => void,
   ): UnsubscribeFn {
     const key = `orderbook:${marketId}`;
 
     const poll = async () => {
       try {
         const pairDecimals = this.cache.getPairDecimals(marketId);
-        const entries = await arborterService.getOrderbook(marketId, false, true);
+        const entries = await arborterService.getOrderbook(
+          marketId,
+          false,
+          true,
+        );
         const { bids, asks } = toEnhancedOrderbook(entries, pairDecimals);
         callback({ bids, asks });
       } catch (error) {
@@ -469,7 +483,11 @@ export class ExchangeClient {
 
   onUserOrders(
     userAddress: string,
-    callback: (order: { order_id: string; status: string; filled_size: string }) => void
+    callback: (order: {
+      order_id: string;
+      status: string;
+      filled_size: string;
+    }) => void,
   ): UnsubscribeFn {
     // User order updates would require subscribing to orderbook changes
     // For now, return no-op
@@ -478,7 +496,7 @@ export class ExchangeClient {
 
   onUserBalances(
     userAddress: string,
-    callback: (balance: EnhancedBalance) => void
+    callback: (balance: EnhancedBalance) => void,
   ): UnsubscribeFn {
     // Balance updates would require on-chain event subscription
     // For now, return no-op
@@ -487,7 +505,7 @@ export class ExchangeClient {
 
   onUserFills(
     userAddress: string,
-    callback: (trade: EnhancedTrade) => void
+    callback: (trade: EnhancedTrade) => void,
   ): UnsubscribeFn {
     // User fills would require subscribing to trades filtered by user
     // For now, return no-op
@@ -507,7 +525,7 @@ export class ExchangeClient {
   }
 
   async cancelAllOrders(
-    params: CancelAllOrdersParams
+    params: CancelAllOrdersParams,
   ): Promise<{ cancelled_order_ids: string[]; count: number }> {
     // Arborter doesn't have a cancel-all endpoint
     // Would need to fetch all orders and cancel individually

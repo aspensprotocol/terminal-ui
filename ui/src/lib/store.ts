@@ -5,7 +5,16 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { immer } from "zustand/middleware/immer";
-import type { Market, Token, Orderbook, Trade, OrderbookLevel, Balance, Order, OrderStatus } from "./types/exchange";
+import type {
+  Market,
+  Token,
+  Orderbook,
+  Trade,
+  OrderbookLevel,
+  Balance,
+  Order,
+  OrderStatus,
+} from "./types/exchange";
 import type { ConnectedWallet } from "./wallet/types";
 
 // ============================================================================
@@ -42,7 +51,11 @@ interface ExchangeState {
   // Actions - UI Data
   selectMarket: (marketId: string) => void;
   setSelectedPrice: (price: number | null) => void;
-  updateOrderbook: (marketId: string, bids: OrderbookLevel[], asks: OrderbookLevel[]) => void;
+  updateOrderbook: (
+    marketId: string,
+    bids: OrderbookLevel[],
+    asks: OrderbookLevel[],
+  ) => void;
   addTrade: (trade: Trade) => void;
 
   // Actions - User Data
@@ -54,9 +67,17 @@ interface ExchangeState {
   disconnectWallet: (walletId: string) => void;
   setActiveWallet: (walletId: string) => void;
   setBalances: (balances: Balance[]) => void;
-  updateBalance: (tokenTicker: string, available: string, locked: string) => void;
+  updateBalance: (
+    tokenTicker: string,
+    available: string,
+    locked: string,
+  ) => void;
   setOrders: (orders: Order[]) => void;
-  updateOrder: (orderId: string, status: OrderStatus, filledSize: string) => void;
+  updateOrder: (
+    orderId: string,
+    status: OrderStatus,
+    filledSize: string,
+  ) => void;
   setUserTrades: (trades: Trade[]) => void;
   addUserTrade: (trade: Trade) => void;
 
@@ -113,7 +134,7 @@ export const useExchangeStore = create<ExchangeState>()(
               acc[market.id] = market;
               return acc;
             },
-            {} as Record<string, Market>
+            {} as Record<string, Market>,
           );
         }),
 
@@ -125,7 +146,7 @@ export const useExchangeStore = create<ExchangeState>()(
               acc[token.ticker] = token;
               return acc;
             },
-            {} as Record<string, Token>
+            {} as Record<string, Token>,
           );
         }),
 
@@ -249,7 +270,7 @@ export const useExchangeStore = create<ExchangeState>()(
               acc[balance.token_ticker] = balance;
               return acc;
             },
-            {} as Record<string, Balance>
+            {} as Record<string, Balance>,
           );
         }),
 
@@ -276,7 +297,9 @@ export const useExchangeStore = create<ExchangeState>()(
             displayAmount: amountValue.toFixed(token.decimals),
             displayOpenInterest: lockedValue.toFixed(token.decimals),
             available: (amountValue - lockedValue).toFixed(token.decimals),
-            displayAvailable: (amountValue - lockedValue).toFixed(token.decimals),
+            displayAvailable: (amountValue - lockedValue).toFixed(
+              token.decimals,
+            ),
             amountValue,
             lockedValue,
           };
@@ -290,7 +313,7 @@ export const useExchangeStore = create<ExchangeState>()(
               acc[order.id] = order;
               return acc;
             },
-            {} as Record<string, Order>
+            {} as Record<string, Order>,
           );
         }),
 
@@ -347,8 +370,8 @@ export const useExchangeStore = create<ExchangeState>()(
 
       reset: () => set(initialState),
     })),
-    { name: "ExchangeStore" }
-  )
+    { name: "ExchangeStore" },
+  ),
 );
 
 // ============================================================================
@@ -361,8 +384,10 @@ const EMPTY_ARRAY: OrderbookLevel[] = [];
 export const selectSelectedMarket = (state: ExchangeState) =>
   state.selectedMarketId ? state.markets[state.selectedMarketId] : undefined;
 
-export const selectOrderbookBids = (state: ExchangeState) => state.orderbook?.bids ?? EMPTY_ARRAY;
+export const selectOrderbookBids = (state: ExchangeState) =>
+  state.orderbook?.bids ?? EMPTY_ARRAY;
 
-export const selectOrderbookAsks = (state: ExchangeState) => state.orderbook?.asks ?? EMPTY_ARRAY;
+export const selectOrderbookAsks = (state: ExchangeState) =>
+  state.orderbook?.asks ?? EMPTY_ARRAY;
 
 export const selectRecentTrades = (state: ExchangeState) => state.recentTrades;

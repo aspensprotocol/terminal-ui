@@ -39,11 +39,24 @@ export function usePriceSelection({
       }
 
       // Round price to tick size and set it
-      const rounded = roundToTickSize(selectedPrice, selectedMarket.tick_size, quoteToken.decimals);
+      const rounded = roundToTickSize(
+        selectedPrice,
+        selectedMarket.tick_size,
+        quoteToken.decimals,
+      );
       setValue("price", rounded.toFixed(priceDecimals));
 
       // Clear the selected price from store
       setSelectedPrice(null);
     }
-  }, [selectedPrice, selectedMarket, baseToken, quoteToken, orderType, setSelectedPrice, setValue, priceDecimals]);
+  }, [
+    selectedPrice,
+    selectedMarket,
+    baseToken,
+    quoteToken,
+    orderType,
+    setSelectedPrice,
+    setValue,
+    priceDecimals,
+  ]);
 }

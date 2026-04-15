@@ -1,6 +1,12 @@
 "use client";
 
-import { CircleCheckIcon, InfoIcon, Loader2Icon, OctagonXIcon, TriangleAlertIcon } from "lucide-react";
+import {
+  CircleCheckIcon,
+  InfoIcon,
+  Loader2Icon,
+  OctagonXIcon,
+  TriangleAlertIcon,
+} from "lucide-react";
 import { useTheme } from "next-themes";
 import { Toaster as Sonner, type ToasterProps } from "sonner";
 
@@ -21,12 +27,16 @@ const Toaster = ({ ...props }: ToasterProps) => {
       }}
       toastOptions={{
         classNames: {
-          toast: "bg-zinc-900/95 backdrop-blur-xl border-zinc-700/50 shadow-2xl dither",
+          toast:
+            "bg-zinc-900/95 backdrop-blur-xl border-zinc-700/50 shadow-2xl dither",
           title: "text-foreground",
           description: "text-muted-foreground",
-          success: "bg-zinc-900/95 backdrop-blur-xl border-zinc-700/50 text-foreground",
-          error: "bg-zinc-900/95 backdrop-blur-xl border-red-500/30 text-foreground",
-          warning: "bg-zinc-900/95 backdrop-blur-xl border-yellow-500/30 text-foreground",
+          success:
+            "bg-zinc-900/95 backdrop-blur-xl border-zinc-700/50 text-foreground",
+          error:
+            "bg-zinc-900/95 backdrop-blur-xl border-red-500/30 text-foreground",
+          warning:
+            "bg-zinc-900/95 backdrop-blur-xl border-yellow-500/30 text-foreground",
           info: "bg-zinc-900/95 backdrop-blur-xl border-zinc-700/50 text-foreground",
           closeButton:
             "bg-zinc-800/80 border-zinc-700/50 text-foreground hover:bg-zinc-700/80 hover:border-zinc-600/50 transition-all",

@@ -77,7 +77,10 @@ import type { Token } from "./types.js";
 /**
  * Convert a raw integer value to a display string with decimals
  */
-export function toDisplayValue(value: string | number, decimals: number): string {
+export function toDisplayValue(
+  value: string | number,
+  decimals: number,
+): string {
   if (typeof value === "number") {
     value = value.toString();
   }
@@ -115,16 +118,17 @@ export function toDisplayValue(value: string | number, decimals: number): string
  */
 export function formatNumber(
   value: string | number,
-  optionsOrDecimals?: number | { decimals?: number; compact?: boolean }
+  optionsOrDecimals?: number | { decimals?: number; compact?: boolean },
 ): string {
   const num = typeof value === "string" ? parseFloat(value) : value;
 
   if (isNaN(num)) return "0";
 
   // Normalize options
-  const options = typeof optionsOrDecimals === "number"
-    ? { decimals: optionsOrDecimals }
-    : optionsOrDecimals;
+  const options =
+    typeof optionsOrDecimals === "number"
+      ? { decimals: optionsOrDecimals }
+      : optionsOrDecimals;
 
   if (options?.compact && Math.abs(num) >= 1000) {
     const suffixes = ["", "K", "M", "B", "T"];
@@ -145,7 +149,11 @@ export function formatNumber(
  * Round a value to the nearest tick size
  * Third argument (decimals) is optional for precision control
  */
-export function roundToTickSize(value: number, tickSize: string, decimals?: number): number {
+export function roundToTickSize(
+  value: number,
+  tickSize: string,
+  decimals?: number,
+): number {
   const tick = parseFloat(tickSize);
   if (tick === 0) return value;
   const rounded = Math.round(value / tick) * tick;
@@ -160,7 +168,11 @@ export function roundToTickSize(value: number, tickSize: string, decimals?: numb
  * Round a value to the nearest lot size
  * Third argument (decimals) is optional for precision control
  */
-export function roundToLotSize(value: number, lotSize: string, decimals?: number): number {
+export function roundToLotSize(
+  value: number,
+  lotSize: string,
+  decimals?: number,
+): number {
   const lot = parseFloat(lotSize);
   if (lot === 0) return value;
   const rounded = Math.round(value / lot) * lot;
@@ -177,7 +189,10 @@ export function roundToLotSize(value: number, lotSize: string, decimals?: number
  *   getDecimalPlaces(token)
  *   getDecimalPlaces(tickSize, tokenDecimals)
  */
-export function getDecimalPlaces(value: string | number | Token, fallbackDecimals?: number): number {
+export function getDecimalPlaces(
+  value: string | number | Token,
+  fallbackDecimals?: number,
+): number {
   if (typeof value === "object" && "decimals" in value) {
     return value.decimals;
   }
@@ -212,7 +227,9 @@ export interface CalculatePercentageSizeParams {
  * Calculate a percentage of available balance for trading
  * Returns the size as a string formatted for the input
  */
-export function calculatePercentageSize(params: CalculatePercentageSizeParams): string {
+export function calculatePercentageSize(
+  params: CalculatePercentageSizeParams,
+): string {
   const {
     percentage,
     side,

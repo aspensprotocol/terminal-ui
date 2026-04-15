@@ -1,4 +1,8 @@
-import { getAccount, disconnect as wagmiDisconnect, signMessage } from "wagmi/actions";
+import {
+  getAccount,
+  disconnect as wagmiDisconnect,
+  signMessage,
+} from "wagmi/actions";
 import { getWagmiConfig } from "../web3modal-config";
 import type { SigningAdapter } from "@exchange/sdk";
 import type { ConnectedWallet, WalletAdapter } from "./types";

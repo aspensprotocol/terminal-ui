@@ -1,0 +1,20 @@
+# Vendored TradingView Advanced Charts bundles — pre-minified assets
+# shipped by a third party; prettier'ing them breaks the bundle hashes
+# and is churny on every upstream update.
+ui/public/vendor/
+
+# Auto-generated protobuf bindings (protoc-gen-es output).
+packages/sdk-typescript/src/protos/
+
+# Build + install outputs
+**/node_modules/
+**/dist/
+**/.next/
+**/build/
+**/out/
+
+# Lockfiles
+bun.lock
+package-lock.json
+yarn.lock
+pnpm-lock.yaml

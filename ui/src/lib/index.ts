@@ -7,7 +7,12 @@ export { getExchangeClient } from "./api";
 
 // Store
 export { useExchangeStore } from "./store";
-export { selectSelectedMarket, selectOrderbookBids, selectOrderbookAsks, selectRecentTrades } from "./store";
+export {
+  selectSelectedMarket,
+  selectOrderbookBids,
+  selectOrderbookAsks,
+  selectRecentTrades,
+} from "./store";
 
 // Hooks
 export * from "./hooks";

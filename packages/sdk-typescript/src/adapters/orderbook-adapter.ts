@@ -31,7 +31,7 @@ function rawToDecimal(raw: string, decimals: number): number {
  */
 export function toEnhancedOrderbookLevel(
   entry: OrderbookEntry,
-  pairDecimals: number
+  pairDecimals: number,
 ): EnhancedOrderbookLevel {
   const priceValue = rawToDecimal(entry.price, pairDecimals);
   const sizeValue = rawToDecimal(entry.quantity, pairDecimals);
@@ -61,7 +61,7 @@ export function toEnhancedOrderbookLevel(
  */
 export function toEnhancedOrderbook(
   entries: OrderbookEntry[],
-  pairDecimals: number
+  pairDecimals: number,
 ): { bids: EnhancedOrderbookLevel[]; asks: EnhancedOrderbookLevel[] } {
   const bids: EnhancedOrderbookLevel[] = [];
   const asks: EnhancedOrderbookLevel[] = [];

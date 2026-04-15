@@ -25,7 +25,7 @@ export function RecentTrades() {
         ...trade,
         side: trade.buyer_address === userAddress ? "buy" : "sell",
       })),
-    [userTrades, userAddress]
+    [userTrades, userAddress],
   );
 
   const columns = useMemo<ColumnDef<EnhancedTrade>[]>(
@@ -43,7 +43,11 @@ export function RecentTrades() {
       {
         accessorKey: "market_id",
         header: "Market",
-        cell: ({ row }) => <div className="font-medium text-foreground/90">{row.getValue("market_id")}</div>,
+        cell: ({ row }) => (
+          <div className="font-medium text-foreground/90">
+            {row.getValue("market_id")}
+          </div>
+        ),
         size: 100,
       },
       {
@@ -71,7 +75,9 @@ export function RecentTrades() {
         cell: ({ row }) => {
           const side = row.getValue("side") as string;
           return (
-            <div className={`text-right font-medium ${side === "buy" ? "text-green-500" : "text-red-500"}`}>
+            <div
+              className={`text-right font-medium ${side === "buy" ? "text-green-500" : "text-red-500"}`}
+            >
               {row.getValue("priceDisplay")}
             </div>
           );
@@ -81,7 +87,11 @@ export function RecentTrades() {
       {
         accessorKey: "sizeDisplay",
         header: () => <div className="text-right">Size</div>,
-        cell: ({ row }) => <div className="text-right text-muted-foreground/80">{row.getValue("sizeDisplay")}</div>,
+        cell: ({ row }) => (
+          <div className="text-right text-muted-foreground/80">
+            {row.getValue("sizeDisplay")}
+          </div>
+        ),
         size: 120,
       },
       {
@@ -93,7 +103,11 @@ export function RecentTrades() {
           const usdValue = trade.priceValue * trade.sizeValue;
           return (
             <div className="text-right font-medium text-foreground/90">
-              ${usdValue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              $
+              {usdValue.toLocaleString("en-US", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
             </div>
           );
         },
@@ -101,13 +115,15 @@ export function RecentTrades() {
         enableSorting: true,
       },
     ],
-    []
+    [],
   );
 
   if (!selectedMarketId || !selectedMarket) {
     return (
       <div className="h-full flex pt-20 justify-center">
-        <p className="text-muted-foreground text-sm">Select a market to view trades</p>
+        <p className="text-muted-foreground text-sm">
+          Select a market to view trades
+        </p>
       </div>
     );
   }
@@ -115,14 +131,20 @@ export function RecentTrades() {
   if (!isAuthenticated || !userAddress) {
     return (
       <div className="h-full flex pt-20 justify-center">
-        <p className="text-muted-foreground text-sm">Connect your wallet to view your trades</p>
+        <p className="text-muted-foreground text-sm">
+          Connect your wallet to view your trades
+        </p>
       </div>
     );
   }
 
   return (
     <div className="h-full">
-      <DataTable columns={columns} data={trades} emptyMessage="No trades found" />
+      <DataTable
+        columns={columns}
+        data={trades}
+        emptyMessage="No trades found"
+      />
     </div>
   );
 }

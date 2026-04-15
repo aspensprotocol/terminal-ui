@@ -4,7 +4,12 @@ import { useEffect, useRef } from "react";
 import { useAccount } from "wagmi";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useExchangeStore } from "@/lib/store";
-import { walletRegistry, EvmWalletAdapter, SolanaWalletAdapter, setSolanaWalletContext } from "@/lib/wallet";
+import {
+  walletRegistry,
+  EvmWalletAdapter,
+  SolanaWalletAdapter,
+  setSolanaWalletContext,
+} from "@/lib/wallet";
 import { toast } from "sonner";
 
 // Register adapters once
@@ -19,7 +24,11 @@ function ensureAdaptersRegistered() {
 export function WalletSync() {
   ensureAdaptersRegistered();
 
-  const { address: evmAddress, isConnected: evmConnected, connector: evmConnector } = useAccount();
+  const {
+    address: evmAddress,
+    isConnected: evmConnected,
+    connector: evmConnector,
+  } = useAccount();
   const solanaWallet = useWallet();
 
   const connectWallet = useExchangeStore((state) => state.connectWallet);
@@ -60,7 +69,14 @@ export function WalletSync() {
         disconnectWallet(walletId);
       }
     }
-  }, [evmConnected, evmAddress, evmConnector, connectWallet, disconnectWallet, connectedWallets]);
+  }, [
+    evmConnected,
+    evmAddress,
+    evmConnector,
+    connectWallet,
+    disconnectWallet,
+    connectedWallets,
+  ]);
 
   // Sync Solana wallet
   useEffect(() => {
@@ -88,7 +104,14 @@ export function WalletSync() {
         disconnectWallet(walletId);
       }
     }
-  }, [solanaWallet.connected, solanaWallet.publicKey, solanaWallet.wallet, connectWallet, disconnectWallet, connectedWallets]);
+  }, [
+    solanaWallet.connected,
+    solanaWallet.publicKey,
+    solanaWallet.wallet,
+    connectWallet,
+    disconnectWallet,
+    connectedWallets,
+  ]);
 
   return null;
 }

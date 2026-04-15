@@ -19,7 +19,13 @@ interface OrderSummaryProps {
   feeBps: number;
 }
 
-export function OrderSummary({ estimate, side, quoteToken, priceDecimals, feeBps }: OrderSummaryProps) {
+export function OrderSummary({
+  estimate,
+  side,
+  quoteToken,
+  priceDecimals,
+  feeBps,
+}: OrderSummaryProps) {
   if (!estimate || estimate.size <= 0 || estimate.price <= 0) {
     return null;
   }
@@ -56,7 +62,9 @@ export function OrderSummary({ estimate, side, quoteToken, priceDecimals, feeBps
       {/* Order details */}
       <div className="space-y-1">
         <div className="flex justify-between items-center">
-          <span className="text-muted-foreground/70 uppercase text-[9px] tracking-wide">Subtotal</span>
+          <span className="text-muted-foreground/70 uppercase text-[9px] tracking-wide">
+            Subtotal
+          </span>
           <span className="font-medium tabular-nums text-foreground">
             {formatNumber(estimate.total, displayDecimals)} {quoteToken.ticker}
           </span>
@@ -77,9 +85,12 @@ export function OrderSummary({ estimate, side, quoteToken, priceDecimals, feeBps
 
       {/* Total */}
       <div className="flex justify-between items-center">
-        <span className="font-bold uppercase text-[9px] tracking-wider">{side === "buy" ? "You Pay" : "You Get"}</span>
+        <span className="font-bold uppercase text-[9px] tracking-wider">
+          {side === "buy" ? "You Pay" : "You Get"}
+        </span>
         <span className="font-bold text-[11px] tabular-nums">
-          {formatNumber(estimate.finalAmount, displayDecimals)} {quoteToken.ticker}
+          {formatNumber(estimate.finalAmount, displayDecimals)}{" "}
+          {quoteToken.ticker}
         </span>
       </div>
     </div>

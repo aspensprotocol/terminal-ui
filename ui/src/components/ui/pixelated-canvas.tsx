@@ -160,7 +160,17 @@ export function PixelatedCanvas({
         cancelAnimationFrame(animationFrameId.current);
       }
     };
-  }, [dots, imageLoaded, interactive, distortionStrength, distortionRadius, distortionMode, shape, width, height]);
+  }, [
+    dots,
+    imageLoaded,
+    interactive,
+    distortionStrength,
+    distortionRadius,
+    distortionMode,
+    shape,
+    width,
+    height,
+  ]);
 
   // Mouse tracking
   useEffect(() => {
