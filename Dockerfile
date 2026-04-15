@@ -13,9 +13,6 @@ COPY packages/sdk-typescript/package.json ./packages/sdk-typescript/
 # Install dependencies (workspace aware)
 RUN bun install --frozen-lockfile
 
-# Copy shared schemas (needed for SDK generation)
-COPY packages/shared ./packages/shared
-
 # Copy SDK source
 COPY packages/sdk-typescript ./packages/sdk-typescript
 

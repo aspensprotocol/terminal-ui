@@ -12,8 +12,7 @@ A full terminal UI for trading on an Aspens Market Stack.
 terminal-ui/
 ├── ui/                        # Next.js 16 trading interface (React 19, Tailwind 4)
 ├── packages/
-│   ├── sdk-typescript/        # @exchange/sdk — gRPC-Web client for the arborter
-│   └── shared/                # OpenAPI / WebSocket schemas (reference only)
+│   └── sdk-typescript/        # @exchange/sdk — gRPC-Web client for the arborter
 ├── Dockerfile                 # Multi-stage Bun build
 ├── docker-compose.yaml        # UI + backing services (Postgres, ClickHouse)
 ├── justfile                   # Common dev commands
@@ -104,11 +103,6 @@ gRPC-Web client for the arborter backend, with generated protobuf types.
   orderbook / trades), `ConfigService` (getConfig)
 
 Consumed by the UI as a `workspace:*` dependency.
-
-### Shared (`packages/shared/`)
-
-Reference OpenAPI / WebSocket schemas. Not built, not published —
-kept alongside the SDK as source-of-truth snapshots.
 
 ## Available `just` commands
 

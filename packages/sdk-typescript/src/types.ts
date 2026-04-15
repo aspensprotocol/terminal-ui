@@ -1,4 +1,5 @@
-// API Types (from openapi.json)
+// Hand-maintained TypeScript types layered over the protobuf bindings in
+// `./protos/` — extend or reshape proto-derived fields for the UI.
 
 export type Side = "buy" | "sell";
 export type OrderType = "limit" | "market";
@@ -155,7 +156,7 @@ export interface Candle {
   volume: number;
 }
 
-// WebSocket Types (from websocket.json)
+// WebSocket / streaming types — kept for the legacy subscription path.
 
 export type SubscriptionChannel =
   | "trades"
