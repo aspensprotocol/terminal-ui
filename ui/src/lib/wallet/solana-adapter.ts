@@ -9,6 +9,19 @@ export function setSolanaWalletContext(ctx: WalletContextState | null): void {
   walletContext = ctx;
 }
 
+/**
+ * Low-level escape hatch for flows that need to submit full Solana
+ * transactions (deposit / withdraw). The wallet-adapter context holds
+ * both the signer and the `sendTransaction(tx, connection)` helper; a
+ * consumer needs it to broadcast an ix built from the SDK.
+ *
+ * Returns `null` when no Solana wallet is connected — callers should
+ * guard on that and refuse the action rather than crashing.
+ */
+export function getSolanaWalletContext(): WalletContextState | null {
+  return walletContext;
+}
+
 function bytesToHex(bytes: Uint8Array): string {
   return (
     "0x" +

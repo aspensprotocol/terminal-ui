@@ -83,15 +83,42 @@ export {
   type OpenOrderArgs,
 } from "./gasless.js";
 
-// EVM gasless orchestrator: builds the GaslessAuthorization proto
-// end-to-end (chain config lookup + Permit2 nonce fetch + EIP-712 sign).
+// Chain-specific gasless orchestrators: build the GaslessAuthorization
+// proto end-to-end from a market + order + wallet.
 export {
   buildEvmGaslessAuthorization,
   type BuildEvmGaslessOpts,
 } from "./gasless-evm.js";
+export {
+  buildSolanaGaslessAuthorization,
+  type BuildSolanaGaslessOpts,
+} from "./gasless-solana.js";
 
 // Proto types consumers populate on PlaceOrderParams / SendOrderRequest.
 export type { GaslessAuthorization } from "./protos/arborter_pb.js";
+
+// On-chain balance queries (shared by the balances panel + deposit UI).
+export {
+  fetchOnChainBalances,
+  fetchChainBalanceSlices,
+  fetchWalletBalance,
+  type WalletBinding,
+  type ChainBalanceSlice,
+} from "./balances.js";
+
+// Solana Midrib instruction builders (deposit / withdraw).
+export {
+  depositIx,
+  withdrawIx,
+  deriveAssociatedTokenAccount,
+  deriveUserBalancePda,
+  deriveInstanceVaultPda,
+  deriveVaultAuthorityPda,
+  anchorIxDiscriminator,
+  SPL_TOKEN_PROGRAM_ID,
+  ATA_PROGRAM_ID,
+  type DepositWithdrawIxOpts,
+} from "./solana-ix.js";
 
 // Utility functions
 import type { Token } from "./types.js";

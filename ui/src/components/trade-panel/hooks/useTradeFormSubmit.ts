@@ -3,7 +3,9 @@ import { useExchangeStore } from "@/lib/store";
 import { useExchangeClient } from "@/lib/hooks/useExchangeClient";
 import {
   buildEvmGaslessAuthorization,
+  buildSolanaGaslessAuthorization,
   signOrder,
+  type GaslessAuthorization,
   type OrderSigningData,
 } from "@exchange/sdk";
 import { createActiveSigningAdapter } from "@/lib/signing-adapter";
@@ -166,46 +168,54 @@ export function useTradeFormSubmit({
         const signingAdapter = createActiveSigningAdapter();
         const signature = await signOrder(orderData, signingAdapter);
 
-        // Build the gasless authorization for EVM-origin markets. The
-        // arborter's legacy EVM lock_for_order has been deprecated —
-        // EVM orders without a GaslessAuthorization are rejected by
-        // the handler. Solana keeps the legacy path for now (its
-        // gasless wiring is a separate follow-up).
-        let gasless:
-          | Awaited<
-              ReturnType<typeof buildEvmGaslessAuthorization>
-            >["authorization"]
-          | undefined;
+        // Build the gasless authorization for every chain architecture.
+        // Arborter's legacy arborter-signed path was deprecated on EVM
+        // (it still serves Hedera / legacy-only chains). For EVM +
+        // Solana a `GaslessAuthorization` is required.
+        const config = client.cache.getConfig();
+        if (!config) {
+          throw new Error(
+            "Arborter configuration not loaded yet — retry in a moment",
+          );
+        }
+        const amountIn = BigInt(
+          data.side === "buy"
+            ? Math.round(
+                finalSize *
+                  (data.orderType === "limit" ? finalPrice : 0) *
+                  Math.pow(10, pairDecimals),
+              )
+            : Math.round(finalSize * Math.pow(10, pairDecimals)),
+        );
+        const amountOut = BigInt(
+          data.side === "buy"
+            ? Math.round(finalSize * Math.pow(10, pairDecimals))
+            : Math.round(
+                finalSize *
+                  (data.orderType === "limit" ? finalPrice : 0) *
+                  Math.pow(10, pairDecimals),
+              ),
+        );
+        let gasless: GaslessAuthorization | undefined;
         if (requiredEcosystem === "evm") {
-          const config = client.cache.getConfig();
-          if (!config) {
-            throw new Error(
-              "Arborter configuration not loaded yet — retry in a moment",
-            );
-          }
           const { authorization } = await buildEvmGaslessAuthorization({
             market: selectedMarket,
             config,
             side: data.side,
-            amountIn: BigInt(
-              data.side === "buy"
-                ? Math.round(
-                    finalSize *
-                      (data.orderType === "limit" ? finalPrice : 0) *
-                      Math.pow(10, pairDecimals),
-                  )
-                : Math.round(finalSize * Math.pow(10, pairDecimals)),
-            ),
-            amountOut: BigInt(
-              data.side === "buy"
-                ? Math.round(finalSize * Math.pow(10, pairDecimals))
-                : Math.round(
-                    finalSize *
-                      (data.orderType === "limit" ? finalPrice : 0) *
-                      Math.pow(10, pairDecimals),
-                  ),
-            ),
+            amountIn,
+            amountOut,
             userAddress: signerAddress as `0x${string}`,
+            adapter: signingAdapter,
+          });
+          gasless = authorization;
+        } else if (requiredEcosystem === "solana") {
+          const { authorization } = await buildSolanaGaslessAuthorization({
+            market: selectedMarket,
+            config,
+            side: data.side,
+            amountIn,
+            amountOut,
+            userAddress: signerAddress,
             adapter: signingAdapter,
           });
           gasless = authorization;

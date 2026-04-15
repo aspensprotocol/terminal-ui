@@ -21,10 +21,12 @@
     "@connectrpc/connect": "^2.0.4",
     "@connectrpc/connect-web": "^2.0.4",
     "@noble/hashes": "^1.8.0",
+    "@solana/web3.js": "^1.98.4",
     "viem": "^2.21.0"
   },
   "devDependencies": {
     "@bufbuild/protoc-gen-es": "^2.11.0",
+    "@types/node": "^25.6.0",
     "typescript": "^5"
   }
 }

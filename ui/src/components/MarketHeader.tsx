@@ -3,7 +3,7 @@
 import { useExchangeStore, selectSelectedMarket } from "@/lib/store";
 import { useMarkets } from "@/lib/hooks";
 import { WalletManager } from "@/components/WalletManager";
-import { FaucetDialog } from "@/components/FaucetDialog";
+import { TransferDialog } from "@/components/TransferDialog";
 import { toDisplayValue } from "@exchange/sdk";
 import { formatWithoutTrailingZeros } from "@/lib/format";
 import {
@@ -58,7 +58,7 @@ export function MarketHeader() {
 
           {/* Actions */}
           <div className="flex items-center gap-2">
-            <FaucetDialog />
+            <TransferDialog />
             <WalletManager />
           </div>
         </div>

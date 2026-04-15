@@ -12,7 +12,7 @@ import { PriceInput } from "./PriceInput";
 import { SizeInput } from "./SizeInput";
 import { OrderSummary } from "./OrderSummary";
 import { SubmitButton } from "./SubmitButton";
-import { FaucetDialog } from "@/components/FaucetDialog";
+import { TransferDialog } from "@/components/TransferDialog";
 import { AvailableBalance } from "./AvailableBalance";
 import { MessageDisplay } from "./MessageDisplay";
 import {
@@ -247,8 +247,13 @@ export function TradePanel() {
         </div>
       </form>
 
-      {/* Faucet Dialog - controlled by available balance click */}
-      <FaucetDialog controlled open={faucetOpen} onOpenChange={setFaucetOpen} />
+      {/* Transfer Dialog - controlled by "available balance" click.
+          Same entry point that used to open the faucet. */}
+      <TransferDialog
+        controlled
+        open={faucetOpen}
+        onOpenChange={setFaucetOpen}
+      />
     </Card>
   );
 }
