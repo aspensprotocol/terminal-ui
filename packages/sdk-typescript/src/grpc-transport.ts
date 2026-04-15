@@ -145,11 +145,13 @@ export const arborterService = {
   async sendOrder(
     order: Order,
     signatureHash: Uint8Array,
+    gasless?: import("./protos/arborter_pb.js").GaslessAuthorization,
   ): Promise<SendOrderResponse> {
     try {
       const request: SendOrderRequest = create(SendOrderRequestSchema, {
         order,
         signatureHash,
+        gasless,
       });
 
       // Add timeout wrapper

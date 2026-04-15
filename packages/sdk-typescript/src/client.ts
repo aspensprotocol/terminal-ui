@@ -57,6 +57,15 @@ export interface PlaceOrderParams {
   signature: Uint8Array;
   baseAccountAddress: string;
   quoteAccountAddress: string;
+  /**
+   * Optional gasless authorization. When provided, the arborter will drive
+   * the on-chain lock via the chain's gasless path (EVM: MidribV2.openFor
+   * with the user's Permit2 + EIP-712 signature; Solana: MidribOpenFor
+   * with Ed25519SigVerify precompile). On EVM chains the arborter-signed
+   * legacy path has been deprecated — consumers on EVM must populate
+   * this, built via `buildEvmGaslessAuthorization`.
+   */
+  gasless?: import("./protos/arborter_pb.js").GaslessAuthorization;
 }
 
 export interface CancelOrderParams {
@@ -153,8 +162,13 @@ class RestClient {
       matchingOrderIds: [],
     });
 
-    // Send the order via gRPC
-    const response = await arborterService.sendOrder(order, params.signature);
+    // Send the order via gRPC, carrying the optional GaslessAuthorization
+    // payload if present.
+    const response = await arborterService.sendOrder(
+      order,
+      params.signature,
+      params.gasless,
+    );
 
     // Convert response to EnhancedOrder
     return this.responseToEnhancedOrder(response, params, pairDecimals);
