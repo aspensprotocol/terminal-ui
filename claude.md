@@ -3,7 +3,7 @@
 Trading terminal UI for **Aspens**, a cross-chain cryptocurrency exchange. Markets are trading pairs where the base and quote tokens can live on different blockchain networks (e.g. fXRP on flare-coston2 vs USDT0 on flare-coston2-quote). The backend matching engine is called **arborter**.
 
 - **UI**: Next.js (App Router) with TypeScript, React 19
-- **SDK**: `@exchange/sdk` — TypeScript gRPC-Web client for arborter
+- **SDK**: `@aspens/terminal-sdk` — TypeScript gRPC-Web client for arborter
 - **State**: Zustand with immer middleware
 - **Wallet**: wagmi (EVM), multi-wallet adapter abstraction
 - **Charts**: TradingView charting library
@@ -19,7 +19,7 @@ terminal-ui/
 │   │   └── lib/               # Store, hooks, wallet adapters, API client
 │   └── public/vendor/trading-view/  # TradingView charting library
 ├── packages/
-│   └── sdk-typescript/        # @exchange/sdk — gRPC-Web client for arborter
+│   └── sdk-typescript/        # @aspens/terminal-sdk — gRPC-Web client for arborter
 │       └── src/
 │           ├── protos/        # Generated protobuf types (protoc-gen-es v2)
 │           ├── adapters/      # Convert protobuf → SDK types (markets, orderbook, trades)

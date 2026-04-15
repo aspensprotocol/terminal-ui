@@ -8,7 +8,7 @@
  */
 
 import { useCallback, useState } from "react";
-import { signCancelOrder } from "@exchange/sdk";
+import { signCancelOrder } from "@aspens/terminal-sdk";
 import { useExchangeStore } from "@/lib/store";
 import { createActiveSigningAdapter } from "@/lib/signing-adapter";
 import { useExchangeClient } from "./useExchangeClient";

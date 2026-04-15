@@ -1,4 +1,4 @@
-import { formatNumber } from "@exchange/sdk";
+import { formatNumber } from "@aspens/terminal-sdk";
 import type { Token } from "@/lib/types/exchange";
 
 type OrderSide = "buy" | "sell";

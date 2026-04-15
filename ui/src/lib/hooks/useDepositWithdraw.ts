@@ -26,7 +26,7 @@ import {
 import {
   depositIx as buildDepositIx,
   withdrawIx as buildWithdrawIx,
-} from "@exchange/sdk";
+} from "@aspens/terminal-sdk";
 import { toast } from "sonner";
 
 import { getWagmiConfig } from "@/lib/web3modal-config";

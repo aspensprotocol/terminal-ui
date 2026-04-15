@@ -14,12 +14,12 @@ export type {
   EnhancedOrder as Order,
   EnhancedBalance as Balance,
   EnhancedOrderbookLevel as OrderbookLevel,
-} from "@exchange/sdk";
+} from "@aspens/terminal-sdk";
 
 // Orderbook composite type - uses enhanced data from SDK
 export interface Orderbook {
   market_id: string;
-  bids: import("@exchange/sdk").EnhancedOrderbookLevel[];
-  asks: import("@exchange/sdk").EnhancedOrderbookLevel[];
+  bids: import("@aspens/terminal-sdk").EnhancedOrderbookLevel[];
+  asks: import("@aspens/terminal-sdk").EnhancedOrderbookLevel[];
   timestamp?: number;
 }

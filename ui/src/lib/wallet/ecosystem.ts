@@ -6,7 +6,7 @@
  * wallet `ChainEcosystem` values the UI understands.
  */
 
-import type { Market } from "@exchange/sdk";
+import type { Market } from "@aspens/terminal-sdk";
 import type { ChainEcosystem } from "./types";
 
 /**

@@ -1,4 +1,4 @@
-import { formatNumber } from "@exchange/sdk";
+import { formatNumber } from "@aspens/terminal-sdk";
 
 interface AvailableBalanceProps {
   side: "buy" | "sell";

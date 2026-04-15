@@ -1,4 +1,4 @@
-import type { SigningAdapter } from "@exchange/sdk";
+import type { SigningAdapter } from "@aspens/terminal-sdk";
 
 export type ChainEcosystem = "evm" | "solana";
 

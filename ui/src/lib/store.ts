@@ -37,6 +37,12 @@ interface ExchangeState {
   userAddress: string | null;
   isAuthenticated: boolean;
   userBalances: Record<string, Balance>; // Keyed by token_ticker
+  /**
+   * Per-chain, per-token balance slices. Populated alongside
+   * `userBalances` — the panel shows the aggregated view while the
+   * Transfer / deposit UI needs the per-chain breakdown.
+   */
+  chainBalanceSlices: import("@aspens/terminal-sdk").ChainBalanceSlice[];
   userOrders: Record<string, Order>; // Keyed by order id
   userTrades: Trade[]; // Keep as array for chronological ordering
 
@@ -67,6 +73,9 @@ interface ExchangeState {
   disconnectWallet: (walletId: string) => void;
   setActiveWallet: (walletId: string) => void;
   setBalances: (balances: Balance[]) => void;
+  setChainBalanceSlices: (
+    slices: import("@aspens/terminal-sdk").ChainBalanceSlice[],
+  ) => void;
   updateBalance: (
     tokenTicker: string,
     available: string,
@@ -105,6 +114,7 @@ const initialState = {
   userAddress: null,
   isAuthenticated: false,
   userBalances: {} as Record<string, Balance>,
+  chainBalanceSlices: [] as import("@aspens/terminal-sdk").ChainBalanceSlice[],
   userOrders: {} as Record<string, Order>,
   userTrades: [],
 
@@ -209,6 +219,7 @@ export const useExchangeStore = create<ExchangeState>()(
           state.userAddress = null;
           state.isAuthenticated = false;
           state.userBalances = {};
+          state.chainBalanceSlices = [];
           state.userOrders = {};
           state.userTrades = [];
         }),
@@ -258,6 +269,7 @@ export const useExchangeStore = create<ExchangeState>()(
           state.isAuthenticated = true;
           // Clear stale user data so hooks re-fetch for new address
           state.userBalances = {};
+          state.chainBalanceSlices = [];
           state.userOrders = {};
           state.userTrades = [];
         }),
@@ -272,6 +284,11 @@ export const useExchangeStore = create<ExchangeState>()(
             },
             {} as Record<string, Balance>,
           );
+        }),
+
+      setChainBalanceSlices: (slices) =>
+        set((state) => {
+          state.chainBalanceSlices = slices;
         }),
 
       updateBalance: (tokenTicker, available, locked) =>

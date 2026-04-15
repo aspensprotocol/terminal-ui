@@ -9,10 +9,16 @@
  * Midrib program instructions), so the dialog itself is
  * ecosystem-agnostic — the (chain, token) picker simply enumerates
  * every chain the arborter exposes.
+ *
+ * Shows live balances for the selected (chain, token) — wallet balance
+ * (source for deposit) and deposited / locked (source for withdraw) —
+ * so the user has the context they need to pick an amount, plus a Max
+ * button that autofills from whichever side is the source.
  */
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ArrowDownToLine, ArrowUpFromLine, Wallet } from "lucide-react";
+import type { ChainBalanceSlice } from "@aspens/terminal-sdk";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -53,6 +59,8 @@ interface TokenChoice {
   architecture: string;
 }
 
+type Mode = "deposit" | "withdraw";
+
 export function TransferDialog({
   controlled = false,
   open: externalOpen,
@@ -61,6 +69,9 @@ export function TransferDialog({
 }: TransferDialogProps) {
   const [internalOpen, setInternalOpen] = useState(false);
   const isAuthenticated = useExchangeStore((state) => state.isAuthenticated);
+  const chainBalanceSlices = useExchangeStore(
+    (state) => state.chainBalanceSlices,
+  );
   const client = useExchangeClient();
   const { deposit, withdraw, pending } = useDepositWithdraw();
 
@@ -95,11 +106,32 @@ export function TransferDialog({
 
   const [choiceKey, setChoiceKey] = useState<string>("");
   const [amountInput, setAmountInput] = useState<string>("");
-  const [mode, setMode] = useState<"deposit" | "withdraw">("deposit");
+  const [mode, setMode] = useState<Mode>("deposit");
+  // Captured alongside the hook's toast so the user sees a persistent
+  // reason next to the button rather than relying on catching an
+  // ephemeral toast. Cleared on every input change + retry.
+  const [error, setError] = useState<string | null>(null);
 
   const choice = tokenChoices.find(
     (c) => `${c.chainNetwork}::${c.tokenTicker}` === choiceKey,
   );
+
+  const slice: ChainBalanceSlice | undefined = useMemo(() => {
+    if (!choice) return undefined;
+    return chainBalanceSlices.find(
+      (s) =>
+        s.chainNetwork === choice.chainNetwork &&
+        s.tokenTicker === choice.tokenTicker,
+    );
+  }, [chainBalanceSlices, choice]);
+
+  // Reset amount + error when the token or mode changes — carrying
+  // over an amount from one token's decimals to another's is a
+  // footgun, and a stale error is likely about a different token.
+  useEffect(() => {
+    setAmountInput(""); // eslint-disable-line react-hooks/set-state-in-effect
+    setError(null);
+  }, [choiceKey, mode]);
 
   const handleSubmit = async () => {
     if (!choice) return;
@@ -111,12 +143,21 @@ export function TransferDialog({
       tokenTicker: choice.tokenTicker,
       amount,
     };
+    setError(null);
     try {
       if (mode === "deposit") await deposit(params);
       else await withdraw(params);
       setAmountInput("");
-    } catch {
-      // error surfaced via toast in the hook
+    } catch (err) {
+      // Hook already surfaced a toast; also keep the reason visible in
+      // the dialog so the user isn't guessing why it didn't submit.
+      setError(
+        err instanceof Error
+          ? err.message
+          : typeof err === "string"
+            ? err
+            : "Unknown error — check the console",
+      );
     }
   };
 
@@ -147,14 +188,14 @@ export function TransferDialog({
         {!isAuthenticated ? (
           <div className="flex flex-col items-center gap-4 py-6">
             <p className="text-sm text-muted-foreground text-center">
-              Connect an EVM wallet in the header to transfer.
+              Connect a wallet in the header to transfer.
             </p>
             <Button onClick={() => setOpen(false)}>Close</Button>
           </div>
         ) : (
           <Tabs
             value={mode}
-            onValueChange={(v) => setMode(v as "deposit" | "withdraw")}
+            onValueChange={(v) => setMode(v as Mode)}
             className="w-full"
           >
             <TabsList className="grid grid-cols-2 w-full">
@@ -171,24 +212,38 @@ export function TransferDialog({
             <TabsContent value="deposit" className="space-y-4 pt-4">
               <TransferForm
                 choices={tokenChoices}
+                choice={choice}
                 choiceKey={choiceKey}
                 setChoiceKey={setChoiceKey}
+                slice={slice}
                 amount={amountInput}
-                setAmount={setAmountInput}
+                setAmount={(v) => {
+                  setError(null);
+                  setAmountInput(v);
+                }}
+                error={error}
+                clearError={() => setError(null)}
                 pending={pending}
-                actionLabel="Deposit"
+                mode="deposit"
                 onSubmit={handleSubmit}
               />
             </TabsContent>
             <TabsContent value="withdraw" className="space-y-4 pt-4">
               <TransferForm
                 choices={tokenChoices}
+                choice={choice}
                 choiceKey={choiceKey}
                 setChoiceKey={setChoiceKey}
+                slice={slice}
                 amount={amountInput}
-                setAmount={setAmountInput}
+                setAmount={(v) => {
+                  setError(null);
+                  setAmountInput(v);
+                }}
+                error={error}
+                clearError={() => setError(null)}
                 pending={pending}
-                actionLabel="Withdraw"
+                mode="withdraw"
                 onSubmit={handleSubmit}
               />
             </TabsContent>
@@ -201,25 +256,53 @@ export function TransferDialog({
 
 interface TransferFormProps {
   choices: TokenChoice[];
+  choice: TokenChoice | undefined;
   choiceKey: string;
   setChoiceKey: (v: string) => void;
+  slice: ChainBalanceSlice | undefined;
   amount: string;
   setAmount: (v: string) => void;
+  error: string | null;
+  clearError: () => void;
   pending: boolean;
-  actionLabel: string;
+  mode: Mode;
   onSubmit: () => void;
 }
 
 function TransferForm({
   choices,
+  choice,
   choiceKey,
   setChoiceKey,
+  slice,
   amount,
   setAmount,
+  error,
+  clearError,
   pending,
-  actionLabel,
+  mode,
   onSubmit,
 }: TransferFormProps) {
+  const actionLabel = mode === "deposit" ? "Deposit" : "Withdraw";
+
+  // Pick the "source" side for the Max button. Deposits pull from the
+  // user's wallet; withdraws pull from the deposited-minus-locked
+  // (available) slice of the trade contract.
+  const sourceRaw: bigint | undefined = slice
+    ? mode === "deposit"
+      ? slice.wallet
+      : slice.deposited - slice.locked
+    : undefined;
+
+  const sourceDisplay = slice
+    ? formatRaw(sourceRaw ?? 0n, slice.tokenDecimals)
+    : null;
+
+  const setMax = () => {
+    if (!choice || !slice) return;
+    setAmount(formatRaw(sourceRaw ?? 0n, slice.tokenDecimals));
+  };
+
   const disabled =
     !choiceKey ||
     pending ||
@@ -251,17 +334,30 @@ function TransferForm({
             ))}
             {choices.length === 0 && (
               <div className="px-2 py-1.5 text-xs text-muted-foreground">
-                No EVM chains configured yet.
+                No supported chains configured yet.
               </div>
             )}
           </SelectContent>
         </Select>
       </div>
 
+      {choice && slice && <BalanceSummary slice={slice} mode={mode} />}
+
       <div className="space-y-2">
-        <Label htmlFor="transfer-amount" className="text-sm font-medium">
-          Amount
-        </Label>
+        <div className="flex items-center justify-between">
+          <Label htmlFor="transfer-amount" className="text-sm font-medium">
+            Amount
+          </Label>
+          {choice && sourceDisplay !== null && (
+            <button
+              type="button"
+              onClick={setMax}
+              className="text-xs text-primary hover:underline"
+            >
+              Max: {sourceDisplay}
+            </button>
+          )}
+        </div>
         <Input
           id="transfer-amount"
           inputMode="decimal"
@@ -270,6 +366,20 @@ function TransferForm({
           onChange={(e) => setAmount(e.target.value)}
         />
       </div>
+
+      {error && (
+        <div className="rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2 text-xs text-red-500 flex items-start justify-between gap-2">
+          <span className="break-words pr-2">{error}</span>
+          <button
+            type="button"
+            onClick={clearError}
+            className="text-red-500/70 hover:text-red-500 shrink-0"
+            aria-label="Dismiss error"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       <Button
         onClick={onSubmit}
@@ -281,4 +391,76 @@ function TransferForm({
       </Button>
     </>
   );
+}
+
+function BalanceSummary({
+  slice,
+  mode,
+}: {
+  slice: ChainBalanceSlice;
+  mode: Mode;
+}) {
+  const wallet = formatRaw(slice.wallet, slice.tokenDecimals);
+  const deposited = formatRaw(slice.deposited, slice.tokenDecimals);
+  const locked = formatRaw(slice.locked, slice.tokenDecimals);
+  const available = formatRaw(
+    slice.deposited - slice.locked,
+    slice.tokenDecimals,
+  );
+  return (
+    <div className="rounded-md border border-border/40 bg-background/40 text-xs divide-y divide-border/40">
+      <Row label="Wallet" value={wallet} emphasis={mode === "deposit"} />
+      <Row
+        label="Deposited (available)"
+        value={available}
+        emphasis={mode === "withdraw"}
+      />
+      <Row label="Locked in open orders" value={locked} muted />
+      {deposited !== available && (
+        <Row label="Deposited (total)" value={deposited} muted />
+      )}
+    </div>
+  );
+}
+
+function Row({
+  label,
+  value,
+  emphasis,
+  muted,
+}: {
+  label: string;
+  value: string;
+  emphasis?: boolean;
+  muted?: boolean;
+}) {
+  return (
+    <div className="flex items-center justify-between px-3 py-2">
+      <span className={muted ? "text-muted-foreground" : "text-foreground/80"}>
+        {label}
+      </span>
+      <span
+        className={
+          emphasis
+            ? "font-medium text-foreground"
+            : muted
+              ? "text-muted-foreground"
+              : "text-foreground/80"
+        }
+      >
+        {value}
+      </span>
+    </div>
+  );
+}
+
+/** Format a raw bigint amount using the token's decimals. Trim trailing zeros. */
+function formatRaw(raw: bigint, decimals: number): string {
+  if (decimals === 0) return raw.toString();
+  const scale = 10n ** BigInt(decimals);
+  const whole = raw / scale;
+  const frac = raw % scale;
+  if (frac === 0n) return whole.toString();
+  const fracStr = frac.toString().padStart(decimals, "0").replace(/0+$/, "");
+  return fracStr.length > 0 ? `${whole}.${fracStr}` : whole.toString();
 }

@@ -4,7 +4,7 @@ import {
   toDisplayValue,
   roundToTickSize,
   getDecimalPlaces,
-} from "@exchange/sdk";
+} from "@aspens/terminal-sdk";
 import type { Token, Market } from "@/lib/types/exchange";
 
 interface PriceInputProps {
