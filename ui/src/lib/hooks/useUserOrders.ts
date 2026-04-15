@@ -6,7 +6,7 @@ import { useEffect, useRef, useMemo, useCallback } from "react";
 import { toast } from "sonner";
 import { useExchangeStore } from "../store";
 import { useExchangeClient } from "./useExchangeClient";
-import { OrderStatus } from "@exchange/sdk";
+import { OrderStatus } from "@aspens/terminal-sdk";
 
 /**
  * Hook that fetches initial orders via REST and subscribes to WebSocket updates

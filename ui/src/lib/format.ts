@@ -4,7 +4,7 @@
  */
 
 // Re-export SDK utilities
-export { toDisplayValue, formatNumber } from "@exchange/sdk";
+export { toDisplayValue, formatNumber } from "@aspens/terminal-sdk";
 
 /**
  * Format a number with a maximum number of decimals, removing trailing zeros

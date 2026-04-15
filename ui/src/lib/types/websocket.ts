@@ -9,4 +9,4 @@ export type {
   SubscriptionChannel,
   TradeData,
   OrderbookData,
-} from "@exchange/sdk";
+} from "@aspens/terminal-sdk";

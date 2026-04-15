@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useExchangeStore } from "@/lib/store";
 import { walletRegistry } from "@/lib/wallet";
-import type { SigningAdapter } from "@exchange/sdk";
+import type { SigningAdapter } from "@aspens/terminal-sdk";
 import type { ChainEcosystem } from "@/lib/wallet/types";
 
 /**

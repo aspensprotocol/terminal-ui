@@ -18,7 +18,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { ArrowDownToLine, ArrowUpFromLine, Wallet } from "lucide-react";
-import type { ChainBalanceSlice } from "@exchange/sdk";
+import type { ChainBalanceSlice } from "@aspens/terminal-sdk";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,

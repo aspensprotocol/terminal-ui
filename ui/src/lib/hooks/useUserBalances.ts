@@ -19,7 +19,7 @@ import {
   type ChainBalanceSlice,
   type EnhancedBalance,
   type WalletBinding,
-} from "@exchange/sdk";
+} from "@aspens/terminal-sdk";
 import { useExchangeStore } from "../store";
 import { useExchangeClient } from "./useExchangeClient";
 

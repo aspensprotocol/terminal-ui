@@ -10,7 +10,7 @@
       },
     },
     "packages/sdk-typescript": {
-      "name": "@exchange/sdk",
+      "name": "@aspens/terminal-sdk",
       "version": "0.1.0",
       "dependencies": {
         "@bufbuild/protobuf": "^2.6.3",
@@ -30,7 +30,7 @@
       "name": "ui",
       "version": "0.1.0",
       "dependencies": {
-        "@exchange/sdk": "workspace:*",
+        "@aspens/terminal-sdk": "workspace:*",
         "@radix-ui/react-dialog": "^1.1.15",
         "@radix-ui/react-label": "^2.1.7",
         "@radix-ui/react-select": "^2.2.6",
@@ -200,7 +200,7 @@
 
     "@ethereumjs/util": ["@ethereumjs/util@9.1.0", "", { "dependencies": { "@ethereumjs/rlp": "^5.0.2", "ethereum-cryptography": "^2.2.1" } }, "sha512-XBEKsYqLGXLah9PNJbgdkigthkG7TAGvlD/sH12beMXEyHDyigfcbdvHhmLyDWgDyOJn4QwiQUaF7yeuhnjdog=="],
 
-    "@exchange/sdk": ["@exchange/sdk@workspace:packages/sdk-typescript"],
+    "@aspens/terminal-sdk": ["@aspens/terminal-sdk@workspace:packages/sdk-typescript"],
 
     "@fivebinaries/coin-selection": ["@fivebinaries/coin-selection@3.0.0", "", { "dependencies": { "@emurgo/cardano-serialization-lib-browser": "^13.2.0", "@emurgo/cardano-serialization-lib-nodejs": "13.2.0" } }, "sha512-h25Pn1ZA7oqQBQDodGAgIsQt66T2wDge9onBKNqE66WNWL0KJiKJbpij8YOLo5AAlEIg5IS7EB1QjBgDOIg6DQ=="],
 

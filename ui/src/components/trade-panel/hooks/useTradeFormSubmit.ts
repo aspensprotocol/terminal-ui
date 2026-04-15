@@ -7,7 +7,7 @@ import {
   signOrder,
   type GaslessAuthorization,
   type OrderSigningData,
-} from "@exchange/sdk";
+} from "@aspens/terminal-sdk";
 import { createActiveSigningAdapter } from "@/lib/signing-adapter";
 import { marketEcosystem } from "@/lib/wallet";
 import type { Market, Token } from "@/lib/types/exchange";

@@ -42,7 +42,7 @@ interface ExchangeState {
    * `userBalances` — the panel shows the aggregated view while the
    * Transfer / deposit UI needs the per-chain breakdown.
    */
-  chainBalanceSlices: import("@exchange/sdk").ChainBalanceSlice[];
+  chainBalanceSlices: import("@aspens/terminal-sdk").ChainBalanceSlice[];
   userOrders: Record<string, Order>; // Keyed by order id
   userTrades: Trade[]; // Keep as array for chronological ordering
 
@@ -74,7 +74,7 @@ interface ExchangeState {
   setActiveWallet: (walletId: string) => void;
   setBalances: (balances: Balance[]) => void;
   setChainBalanceSlices: (
-    slices: import("@exchange/sdk").ChainBalanceSlice[],
+    slices: import("@aspens/terminal-sdk").ChainBalanceSlice[],
   ) => void;
   updateBalance: (
     tokenTicker: string,
@@ -114,7 +114,7 @@ const initialState = {
   userAddress: null,
   isAuthenticated: false,
   userBalances: {} as Record<string, Balance>,
-  chainBalanceSlices: [] as import("@exchange/sdk").ChainBalanceSlice[],
+  chainBalanceSlices: [] as import("@aspens/terminal-sdk").ChainBalanceSlice[],
   userOrders: {} as Record<string, Order>,
   userTrades: [],
 

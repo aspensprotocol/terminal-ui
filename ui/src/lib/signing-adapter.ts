@@ -9,7 +9,7 @@ import { signMessage } from "wagmi/actions";
 import { getWagmiConfig } from "./web3modal-config";
 import { walletRegistry } from "./wallet";
 import { useExchangeStore } from "./store";
-import type { SigningAdapter } from "@exchange/sdk";
+import type { SigningAdapter } from "@aspens/terminal-sdk";
 import type { ChainEcosystem } from "./wallet/types";
 
 /**

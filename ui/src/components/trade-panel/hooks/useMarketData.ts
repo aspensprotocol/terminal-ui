@@ -6,7 +6,7 @@ import {
   selectOrderbookAsks,
 } from "@/lib/store";
 import { useUserBalances } from "@/lib/hooks";
-import { getDecimalPlaces } from "@exchange/sdk";
+import { getDecimalPlaces } from "@aspens/terminal-sdk";
 
 export function useMarketData() {
   const selectedMarket = useExchangeStore(selectSelectedMarket);

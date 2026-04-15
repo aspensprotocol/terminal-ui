@@ -4,7 +4,7 @@ import { useExchangeStore, selectSelectedMarket } from "@/lib/store";
 import { useMarkets } from "@/lib/hooks";
 import { WalletManager } from "@/components/WalletManager";
 import { TransferDialog } from "@/components/TransferDialog";
-import { toDisplayValue } from "@exchange/sdk";
+import { toDisplayValue } from "@aspens/terminal-sdk";
 import { formatWithoutTrailingZeros } from "@/lib/format";
 import {
   Select,
