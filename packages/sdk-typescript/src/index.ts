@@ -66,10 +66,32 @@ export {
   getCancelOrderForSigning,
   hexToBytes,
   bytesToHex,
+  normalizeWalletSignature,
   type SigningAdapter,
   type OrderSigningData,
   type CancelSigningData,
 } from "./signing.js";
+
+// Gasless order-signing foundation (pure, framework-agnostic helpers).
+export {
+  deriveOrderId,
+  gaslessLockSigningHash,
+  gaslessLockSigningMessage,
+  MIDRIB_EIP712_NAME,
+  MIDRIB_EIP712_VERSION,
+  type GaslessLockParams,
+  type OpenOrderArgs,
+} from "./gasless.js";
+
+// EVM gasless orchestrator: builds the GaslessAuthorization proto
+// end-to-end (chain config lookup + Permit2 nonce fetch + EIP-712 sign).
+export {
+  buildEvmGaslessAuthorization,
+  type BuildEvmGaslessOpts,
+} from "./gasless-evm.js";
+
+// Proto types consumers populate on PlaceOrderParams / SendOrderRequest.
+export type { GaslessAuthorization } from "./protos/arborter_pb.js";
 
 // Utility functions
 import type { Token } from "./types.js";

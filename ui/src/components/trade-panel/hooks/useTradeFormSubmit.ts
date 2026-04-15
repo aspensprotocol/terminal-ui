@@ -1,7 +1,11 @@
 import { useState, useCallback } from "react";
 import { useExchangeStore } from "@/lib/store";
 import { useExchangeClient } from "@/lib/hooks/useExchangeClient";
-import { signOrder, type OrderSigningData } from "@exchange/sdk";
+import {
+  buildEvmGaslessAuthorization,
+  signOrder,
+  type OrderSigningData,
+} from "@exchange/sdk";
 import { createActiveSigningAdapter } from "@/lib/signing-adapter";
 import { marketEcosystem } from "@/lib/wallet";
 import type { Market, Token } from "@/lib/types/exchange";
@@ -156,9 +160,56 @@ export function useTradeFormSubmit({
           quoteAccountAddress: signerAddress,
         };
 
-        // Sign the order using the matched wallet
+        // Sign the order envelope using the matched wallet. This
+        // (EIP-191 / personal_sign over the protobuf Order bytes)
+        // remains the auth over the SendOrderRequest itself.
         const signingAdapter = createActiveSigningAdapter();
         const signature = await signOrder(orderData, signingAdapter);
+
+        // Build the gasless authorization for EVM-origin markets. The
+        // arborter's legacy EVM lock_for_order has been deprecated —
+        // EVM orders without a GaslessAuthorization are rejected by
+        // the handler. Solana keeps the legacy path for now (its
+        // gasless wiring is a separate follow-up).
+        let gasless:
+          | Awaited<
+              ReturnType<typeof buildEvmGaslessAuthorization>
+            >["authorization"]
+          | undefined;
+        if (requiredEcosystem === "evm") {
+          const config = client.cache.getConfig();
+          if (!config) {
+            throw new Error(
+              "Arborter configuration not loaded yet — retry in a moment",
+            );
+          }
+          const { authorization } = await buildEvmGaslessAuthorization({
+            market: selectedMarket,
+            config,
+            side: data.side,
+            amountIn: BigInt(
+              data.side === "buy"
+                ? Math.round(
+                    finalSize *
+                      (data.orderType === "limit" ? finalPrice : 0) *
+                      Math.pow(10, pairDecimals),
+                  )
+                : Math.round(finalSize * Math.pow(10, pairDecimals)),
+            ),
+            amountOut: BigInt(
+              data.side === "buy"
+                ? Math.round(finalSize * Math.pow(10, pairDecimals))
+                : Math.round(
+                    finalSize *
+                      (data.orderType === "limit" ? finalPrice : 0) *
+                      Math.pow(10, pairDecimals),
+                  ),
+            ),
+            userAddress: signerAddress as `0x${string}`,
+            adapter: signingAdapter,
+          });
+          gasless = authorization;
+        }
 
         // Place the order via SDK
         const result = await client.placeOrder({
@@ -171,6 +222,7 @@ export function useTradeFormSubmit({
           signature,
           baseAccountAddress: signerAddress,
           quoteAccountAddress: signerAddress,
+          gasless,
         });
 
         const successMessage = `Order placed! ${
