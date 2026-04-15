@@ -107,6 +107,10 @@ export function TransferDialog({
   const [choiceKey, setChoiceKey] = useState<string>("");
   const [amountInput, setAmountInput] = useState<string>("");
   const [mode, setMode] = useState<Mode>("deposit");
+  // Captured alongside the hook's toast so the user sees a persistent
+  // reason next to the button rather than relying on catching an
+  // ephemeral toast. Cleared on every input change + retry.
+  const [error, setError] = useState<string | null>(null);
 
   const choice = tokenChoices.find(
     (c) => `${c.chainNetwork}::${c.tokenTicker}` === choiceKey,
@@ -121,10 +125,12 @@ export function TransferDialog({
     );
   }, [chainBalanceSlices, choice]);
 
-  // Reset amount when the token changes — carrying over an amount from
-  // one token's decimals to another's is a footgun.
+  // Reset amount + error when the token or mode changes — carrying
+  // over an amount from one token's decimals to another's is a
+  // footgun, and a stale error is likely about a different token.
   useEffect(() => {
-    setAmountInput("");
+    setAmountInput(""); // eslint-disable-line react-hooks/set-state-in-effect
+    setError(null);
   }, [choiceKey, mode]);
 
   const handleSubmit = async () => {
@@ -137,12 +143,21 @@ export function TransferDialog({
       tokenTicker: choice.tokenTicker,
       amount,
     };
+    setError(null);
     try {
       if (mode === "deposit") await deposit(params);
       else await withdraw(params);
       setAmountInput("");
-    } catch {
-      // error surfaced via toast in the hook
+    } catch (err) {
+      // Hook already surfaced a toast; also keep the reason visible in
+      // the dialog so the user isn't guessing why it didn't submit.
+      setError(
+        err instanceof Error
+          ? err.message
+          : typeof err === "string"
+            ? err
+            : "Unknown error — check the console",
+      );
     }
   };
 
@@ -202,7 +217,12 @@ export function TransferDialog({
                 setChoiceKey={setChoiceKey}
                 slice={slice}
                 amount={amountInput}
-                setAmount={setAmountInput}
+                setAmount={(v) => {
+                  setError(null);
+                  setAmountInput(v);
+                }}
+                error={error}
+                clearError={() => setError(null)}
                 pending={pending}
                 mode="deposit"
                 onSubmit={handleSubmit}
@@ -216,7 +236,12 @@ export function TransferDialog({
                 setChoiceKey={setChoiceKey}
                 slice={slice}
                 amount={amountInput}
-                setAmount={setAmountInput}
+                setAmount={(v) => {
+                  setError(null);
+                  setAmountInput(v);
+                }}
+                error={error}
+                clearError={() => setError(null)}
                 pending={pending}
                 mode="withdraw"
                 onSubmit={handleSubmit}
@@ -237,6 +262,8 @@ interface TransferFormProps {
   slice: ChainBalanceSlice | undefined;
   amount: string;
   setAmount: (v: string) => void;
+  error: string | null;
+  clearError: () => void;
   pending: boolean;
   mode: Mode;
   onSubmit: () => void;
@@ -250,6 +277,8 @@ function TransferForm({
   slice,
   amount,
   setAmount,
+  error,
+  clearError,
   pending,
   mode,
   onSubmit,
@@ -337,6 +366,20 @@ function TransferForm({
           onChange={(e) => setAmount(e.target.value)}
         />
       </div>
+
+      {error && (
+        <div className="rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2 text-xs text-red-500 flex items-start justify-between gap-2">
+          <span className="break-words pr-2">{error}</span>
+          <button
+            type="button"
+            onClick={clearError}
+            className="text-red-500/70 hover:text-red-500 shrink-0"
+            aria-label="Dismiss error"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       <Button
         onClick={onSubmit}

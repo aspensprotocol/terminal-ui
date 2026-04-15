@@ -53,6 +53,12 @@ export function TradePanel() {
     },
   });
 
+  // watch() returns a fresh closure per render — React Compiler flags
+  // it as "incompatible library" because it can't safely memoise the
+  // result. The whole point here is exactly that: we want formData to
+  // re-read every render so the computed summary / balance checks stay
+  // in sync. Suppress the warning for this one call.
+  // eslint-disable-next-line react-hooks/incompatible-library
   const formData = watch();
 
   // Custom hooks for data and logic
