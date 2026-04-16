@@ -152,6 +152,9 @@ export async function buildSolanaGaslessAuthorization(
 
   const signatureBytes = await opts.adapter.signBytes(message);
 
+  // `nonce` and `openDeadline` are ignored by the Solana path on the
+  // arborter (the Order PDA's init serves as the nonce; there's no
+  // openDeadline concept). Leave them at their proto-default zero.
   const authorization = create(GaslessAuthorizationSchema, {
     userSignature: signatureBytes,
     deadline,
