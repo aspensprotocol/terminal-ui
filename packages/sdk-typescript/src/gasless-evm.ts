@@ -219,10 +219,17 @@ export async function buildEvmGaslessAuthorization(
   // address over that exact digest. Log once for debugging.
   console.log("[gasless] EIP-712 digest:", digest, "order_id:", orderId);
 
+  // The arborter rebuilds the EIP-712 typed data from these fields to
+  // verify the user's signature — any drift between what we signed and
+  // what we send in the authorization breaks signature recovery. Keep
+  // `nonce` = Permit2 nonce + `openDeadline` identical to the values
+  // used in `gaslessLockSigningHash` above.
   const authorization = create(GaslessAuthorizationSchema, {
     userSignature: hexToBytes(signatureHex as Hex),
     deadline: fillDeadline,
     orderId,
+    nonce: permit2Nonce,
+    openDeadline,
   });
 
   return { authorization, orderId, permit2Nonce };
