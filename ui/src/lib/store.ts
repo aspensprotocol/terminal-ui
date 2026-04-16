@@ -17,6 +17,51 @@ import type {
 } from "./types/exchange";
 import type { ConnectedWallet } from "./wallet/types";
 
+/** Shape of a locally-tracked cancelled order — see `cancelledOrders`. */
+export interface CancelledOrderEntry {
+  /** Arborter order id (as a string for JSON-safe localStorage). */
+  orderId: string;
+  marketId: string;
+  side: "buy" | "sell";
+  /** Display price at submission time, as a string (preserves precision). */
+  priceDisplay: string;
+  /** Display size at submission time. */
+  sizeDisplay: string;
+  /** Wall-clock timestamp (ms) when the cancel landed. */
+  cancelledAt: number;
+  /** User who cancelled (we key persistence per address). */
+  userAddress: string;
+}
+
+const CANCELLED_ORDERS_STORAGE_KEY = "aspens.cancelledOrders.v1";
+
+function loadCancelledOrders(): CancelledOrderEntry[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(CANCELLED_ORDERS_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveCancelledOrders(entries: CancelledOrderEntry[]): void {
+  if (typeof window === "undefined") return;
+  try {
+    // Cap at 500 entries — way past what a single user produces, but
+    // a ceiling in case something wedges the log in a loop.
+    const capped = entries.slice(-500);
+    window.localStorage.setItem(
+      CANCELLED_ORDERS_STORAGE_KEY,
+      JSON.stringify(capped),
+    );
+  } catch {
+    // quota exhausted / private browsing; a missed persist is survivable
+  }
+}
+
 // ============================================================================
 // State Interface
 // ============================================================================
@@ -45,6 +90,14 @@ interface ExchangeState {
   chainBalanceSlices: import("@aspens/terminal-sdk").ChainBalanceSlice[];
   userOrders: Record<string, Order>; // Keyed by order id
   userTrades: Trade[]; // Keep as array for chronological ordering
+  /**
+   * Client-side log of orders the user has cancelled. The arborter
+   * drops cancelled orders from the orderbook once the cancel lands,
+   * so they stop being queryable. We track them locally (with
+   * localStorage persistence per user address) so the Order History
+   * tab can still show them.
+   */
+  cancelledOrders: CancelledOrderEntry[];
 
   // Multi-wallet state
   connectedWallets: Record<string, ConnectedWallet>; // Keyed by wallet id
@@ -76,6 +129,8 @@ interface ExchangeState {
   setChainBalanceSlices: (
     slices: import("@aspens/terminal-sdk").ChainBalanceSlice[],
   ) => void;
+  /** Append a cancelled order to the persisted history log. */
+  recordCancelledOrder: (entry: CancelledOrderEntry) => void;
   updateBalance: (
     tokenTicker: string,
     available: string,
@@ -117,6 +172,7 @@ const initialState = {
   chainBalanceSlices: [] as import("@aspens/terminal-sdk").ChainBalanceSlice[],
   userOrders: {} as Record<string, Order>,
   userTrades: [],
+  cancelledOrders: loadCancelledOrders(),
 
   // Multi-wallet
   connectedWallets: {} as Record<string, ConnectedWallet>,
@@ -289,6 +345,20 @@ export const useExchangeStore = create<ExchangeState>()(
       setChainBalanceSlices: (slices) =>
         set((state) => {
           state.chainBalanceSlices = slices;
+        }),
+
+      recordCancelledOrder: (entry) =>
+        set((state) => {
+          // De-dup by orderId in case a cancel retry double-fires.
+          const existingIdx = state.cancelledOrders.findIndex(
+            (e) => e.orderId === entry.orderId,
+          );
+          if (existingIdx >= 0) {
+            state.cancelledOrders[existingIdx] = entry;
+          } else {
+            state.cancelledOrders.push(entry);
+          }
+          saveCancelledOrders(state.cancelledOrders);
         }),
 
       updateBalance: (tokenTicker, available, locked) =>

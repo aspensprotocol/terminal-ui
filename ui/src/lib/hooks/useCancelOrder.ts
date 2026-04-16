@@ -71,6 +71,20 @@ export function useCancelOrder() {
           tokenAddress: lockedToken.address,
           signature,
         });
+
+        // The arborter drops cancelled orders from its orderbook, so
+        // they'll be invisible on the next getOrders poll. Persist an
+        // entry keyed by orderId so Order History can still show the
+        // cancellation across refreshes.
+        useExchangeStore.getState().recordCancelledOrder({
+          orderId,
+          marketId: order.market_id,
+          side: order.side,
+          priceDisplay: order.priceDisplay ?? order.price ?? "",
+          sizeDisplay: order.sizeDisplay ?? order.size ?? "",
+          cancelledAt: Date.now(),
+          userAddress,
+        });
       } catch (err) {
         console.error(`[useCancelOrder] Failed to cancel ${orderId}:`, err);
         throw err;

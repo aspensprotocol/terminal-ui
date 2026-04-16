@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Balances } from "./Balances";
 import { RecentOrders } from "./RecentOrders";
-import { RecentTrades } from "./RecentTrades";
+import { OrderHistory } from "./OrderHistory";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -22,11 +22,14 @@ export function BottomPanel() {
             <TabsTrigger value="balances" className="rounded-none px-4 text-sm">
               Balances
             </TabsTrigger>
-            <TabsTrigger value="orders" className="rounded-none px-4 text-sm ">
-              Orders
+            <TabsTrigger
+              value="open-orders"
+              className="rounded-none px-4 text-sm "
+            >
+              Open Orders
             </TabsTrigger>
-            <TabsTrigger value="trades" className="rounded-none px-4 text-sm ">
-              Trades
+            <TabsTrigger value="history" className="rounded-none px-4 text-sm ">
+              History
             </TabsTrigger>
           </TabsList>
 
@@ -38,14 +41,14 @@ export function BottomPanel() {
               <Balances />
             </div>
             <div
-              className={`h-full ${activeTab === "orders" ? "block" : "hidden"}`}
+              className={`h-full ${activeTab === "open-orders" ? "block" : "hidden"}`}
             >
               <RecentOrders />
             </div>
             <div
-              className={`h-full ${activeTab === "trades" ? "block" : "hidden"}`}
+              className={`h-full ${activeTab === "history" ? "block" : "hidden"}`}
             >
-              <RecentTrades />
+              <OrderHistory />
             </div>
           </div>
         </Tabs>
