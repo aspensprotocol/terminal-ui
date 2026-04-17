@@ -3,6 +3,11 @@ FROM oven/bun:1@sha256:8956c7667fa17beb6e3c664115e66bdacfe502da5d99603626e74c197
 
 WORKDIR /app
 
+# Native-module build deps for optional transitive deps (utf-8-validate, bufferutil)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      python3 make g++ \
+    && rm -rf /var/lib/apt/lists/*
+
 # Copy workspace root package files first
 COPY package.json bun.lockb* ./
 
