@@ -60,14 +60,21 @@ the built Next.js app on port 3000.
 
 ## Environment Variables
 
-The UI is a client-side bundle; all public config is prefixed with
-`NEXT_PUBLIC_` and baked in at build time.
+Two layers:
 
-| Variable                               | Default                | Purpose                                       |
-| -------------------------------------- | ---------------------- | --------------------------------------------- |
-| `NEXT_PUBLIC_GRPC_URL`                 | `/api` (Next.js proxy) | Arborter gRPC-Web endpoint                    |
-| `NEXT_PUBLIC_SOLANA_RPC_URL`           | devnet                 | Solana RPC used by the wallet-adapter context |
-| `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` | fallback               | WalletConnect / Reown project id              |
+- **Server-side** (read at request time, changeable without a rebuild):
+- **Client-side** (prefixed `NEXT_PUBLIC_`, baked into the bundle at build time).
+
+| Variable                               | Layer  | Default                | Purpose                                                                                               |
+| -------------------------------------- | ------ | ---------------------- | ----------------------------------------------------------------------------------------------------- |
+| `ARBORTER_GRPC_URL`                    | server | `http://envoy:8811`    | Target for the Next.js `/api/*` rewrite. The browser always hits `/api`; Next.js proxies to this URL. |
+| `NEXT_PUBLIC_GRPC_URL`                 | client | `/api` (rewrite above) | Override to bypass the server-side rewrite (e.g. static hosting). Usually leave unset.                |
+| `NEXT_PUBLIC_SOLANA_RPC_URL`           | client | devnet                 | Solana RPC used by the wallet-adapter context                                                         |
+| `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` | client | fallback               | WalletConnect / Reown project id                                                                      |
+
+Splitting `ARBORTER_GRPC_URL` into a server-side env lets one container
+image redeploy against any environment — the gRPC endpoint isn't baked
+into the bundle.
 
 Additional vars (`NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_WS_URL`,
 `NEXT_PUBLIC_ORGANIZATION_ID`, `NEXT_PUBLIC_AUTH_PROXY_CONFIG_ID`) are
