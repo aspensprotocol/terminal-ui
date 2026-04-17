@@ -51,8 +51,8 @@ WORKDIR /app
 
 # Copy built application from builder
 COPY --from=builder /app/ui/.next/standalone ./
-COPY --from=builder /app/ui/.next/static ./app/ui/.next/static
-COPY --from=builder /app/ui/public ./app/ui/public
+COPY --from=builder /app/ui/.next/static ./ui/.next/static
+COPY --from=builder /app/ui/public ./ui/public
 
 ENV HOSTNAME=0.0.0.0
 ENV PORT=3000
