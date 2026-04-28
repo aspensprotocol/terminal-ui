@@ -15,6 +15,28 @@ const projectId =
   process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID ||
   "c3690594c774dccbd4a0272ae38f1953";
 
+// Flare Coston2 — also covers the local anvil-fork dev setup where two
+// "networks" (flare-coston2 and flare-coston2-quote) share chainId 114
+// and run on adjacent ports. wagmi keys by chainId, so a single entry
+// is enough for the connector to accept the chain when MetaMask is on
+// it. Actual chain reads in the gasless flow go via the per-network
+// rpcUrl from arborter's Configuration, not via wagmi's transports.
+const flareCoston2 = defineChain({
+  id: 114,
+  name: "Flare Coston2",
+  nativeCurrency: { name: "Coston2 Flare", symbol: "C2FLR", decimals: 18 },
+  rpcUrls: {
+    default: { http: ["http://localhost:8545"] },
+    public: { http: ["http://localhost:8545"] },
+  },
+  blockExplorers: {
+    default: {
+      name: "Coston2 Explorer",
+      url: "https://coston2-explorer.flare.network",
+    },
+  },
+});
+
 // Default chains that are always available
 const defaultChains = [
   mainnet,
@@ -23,6 +45,7 @@ const defaultChains = [
   baseSepolia,
   optimism,
   optimismSepolia,
+  flareCoston2,
 ] as const;
 
 // Create initial wagmi config with default chains only

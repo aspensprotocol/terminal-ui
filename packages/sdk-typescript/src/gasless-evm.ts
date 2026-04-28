@@ -28,8 +28,6 @@ import {
 import {
   deriveOrderId,
   gaslessLockSigningHash,
-  MIDRIB_EIP712_NAME,
-  MIDRIB_EIP712_VERSION,
   type GaslessLockParams,
 } from "./gasless.js";
 import {
@@ -88,9 +86,9 @@ export async function buildEvmGaslessAuthorization(
   orderId: Hex;
   permit2Nonce: bigint;
 }> {
-  if (!opts.adapter.signTypedData) {
+  if (!opts.adapter.signMessage) {
     throw new Error(
-      "EVM gasless signing requires a wallet adapter with signTypedData support",
+      "EVM gasless signing requires a wallet adapter with signMessage support",
     );
   }
 
@@ -165,59 +163,22 @@ export async function buildEvmGaslessAuthorization(
     openDeadline,
   };
 
-  // Compute the EIP-712 digest (for parity assertion / debug logging)
-  // and build the exact typed-data object for the wallet. The helper in
-  // `./gasless.ts` mirrors this layout; we keep it re-exported here so
-  // any future arborter-side change flows through a single place.
+  // MidribV2._verifyOrder wraps the EIP-712 digest with EIP-191
+  // ("\x19Ethereum Signed Message:\n32") before ecrecover — the legacy
+  // TPMSigner-shaped recipe. The user's signature must be over the
+  // EIP-191-wrapped digest, not the raw EIP-712 hash. wagmi's
+  // signMessage({ message: { raw } }) applies that prefix; signTypedData
+  // would NOT and on-chain recovery would yield a different address
+  // (custom error 0x6cbfd82c = INVALID_SIGNER). Mirrors the Rust SDK's
+  // `wallet.sign_message(digest)` path in
+  // `aspens::commands::trading::gasless::build_evm`.
   const digest = gaslessLockSigningHash({
     order: params,
     arborterAddress,
     originSettler: midribAddress,
     originChainId,
   });
-
-  const typedDataOrderData = await encodeOrderDataForTypedData(
-    params,
-    arborterAddress,
-    permit2Nonce,
-  );
-
-  const signatureHex = await opts.adapter.signTypedData({
-    domain: {
-      name: MIDRIB_EIP712_NAME,
-      version: MIDRIB_EIP712_VERSION,
-      chainId: Number(originChainId),
-      verifyingContract: midribAddress,
-    },
-    types: {
-      GaslessCrossChainOrder: [
-        { name: "originSettler", type: "address" },
-        { name: "user", type: "address" },
-        { name: "nonce", type: "uint256" },
-        { name: "originChainId", type: "uint256" },
-        { name: "openDeadline", type: "uint32" },
-        { name: "fillDeadline", type: "uint32" },
-        { name: "orderDataType", type: "bytes32" },
-        { name: "orderData", type: "bytes" },
-      ],
-    },
-    primaryType: "GaslessCrossChainOrder",
-    message: {
-      originSettler: midribAddress,
-      user: opts.userAddress,
-      nonce: permit2Nonce,
-      originChainId,
-      openDeadline: Number(openDeadline),
-      fillDeadline: Number(fillDeadline),
-      orderDataType: `0x${"00".repeat(32)}` as Hex,
-      orderData: typedDataOrderData,
-    },
-  });
-
-  // `gaslessLockSigningHash` is pinned against the Rust SDK's parity
-  // snapshot; the wallet-produced signature must recover to the user's
-  // address over that exact digest. Log once for debugging.
-  console.log("[gasless] EIP-712 digest:", digest, "order_id:", orderId);
+  const signatureHex = await opts.adapter.signMessage(digest);
 
   // The arborter rebuilds the EIP-712 typed data from these fields to
   // verify the user's signature — any drift between what we signed and
@@ -254,78 +215,6 @@ async function fetchPermit2Nonce(opts: {
     args: [opts.user, opts.token, opts.spender],
   });
   return BigInt(nonce);
-}
-
-/**
- * Rebuild the inner `orderData` bytes for the typed-data signature.
- *
- * This mirrors the `encodeAbiParameters(...)` inside `./gasless.ts`.
- * Kept inline (rather than re-exported) to avoid cross-module coupling
- * of viem's ABI encoder.
- */
-async function encodeOrderDataForTypedData(
-  params: GaslessLockParams,
-  arborterAddress: Address,
-  permit2Nonce: bigint,
-): Promise<Hex> {
-  const { encodeAbiParameters } = await import("viem");
-  return encodeAbiParameters(
-    [
-      { type: "uint8" },
-      {
-        type: "tuple",
-        components: [
-          {
-            type: "tuple",
-            components: [
-              { name: "token", type: "address" },
-              { name: "amount", type: "uint160" },
-              { name: "expiration", type: "uint48" },
-              { name: "nonce", type: "uint48" },
-            ],
-            name: "details",
-          },
-          { name: "spender", type: "address" },
-          { name: "sigDeadline", type: "uint256" },
-        ],
-      },
-      {
-        type: "tuple",
-        components: [
-          { name: "outputToken", type: "address" },
-          { name: "outputAmount", type: "uint160" },
-          { name: "inputAmount", type: "uint160" },
-          { name: "recipient", type: "address" },
-          { name: "destinationChainId", type: "uint256" },
-          { name: "exclusiveRelayer", type: "address" },
-          { name: "message", type: "bytes" },
-        ],
-      },
-    ],
-    [
-      2, // MidribDataTypes.IntentAction.LOCK
-      {
-        details: {
-          token: params.tokenContract.toLowerCase() as Address,
-          amount: params.amountIn,
-          expiration: 0,
-          nonce: Number(permit2Nonce),
-        },
-        spender: arborterAddress.toLowerCase() as Address,
-        sigDeadline: 0n,
-      },
-      {
-        outputToken:
-          params.tokenContractDestinationChain.toLowerCase() as Address,
-        outputAmount: params.amountOut,
-        inputAmount: params.amountIn,
-        recipient: params.depositorAddress.toLowerCase() as Address,
-        destinationChainId: BigInt(params.destinationChainId),
-        exclusiveRelayer: arborterAddress.toLowerCase() as Address,
-        message: "0x",
-      },
-    ],
-  );
 }
 
 function resolveOriginChain(
