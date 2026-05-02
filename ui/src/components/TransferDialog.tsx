@@ -16,7 +16,7 @@
  * button that autofills from whichever side is the source.
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { ArrowDownToLine, ArrowUpFromLine, Wallet } from "lucide-react";
 import type { ChainBalanceSlice } from "@aspens/terminal-sdk";
 import { Button } from "@/components/ui/button";
@@ -133,10 +133,23 @@ export function TransferDialog({
   // Reset amount + error when the token or mode changes — carrying
   // over an amount from one token's decimals to another's is a
   // footgun, and a stale error is likely about a different token.
-  useEffect(() => {
+  //
+  // Implemented as a render-phase reset rather than a `useEffect` so
+  // we don't render one frame of stale amount/error before the
+  // effect fires. The "track previous + reset inline" pattern is
+  // the React-docs-recommended shape for "reset state when a prop
+  // (or local key) changes" and satisfies
+  // `react-hooks/set-state-in-effect`. The setState calls below
+  // queue an immediate re-render with the new state; only the very
+  // first render of the new (choiceKey, mode) pair sees the reset
+  // path because `prevResetKey` then matches.
+  const resetKey = `${choiceKey}::${mode}`;
+  const [prevResetKey, setPrevResetKey] = useState<string>(resetKey);
+  if (resetKey !== prevResetKey) {
+    setPrevResetKey(resetKey);
     setAmountInput("");
     setError(null);
-  }, [choiceKey, mode]);
+  }
 
   const handleSubmit = async () => {
     if (!choice) return;
