@@ -16,6 +16,7 @@ import type {
   OrderStatus,
 } from "./types/exchange";
 import type { ConnectedWallet } from "./wallet/types";
+import type { Configuration } from "@aspens/terminal-sdk";
 
 /** Shape of a locally-tracked cancelled order — see `cancelledOrders`. */
 export interface CancelledOrderEntry {
@@ -70,6 +71,18 @@ interface ExchangeState {
   // Market data (Records for O(1) lookup/insert/update)
   markets: Record<string, Market>;
   tokens: Record<string, Token>;
+  /**
+   * Mirror of the gRPC `ConfigService.GetConfig` response. Holds
+   * everything the SDK's internal `client.cache.config` does, exposed
+   * via Zustand so React components can subscribe to changes (the SDK
+   * cache is mutable internal state and isn't observable from React).
+   *
+   * Use this when a component needs richer per-chain metadata than
+   * `markets`/`tokens` provide — e.g. `chain.architecture`,
+   * `chain.tokens` keyed per chain, `chain.factoryAddress`. For raw
+   * trading flows, `markets`/`tokens` are still the right hooks.
+   */
+  config: Configuration | null;
   latestPrices: Record<string, number>; // Latest trade price per token (e.g., BTC -> 95000)
 
   // UI Data
@@ -106,6 +119,11 @@ interface ExchangeState {
   // Actions - Market Data
   setMarkets: (markets: Market[]) => void;
   setTokens: (tokens: Token[]) => void;
+  /**
+   * Replace the cached `Configuration` mirror. Pass `null` to clear
+   * (e.g. on stack URL change). See `config` field for rationale.
+   */
+  setConfig: (config: Configuration | null) => void;
 
   // Actions - UI Data
   selectMarket: (marketId: string) => void;
@@ -157,6 +175,7 @@ const initialState = {
   // Market Data
   markets: {} as Record<string, Market>,
   tokens: {} as Record<string, Token>,
+  config: null as Configuration | null,
   latestPrices: { USDC: 1.0 } as Record<string, number>,
 
   // UI Data
@@ -214,6 +233,11 @@ export const useExchangeStore = create<ExchangeState>()(
             },
             {} as Record<string, Token>,
           );
+        }),
+
+      setConfig: (config) =>
+        set((state) => {
+          state.config = config;
         }),
 
       // ========================================================================

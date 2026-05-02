@@ -16,7 +16,7 @@
  * button that autofills from whichever side is the source.
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { ArrowDownToLine, ArrowUpFromLine, Wallet } from "lucide-react";
 import type { ChainBalanceSlice } from "@aspens/terminal-sdk";
 import { Button } from "@/components/ui/button";
@@ -39,7 +39,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useExchangeStore } from "@/lib/store";
-import { useExchangeClient } from "@/lib/hooks/useExchangeClient";
 import { useDepositWithdraw } from "@/lib/hooks/useDepositWithdraw";
 
 interface TransferDialogProps {
@@ -72,7 +71,12 @@ export function TransferDialog({
   const chainBalanceSlices = useExchangeStore(
     (state) => state.chainBalanceSlices,
   );
-  const client = useExchangeClient();
+  // Store-mirrored gRPC `Configuration`. Subscribing here gives us
+  // a React-observable view of the same data the SDK caches; before
+  // this, the picker memo'd an empty list at first render (cache
+  // empty) and never re-evaluated even after `useMarkets()` fetched
+  // GetConfig. See `useMarkets` for where it's populated.
+  const config = useExchangeStore((state) => state.config);
   const { deposit, withdraw, pending } = useDepositWithdraw();
 
   const open = controlled ? (externalOpen ?? false) : internalOpen;
@@ -82,9 +86,10 @@ export function TransferDialog({
 
   // Every (chain, token) pair the arborter knows about. We intentionally
   // enumerate per chain rather than aggregating — a user deposits into
-  // one specific chain, not "all chains".
+  // one specific chain, not "all chains". Driven off the
+  // store-mirrored `config`, so the memo invalidates whenever
+  // `useMarkets()` updates the Configuration.
   const tokenChoices = useMemo<TokenChoice[]>(() => {
-    const config = client.cache.getConfig();
     if (!config) return [];
     const out: TokenChoice[] = [];
     for (const chain of config.chains) {
@@ -102,7 +107,7 @@ export function TransferDialog({
       }
     }
     return out;
-  }, [client]);
+  }, [config]);
 
   const [choiceKey, setChoiceKey] = useState<string>("");
   const [amountInput, setAmountInput] = useState<string>("");
@@ -128,10 +133,23 @@ export function TransferDialog({
   // Reset amount + error when the token or mode changes — carrying
   // over an amount from one token's decimals to another's is a
   // footgun, and a stale error is likely about a different token.
-  useEffect(() => {
-    setAmountInput(""); // eslint-disable-line react-hooks/set-state-in-effect
+  //
+  // Implemented as a render-phase reset rather than a `useEffect` so
+  // we don't render one frame of stale amount/error before the
+  // effect fires. The "track previous + reset inline" pattern is
+  // the React-docs-recommended shape for "reset state when a prop
+  // (or local key) changes" and satisfies
+  // `react-hooks/set-state-in-effect`. The setState calls below
+  // queue an immediate re-render with the new state; only the very
+  // first render of the new (choiceKey, mode) pair sees the reset
+  // path because `prevResetKey` then matches.
+  const resetKey = `${choiceKey}::${mode}`;
+  const [prevResetKey, setPrevResetKey] = useState<string>(resetKey);
+  if (resetKey !== prevResetKey) {
+    setPrevResetKey(resetKey);
+    setAmountInput("");
     setError(null);
-  }, [choiceKey, mode]);
+  }
 
   const handleSubmit = async () => {
     if (!choice) return;
