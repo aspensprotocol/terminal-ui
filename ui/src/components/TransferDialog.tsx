@@ -134,7 +134,7 @@ export function TransferDialog({
   // over an amount from one token's decimals to another's is a
   // footgun, and a stale error is likely about a different token.
   useEffect(() => {
-    setAmountInput("");  
+    setAmountInput("");
     setError(null);
   }, [choiceKey, mode]);
 
