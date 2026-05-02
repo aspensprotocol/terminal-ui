@@ -10,6 +10,7 @@ export function useMarkets() {
   const client = useExchangeClient();
   const setMarkets = useExchangeStore((state) => state.setMarkets);
   const setTokens = useExchangeStore((state) => state.setTokens);
+  const setConfig = useExchangeStore((state) => state.setConfig);
   const marketsRecord = useExchangeStore((state) => state.markets);
   const tokensRecord = useExchangeStore((state) => state.tokens);
 
@@ -47,6 +48,15 @@ export function useMarkets() {
 
           setMarkets(enrichedMarkets);
           setTokens(tokensData);
+          // Mirror the SDK cache's full Configuration into the
+          // store. Components that need per-chain metadata (e.g.
+          // architecture, factoryAddress, per-chain `tokens` map)
+          // can subscribe via `useExchangeStore((s) => s.config)`
+          // instead of reading `client.cache.getConfig()` directly,
+          // which isn't React-observable. `getConfig()` returns the
+          // value the SDK just set on the same code path that
+          // produced `marketsData`, so it's never stale here.
+          setConfig(client.cache.getConfig());
         }
       } catch (error) {
         console.error("Failed to fetch markets:", error);

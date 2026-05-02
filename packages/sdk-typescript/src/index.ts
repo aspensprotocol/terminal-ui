@@ -42,6 +42,13 @@ export {
   resetTransport,
 } from "./grpc-transport.js";
 
+// Re-export the protobuf-generated Configuration type so consumers
+// (e.g. the terminal-ui Zustand store mirror) can hold it without
+// reaching into `./protos/...` paths that aren't part of the public
+// surface. Returned by `ConfigService.GetConfig` and cached in
+// `ExchangeClient.cache`.
+export type { Configuration } from "./grpc-transport.js";
+
 // Re-export type adapters
 export {
   toEnhancedOrderbookLevel,

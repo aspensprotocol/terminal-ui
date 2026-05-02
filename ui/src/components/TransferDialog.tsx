@@ -39,7 +39,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useExchangeStore } from "@/lib/store";
-import { useExchangeClient } from "@/lib/hooks/useExchangeClient";
 import { useDepositWithdraw } from "@/lib/hooks/useDepositWithdraw";
 
 interface TransferDialogProps {
@@ -72,18 +71,12 @@ export function TransferDialog({
   const chainBalanceSlices = useExchangeStore(
     (state) => state.chainBalanceSlices,
   );
-  // We don't render the markets list directly, but its size is the
-  // signal that `useMarkets()` has populated the SDK's internal cache
-  // — which is where chain + token metadata for the picker lives.
-  // Without this dep on `tokenChoices`, the dialog memoizes an empty
-  // list at first render (before GetConfig resolves) and never picks
-  // up the real config when it lands. See bug repro: opening the
-  // Transfer dialog with a connected EVM wallet and configured
-  // markets showed "No supported chains configured yet."
-  const marketsCount = useExchangeStore(
-    (state) => Object.keys(state.markets).length,
-  );
-  const client = useExchangeClient();
+  // Store-mirrored gRPC `Configuration`. Subscribing here gives us
+  // a React-observable view of the same data the SDK caches; before
+  // this, the picker memo'd an empty list at first render (cache
+  // empty) and never re-evaluated even after `useMarkets()` fetched
+  // GetConfig. See `useMarkets` for where it's populated.
+  const config = useExchangeStore((state) => state.config);
   const { deposit, withdraw, pending } = useDepositWithdraw();
 
   const open = controlled ? (externalOpen ?? false) : internalOpen;
@@ -93,15 +86,10 @@ export function TransferDialog({
 
   // Every (chain, token) pair the arborter knows about. We intentionally
   // enumerate per chain rather than aggregating — a user deposits into
-  // one specific chain, not "all chains".
-  //
-  // The dependency includes `marketsCount` (and not just `client`) so
-  // the memo invalidates after `useMarkets()` populates the SDK cache.
-  // `client.cache` is mutable internal state that React can't observe;
-  // tying invalidation to the markets count gives us a React-visible
-  // signal that fires in the same fetch path that fills the cache.
+  // one specific chain, not "all chains". Driven off the
+  // store-mirrored `config`, so the memo invalidates whenever
+  // `useMarkets()` updates the Configuration.
   const tokenChoices = useMemo<TokenChoice[]>(() => {
-    const config = client.cache.getConfig();
     if (!config) return [];
     const out: TokenChoice[] = [];
     for (const chain of config.chains) {
@@ -119,9 +107,7 @@ export function TransferDialog({
       }
     }
     return out;
-    // `marketsCount` is intentionally a dep — see comment above.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [client, marketsCount]);
+  }, [config]);
 
   const [choiceKey, setChoiceKey] = useState<string>("");
   const [amountInput, setAmountInput] = useState<string>("");
