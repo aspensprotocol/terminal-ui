@@ -24,3 +24,14 @@ bun.lockb
 .DS_Store
 *.pem
 .env
+# `.env.local` is the per-developer Next.js convention override and
+# must NOT be committed: Next.js loads it during `next build` with the
+# highest priority, so any value here gets baked into the production
+# image (e.g. into routes-manifest.json for static rewrites). Pre-fix
+# we shipped a build with ARBORTER_GRPC_URL=http://localhost:8811
+# baked in, which made the deployed Next.js proxy point at localhost
+# instead of the in-stack envoy service. See ui/.env.example for
+# documented defaults; production gets the source default in
+# ui/next.config.ts.
+.env.local
+.env.*.local
