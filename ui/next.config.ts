@@ -1,13 +1,17 @@
 import type { NextConfig } from "next";
 import path from "path";
 
-// Server-side only — read at request time, NOT baked into the bundle
-// like NEXT_PUBLIC_*. Every /api/* call the client makes is proxied to
-// this target by Next.js before the browser sees a response, so the
-// same built image works in any environment (local docker swarm
-// reaches `envoy:8811` on the internal overlay; cloud stacks likewise
-// reach envoy by its service name, no public route required).
-const arborterGrpcUrl = process.env.ARBORTER_GRPC_URL ?? "http://envoy:8811";
+// Same-origin proxy for browser gRPC-Web calls.
+//
+// Hardcoded — not read from `process.env` — because envoy is always
+// reachable inside the docker swarm at the service-name DNS `envoy`
+// on port 8811. Reading from an env var here would re-introduce the
+// 2026-05-02 footgun where a committed `ui/.env.local` baked a
+// dev-local URL (`http://localhost:8811`) into the published image
+// at `next build` time. Local dev bypasses this proxy entirely via
+// `NEXT_PUBLIC_GRPC_URL` (see `ui/.env.example`), so no env-var
+// escape hatch is needed.
+const ARBORTER_GRPC_UPSTREAM = "http://envoy:8811";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
@@ -22,7 +26,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/api/:path*",
-        destination: `${arborterGrpcUrl}/:path*`,
+        destination: `${ARBORTER_GRPC_UPSTREAM}/:path*`,
       },
     ];
   },
