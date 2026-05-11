@@ -35,7 +35,11 @@ All communication with arborter uses **gRPC-Web** via the Connect RPC library (`
 
 - **Envoy proxy** translates gRPC-Web (browser) → native gRPC (arborter on port 50051)
 - **Dev**: UI connects directly to Envoy at `http://localhost:8811` via `NEXT_PUBLIC_GRPC_URL`
-- **Prod**: Envoy runs as a Docker Swarm service, config in `../infra/stacks/`
+- **Prod**: Envoy runs as a Docker Swarm service, config in `../infra/stacks/`. The
+  SDK falls back to the same-origin `/api/*` path when `NEXT_PUBLIC_GRPC_URL` is
+  unset; `ui/next.config.ts` rewrites `/api/*` to the in-swarm `http://envoy:8811`
+  with that destination hardcoded — no env var is read at build or runtime, so a
+  stray `.env.local` cannot poison the published image.
 
 ### gRPC Services
 
