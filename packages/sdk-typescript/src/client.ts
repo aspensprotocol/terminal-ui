@@ -23,6 +23,7 @@ import {
   type OrderToCancel,
   type SendOrderResponse,
   type Configuration,
+  type AttestationReport,
 } from "./grpc-transport.js";
 import {
   toMarkets,
@@ -315,6 +316,25 @@ export class ExchangeClient {
     console.log("[SDK] Using stub token data");
     this.cache.setTokens(STUB_TOKENS);
     return STUB_TOKENS;
+  }
+
+  /**
+   * Fetch the TEE attestation report from the arborter's signer.
+   *
+   * Returns null if the backend doesn't expose attestation or the call
+   * fails — callers (notably the attestation modal) want to render an
+   * error state rather than crash on a missing report.
+   */
+  async getAttestation(
+    reportData?: Uint8Array,
+  ): Promise<AttestationReport | null> {
+    try {
+      const response = await configService.getAttestation(reportData);
+      return response.report ?? null;
+    } catch (error) {
+      console.warn("[SDK] Failed to fetch attestation:", error);
+      return null;
+    }
   }
 
   /**
