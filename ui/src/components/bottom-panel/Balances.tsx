@@ -17,7 +17,7 @@
 
 import { useMemo } from "react";
 import { ColumnDef } from "@tanstack/react-table";
-import type { ChainBalanceSlice } from "@aspens/terminal-sdk";
+import { toDisplayValue, type ChainBalanceSlice } from "@aspens/terminal-sdk";
 import { useExchangeStore } from "@/lib/store";
 import { useUserBalances } from "@/lib/hooks";
 import { DataTable } from "@/components/ui/data-table";
@@ -151,19 +151,21 @@ export function Balances() {
   );
 }
 
+// Convert a raw scaled bigint to a JS number for display.
+// Goes through the exact decimal-string path so balances above 2^53 atomic
+// units (common for 18-decimal tokens) don't silently lose precision.
+function bigIntToHuman(raw: bigint, decimals: number): number {
+  return parseFloat(toDisplayValue(raw.toString(), decimals));
+}
+
 function sliceToRow(s: ChainBalanceSlice): BalanceRow {
-  const scale = 10 ** s.tokenDecimals;
-  const walletValue = Number(s.wallet) / scale;
-  const depositedValue = Number(s.deposited) / scale;
-  const lockedValue = Number(s.locked) / scale;
-  const availableValue = Number(s.deposited - s.locked) / scale;
   return {
     chainNetwork: s.chainNetwork,
     tokenTicker: s.tokenTicker,
-    walletValue,
-    depositedValue,
-    lockedValue,
-    availableValue,
+    walletValue: bigIntToHuman(s.wallet, s.tokenDecimals),
+    depositedValue: bigIntToHuman(s.deposited, s.tokenDecimals),
+    lockedValue: bigIntToHuman(s.locked, s.tokenDecimals),
+    availableValue: bigIntToHuman(s.deposited - s.locked, s.tokenDecimals),
     decimals: s.tokenDecimals,
   };
 }

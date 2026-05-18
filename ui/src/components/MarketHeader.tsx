@@ -22,8 +22,10 @@ export function MarketHeader() {
   const selectedMarket = useExchangeStore(selectSelectedMarket);
   const tokens = useExchangeStore((state) => state.tokens);
   const recentTrades = useExchangeStore((state) => state.recentTrades);
-  const currentPrice =
-    recentTrades.length > 0 ? (recentTrades[0]?.priceValue ?? null) : null;
+  // Use the adapter-formatted string (capped + zero-trimmed) rather than
+  // re-formatting `priceValue` here — keeps every surface of the UI consistent.
+  const currentPriceDisplay =
+    recentTrades.length > 0 ? (recentTrades[0]?.priceDisplay ?? null) : null;
 
   // Look up tokens for the selected market using O(1) Record access
   const baseToken = selectedMarket ? tokens[selectedMarket.base_ticker] : null;
@@ -99,7 +101,7 @@ export function MarketHeader() {
                     Price
                   </span>
                   <span className="text-primary font-mono font-bold">
-                    {currentPrice !== null ? currentPrice.toFixed(2) : "—"}
+                    {currentPriceDisplay ?? "—"}
                   </span>
                   <span className="text-muted-foreground/60">
                     {selectedMarket.quote_ticker}

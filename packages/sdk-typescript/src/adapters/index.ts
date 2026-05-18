@@ -6,7 +6,6 @@ export {
   toEnhancedOrderbookLevel,
   toEnhancedOrderbook,
   rawToDecimal,
-  formatDecimal,
 } from "./orderbook-adapter.js";
 
 export { toEnhancedTrade, toEnhancedTrades } from "./trade-adapter.js";
