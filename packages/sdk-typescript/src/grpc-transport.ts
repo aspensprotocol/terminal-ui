@@ -30,6 +30,13 @@ import {
   type GetConfigResponse,
 } from "./protos/arborter_config_pb.js";
 
+import {
+  type AttestationReport,
+  type GetAttestationRequest,
+  GetAttestationRequestSchema,
+  type GetAttestationResponse,
+} from "./protos/attestation_pb.js";
+
 let grpcBaseUrl = "/api";
 
 /**
@@ -135,6 +142,30 @@ export const configService = {
       return response;
     } catch (error: unknown) {
       console.error("[gRPC] Failed to get config:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Fetch the TEE attestation report from the arborter's signer.
+   *
+   * `reportData` is an optional ≤64-byte payload that gets bound to the
+   * report's REPORTDATA field — useful for proving a specific value (e.g. a
+   * nonce or pubkey) was attested by the same TEE instance. Most callers
+   * just want the report itself and can omit it.
+   */
+  async getAttestation(
+    reportData?: Uint8Array,
+  ): Promise<GetAttestationResponse> {
+    try {
+      const request: GetAttestationRequest = create(
+        GetAttestationRequestSchema,
+        reportData ? { reportData } : {},
+      );
+      const response = await getConfigClient().getAttestation(request);
+      return response;
+    } catch (error: unknown) {
+      console.error("[gRPC] Failed to get attestation:", error);
       throw error;
     }
   },
@@ -285,4 +316,6 @@ export type {
   SendOrderResponse,
   CancelOrderResponse,
   Configuration,
+  AttestationReport,
+  GetAttestationResponse,
 };

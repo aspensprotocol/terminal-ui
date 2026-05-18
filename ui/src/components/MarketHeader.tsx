@@ -1,9 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import { useExchangeStore, selectSelectedMarket } from "@/lib/store";
 import { useMarkets } from "@/lib/hooks";
 import { WalletManager } from "@/components/WalletManager";
 import { TransferDialog } from "@/components/TransferDialog";
+import { AttestationDialog } from "@/components/AttestationDialog";
 import { toDisplayValue } from "@aspens/terminal-sdk";
 import { formatWithoutTrailingZeros } from "@/lib/format";
 import {
@@ -16,6 +18,7 @@ import {
 import Image from "next/image";
 
 export function MarketHeader() {
+  const [attestationOpen, setAttestationOpen] = useState(false);
   const { markets, isLoading } = useMarkets();
   const selectedMarketId = useExchangeStore((state) => state.selectedMarketId);
   const selectMarket = useExchangeStore((state) => state.selectMarket);
@@ -143,9 +146,24 @@ export function MarketHeader() {
                 </div>
               </>
             )}
+
+            {/* Right-aligned attestation link; sits on the same row as the
+                market dropdown and the Price / Tick / Lot stats. */}
+            <button
+              type="button"
+              onClick={() => setAttestationOpen(true)}
+              className="ml-auto text-muted-foreground/70 hover:text-primary uppercase tracking-wider underline decoration-dotted underline-offset-2 transition-colors whitespace-nowrap cursor-pointer"
+            >
+              Attestation
+            </button>
           </div>
         </div>
       </div>
+
+      <AttestationDialog
+        open={attestationOpen}
+        onOpenChange={setAttestationOpen}
+      />
     </>
   );
 }
