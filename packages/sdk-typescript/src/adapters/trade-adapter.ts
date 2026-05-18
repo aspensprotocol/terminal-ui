@@ -4,7 +4,8 @@
 
 import type { Trade as ProtoTrade, TradeRole } from "../protos/arborter_pb.js";
 import type { EnhancedTrade, Side } from "../types.js";
-import { rawToDecimal, formatDecimal } from "./orderbook-adapter.js";
+import { rawToDecimal } from "./orderbook-adapter.js";
+import { toDisplayValueCapped } from "../decimals.js";
 
 /**
  * Convert TradeRole enum to side string
@@ -46,8 +47,8 @@ export function toEnhancedTrade(
   const priceValue = rawToDecimal(trade.price, pairDecimals);
   const sizeValue = rawToDecimal(trade.qty, pairDecimals);
 
-  const displayPrice = formatDecimal(priceValue, pairDecimals);
-  const displaySize = formatDecimal(sizeValue, pairDecimals);
+  const displayPrice = toDisplayValueCapped(trade.price, pairDecimals);
+  const displaySize = toDisplayValueCapped(trade.qty, pairDecimals);
 
   // Determine side based on buyer/seller roles
   const side = getTradeSide(trade.buyerIs, trade.sellerIs);

@@ -1,29 +1,35 @@
 /**
  * Orderbook adapter - converts protobuf OrderbookEntry to EnhancedOrderbookLevel
+ *
+ * Wire format: `price` and `quantity` arrive as decimal-string integers scaled
+ * by `pairDecimals` (e.g. "1500000" with pairDecimals=6 means 1.5). Display
+ * strings are produced via `toDisplayValueCapped` so trailing zeros don't
+ * pollute the UI when pairDecimals is large.
  */
 
-import type { OrderbookEntry, Side } from "../protos/arborter_pb.js";
+import type { OrderbookEntry } from "../protos/arborter_pb.js";
 import type { EnhancedOrderbookLevel } from "../types.js";
+import { toDisplayValue, toDisplayValueCapped } from "../decimals.js";
 
 /**
- * Format a value with the specified number of decimal places
+ * Convert a raw scaled-integer string to a JS number.
+ *
+ * Goes through the exact `toDisplayValue` string so we don't lose precision
+ * during the BigInt → Number cast for values larger than 2^53.
  */
-function formatDecimal(value: number, decimals: number): string {
-  return value.toFixed(decimals);
+function rawToDecimal(raw: string, decimals: number): number {
+  return parseFloat(toDisplayValue(raw || "0", decimals));
 }
 
 /**
- * Convert a raw integer string to a decimal value
+ * Multiply two scaled-integer strings (both in `pairDecimals` units) and
+ * return the product re-scaled back to `pairDecimals` units. Uses BigInt so
+ * the intermediate `price * size` doesn't overflow / lose precision.
  */
-function rawToDecimal(raw: string, decimals: number): number {
-  const rawBigInt = BigInt(raw || "0");
-  const divisor = BigInt(10 ** decimals);
-  const integerPart = rawBigInt / divisor;
-  const fractionalPart = rawBigInt % divisor;
-
-  // Combine integer and fractional parts
-  const fractionalStr = fractionalPart.toString().padStart(decimals, "0");
-  return parseFloat(`${integerPart}.${fractionalStr}`);
+function multiplyScaled(a: string, b: string, pairDecimals: number): string {
+  const product = BigInt(a || "0") * BigInt(b || "0");
+  const divisor = BigInt(10) ** BigInt(pairDecimals);
+  return (product / divisor).toString();
 }
 
 /**
@@ -35,11 +41,12 @@ export function toEnhancedOrderbookLevel(
 ): EnhancedOrderbookLevel {
   const priceValue = rawToDecimal(entry.price, pairDecimals);
   const sizeValue = rawToDecimal(entry.quantity, pairDecimals);
-  const totalValue = priceValue * sizeValue;
 
-  const displayPrice = formatDecimal(priceValue, pairDecimals);
-  const displaySize = formatDecimal(sizeValue, pairDecimals);
-  const displayTotal = formatDecimal(totalValue, pairDecimals);
+  const displayPrice = toDisplayValueCapped(entry.price, pairDecimals);
+  const displaySize = toDisplayValueCapped(entry.quantity, pairDecimals);
+
+  const totalRaw = multiplyScaled(entry.price, entry.quantity, pairDecimals);
+  const displayTotal = toDisplayValueCapped(totalRaw, pairDecimals);
 
   return {
     price: entry.price,
@@ -50,7 +57,7 @@ export function toEnhancedOrderbookLevel(
     displaySize,
     priceDisplay: displayPrice,
     sizeDisplay: displaySize,
-    total: totalValue.toString(),
+    total: totalRaw,
     displayTotal,
   };
 }
@@ -86,4 +93,4 @@ export function toEnhancedOrderbook(
   return { bids, asks };
 }
 
-export { rawToDecimal, formatDecimal };
+export { rawToDecimal };

@@ -33,6 +33,7 @@ import {
 } from "./adapters/index.js";
 import { Side as ProtoSide, ExecutionType } from "./protos/arborter_pb.js";
 import { fetchOnChainBalances, type WalletBinding } from "./balances.js";
+import { formatDisplayNumber } from "./decimals.js";
 
 export interface ExchangeClientConfig {
   grpcUrl: string;
@@ -202,12 +203,15 @@ class RestClient {
   private responseToEnhancedOrder(
     response: SendOrderResponse,
     params: PlaceOrderParams,
-    pairDecimals: number,
+    _pairDecimals: number,
   ): EnhancedOrder {
     const priceDecimal = params.priceDecimal ?? params.price ?? "0";
     const sizeDecimal = params.sizeDecimal ?? params.size ?? "0";
     const priceValue = parseFloat(priceDecimal);
     const sizeValue = parseFloat(sizeDecimal);
+
+    const priceDisplay = formatDisplayNumber(priceValue);
+    const sizeDisplay = formatDisplayNumber(sizeValue);
 
     return {
       id: response.orderId.toString(),
@@ -224,11 +228,11 @@ class RestClient {
       priceValue,
       sizeValue,
       filledValue: 0,
-      displayPrice: priceValue.toFixed(pairDecimals),
-      displaySize: sizeValue.toFixed(pairDecimals),
+      displayPrice: priceDisplay,
+      displaySize: sizeDisplay,
       displayFilledSize: "0",
-      priceDisplay: priceValue.toFixed(pairDecimals),
-      sizeDisplay: sizeValue.toFixed(pairDecimals),
+      priceDisplay,
+      sizeDisplay,
       filledDisplay: "0",
       trades: [],
     };

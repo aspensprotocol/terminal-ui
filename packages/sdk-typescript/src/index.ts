@@ -130,40 +130,14 @@ export {
 // Utility functions
 import type { Token } from "./types.js";
 
-/**
- * Convert a raw integer value to a display string with decimals
- */
-export function toDisplayValue(
-  value: string | number,
-  decimals: number,
-): string {
-  if (typeof value === "number") {
-    value = value.toString();
-  }
-
-  // Handle zero
-  if (value === "0") return "0";
-
-  // Handle negative numbers
-  const isNegative = value.startsWith("-");
-  if (isNegative) {
-    value = value.slice(1);
-  }
-
-  // Pad with leading zeros if needed
-  while (value.length <= decimals) {
-    value = "0" + value;
-  }
-
-  const intPart = value.slice(0, -decimals) || "0";
-  const decPart = value.slice(-decimals);
-
-  // Remove trailing zeros from decimal part
-  const trimmedDec = decPart.replace(/0+$/, "");
-
-  const result = trimmedDec ? `${intPart}.${trimmedDec}` : intPart;
-  return isNegative ? `-${result}` : result;
-}
+// Re-export decimal helpers from their dedicated module so adapters can
+// import them without pulling in this file (which would introduce a cycle).
+export {
+  toDisplayValue,
+  toDisplayValueCapped,
+  formatDisplayNumber,
+  DEFAULT_DISPLAY_DECIMALS,
+} from "./decimals.js";
 
 /**
  * Format a number for display with thousands separators

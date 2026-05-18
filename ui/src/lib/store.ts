@@ -17,6 +17,7 @@ import type {
 } from "./types/exchange";
 import type { ConnectedWallet } from "./wallet/types";
 import type { Configuration } from "@aspens/terminal-sdk";
+import { toDisplayValue, toDisplayValueCapped } from "@aspens/terminal-sdk";
 
 /** Shape of a locally-tracked cancelled order — see `cancelledOrders`. */
 export interface CancelledOrderEntry {
@@ -392,9 +393,28 @@ export const useExchangeStore = create<ExchangeState>()(
           const token = state.tokens[tokenTicker];
           if (!token) return;
 
-          const divisor = Math.pow(10, token.decimals);
-          const amountValue = Number(BigInt(totalAmount)) / divisor;
-          const lockedValue = Number(BigInt(locked)) / divisor;
+          // Convert raw scaled integers via the exact string path — going
+          // through Number(BigInt(...)) silently truncates values above 2^53.
+          const amountDisplay = toDisplayValueCapped(
+            totalAmount,
+            token.decimals,
+          );
+          const lockedDisplay = toDisplayValueCapped(locked, token.decimals);
+          const availableRaw = BigInt(available).toString();
+          const availableDisplay = toDisplayValueCapped(
+            availableRaw,
+            token.decimals,
+          );
+
+          // The numeric companion fields are still needed for sorting / math
+          // elsewhere in the UI; parseFloat after the exact divide is the
+          // best-precision float representation we can produce.
+          const amountValue = parseFloat(
+            toDisplayValue(totalAmount, token.decimals),
+          );
+          const lockedValue = parseFloat(
+            toDisplayValue(locked, token.decimals),
+          );
 
           // O(1) insert or update - handles both new and existing balances
           state.userBalances[tokenTicker] = {
@@ -404,13 +424,11 @@ export const useExchangeStore = create<ExchangeState>()(
             open_interest: locked,
             locked: locked,
             updated_at: new Date().toISOString(),
-            amountDisplay: amountValue.toFixed(token.decimals),
-            displayAmount: amountValue.toFixed(token.decimals),
-            displayOpenInterest: lockedValue.toFixed(token.decimals),
-            available: (amountValue - lockedValue).toFixed(token.decimals),
-            displayAvailable: (amountValue - lockedValue).toFixed(
-              token.decimals,
-            ),
+            amountDisplay,
+            displayAmount: amountDisplay,
+            displayOpenInterest: lockedDisplay,
+            available: availableDisplay,
+            displayAvailable: availableDisplay,
             amountValue,
             lockedValue,
           };
@@ -443,15 +461,22 @@ export const useExchangeStore = create<ExchangeState>()(
           const baseToken = state.tokens[market.base_ticker];
           if (!baseToken) return;
 
-          const divisor = Math.pow(10, baseToken.decimals);
-          const filledValue = Number(BigInt(filledSize)) / divisor;
+          // Exact divide via the string path — Number(BigInt(...)) loses
+          // precision once the raw integer exceeds 2^53.
+          const filledDisplay = toDisplayValueCapped(
+            filledSize,
+            baseToken.decimals,
+          );
+          const filledValue = parseFloat(
+            toDisplayValue(filledSize, baseToken.decimals),
+          );
 
           // O(1) update - directly update the order in the Record
           state.userOrders[orderId] = {
             ...existing,
             status,
             filled_size: filledSize,
-            filledDisplay: filledValue.toFixed(baseToken.decimals),
+            filledDisplay,
             filledValue,
           };
         }),
