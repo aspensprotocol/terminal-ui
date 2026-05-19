@@ -98,6 +98,25 @@ export function MarketHeader() {
 
             {selectedMarket && baseToken && quoteToken && (
               <>
+                {/* Cross-chain pair label — base and quote tokens often live on
+                    different networks, so spell out (token, chain) for each
+                    side. Surfacing the chain inline is what tells the user at
+                    a glance "this is cross-chain". */}
+                <div className="flex items-center gap-1.5 font-mono whitespace-nowrap">
+                  <span className="text-foreground/90 font-semibold">
+                    {selectedMarket.base_ticker}
+                  </span>
+                  <span className="text-muted-foreground/60">
+                    ({selectedMarket.baseChainNetwork})
+                  </span>
+                  <span className="text-muted-foreground/50">/</span>
+                  <span className="text-foreground/90 font-semibold">
+                    {selectedMarket.quote_ticker}
+                  </span>
+                  <span className="text-muted-foreground/60">
+                    ({selectedMarket.quoteChainNetwork})
+                  </span>
+                </div>
                 <div className="h-3.5 w-px bg-primary/40"></div>
                 <div className="flex items-center gap-1.5">
                   <span className="text-primary/60 uppercase tracking-wider font-semibold">
