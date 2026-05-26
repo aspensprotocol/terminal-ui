@@ -68,6 +68,14 @@ export interface OrderSigningData {
   baseAccountAddress: string;
   quoteAccountAddress: string;
   matchingOrderIds?: number[];
+  /**
+   * Post-only: arborter rejects the order if it would cross at
+   * submission. The field IS signed-over (it's part of the encoded
+   * Order proto), but proto3 wire-skips `false`, so omitting it (or
+   * passing false) produces the same digest a pre-feature client
+   * produced — existing signatures remain valid.
+   */
+  postOnly?: boolean;
 }
 
 /**
@@ -136,6 +144,7 @@ export function createOrderMessage(data: OrderSigningData): Order {
     quoteAccountAddress: data.quoteAccountAddress,
     executionType: ExecutionType.UNSPECIFIED,
     matchingOrderIds: data.matchingOrderIds?.map((id) => BigInt(id)) || [],
+    postOnly: data.postOnly ?? false,
   });
 }
 

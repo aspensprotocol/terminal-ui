@@ -9,6 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { OrderTypeSelector } from "./OrderTypeSelector";
 import { SideSelector } from "./SideSelector";
 import { PriceInput } from "./PriceInput";
+import { PostOnlyToggle } from "./PostOnlyToggle";
 import { SizeInput } from "./SizeInput";
 import { OrderSummary } from "./OrderSummary";
 import { SubmitButton } from "./SubmitButton";
@@ -30,6 +31,13 @@ interface TradeFormData {
   orderType: OrderType;
   price: string;
   size: string;
+  /**
+   * Post-only flag — only meaningful for limit orders. Kept on the form
+   * even when `orderType === "market"` is hidden, but the form submit
+   * passes `false` for market orders so the toggle's last value can't
+   * leak into the wrong order type.
+   */
+  postOnly: boolean;
 }
 
 export function TradePanel() {
@@ -50,6 +58,7 @@ export function TradePanel() {
       orderType: "limit",
       price: "",
       size: "",
+      postOnly: false,
     },
   });
 
@@ -177,7 +186,12 @@ export function TradePanel() {
     <Card className="h-full flex flex-col gap-0 py-0 overflow-hidden border-border/40 bg-card min-w-0">
       <OrderTypeSelector
         value={formData.orderType}
-        onChange={(value) => setValue("orderType", value)}
+        onChange={(value) => {
+          setValue("orderType", value);
+          // Post-only is limit-only; clear it on a switch to market so
+          // the previous toggle state can't ride along silently.
+          if (value === "market") setValue("postOnly", false);
+        }}
       />
 
       <form
@@ -204,12 +218,18 @@ export function TradePanel() {
 
           {/* Price - Only for limit orders */}
           {formData.orderType === "limit" && (
-            <PriceInput
-              value={formData.price}
-              onChange={(value) => setValue("price", value)}
-              market={selectedMarket}
-              quoteToken={quoteToken}
-            />
+            <>
+              <PriceInput
+                value={formData.price}
+                onChange={(value) => setValue("price", value)}
+                market={selectedMarket}
+                quoteToken={quoteToken}
+              />
+              <PostOnlyToggle
+                value={formData.postOnly}
+                onChange={(value) => setValue("postOnly", value)}
+              />
+            </>
           )}
 
           {/* Size */}

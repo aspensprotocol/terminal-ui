@@ -69,6 +69,18 @@ export interface PlaceOrderParams {
    * this, built via `buildEvmGaslessAuthorization`.
    */
   gasless?: import("./protos/arborter_pb.js").GaslessAuthorization;
+  /**
+   * Post-only: when true, arborter rejects the order with
+   * FAILED_PRECONDITION (no on-chain lock, no gas spent) if it would
+   * cross any opposing confirmed order at submission. Guarantees
+   * maker-side execution. Limit orders only — set false for market
+   * orders; the SDK does not validate this, but arborter will reject
+   * `post_only=true` paired with an absent price.
+   *
+   * Defaults to false. Proto3 wire-skips the default, so existing
+   * signed-envelope digests stay byte-identical for legacy callers.
+   */
+  postOnly?: boolean;
 }
 
 export interface CancelOrderParams {
@@ -163,6 +175,7 @@ class RestClient {
       quoteAccountAddress: params.quoteAccountAddress,
       executionType: ExecutionType.UNSPECIFIED,
       matchingOrderIds: [],
+      postOnly: params.postOnly ?? false,
     });
 
     // Send the order via gRPC, carrying the optional GaslessAuthorization

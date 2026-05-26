@@ -9,6 +9,7 @@ interface TradeFormData {
   orderType: "limit" | "market";
   price: string;
   size: string;
+  postOnly: boolean;
 }
 
 interface UsePriceSelectionParams {
