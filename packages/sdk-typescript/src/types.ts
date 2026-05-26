@@ -143,6 +143,13 @@ export interface EnhancedOrderbookLevel {
   sizeDisplay: string;
   total: string;
   displayTotal: string;
+  /**
+   * Resting order is post-only — guaranteed not to take liquidity. Mirrors
+   * the `post_only` flag on the `OrderbookEntry` proto. Optional because
+   * pre-feature snapshots / streams may not set it (proto3 default is
+   * false, so unknown ≡ false in practice).
+   */
+  postOnly?: boolean;
 }
 
 // Candle type alias for charting

@@ -1,6 +1,5 @@
 import { Button } from "@/components/ui/button";
-
-type OrderSide = "buy" | "sell";
+import type { OrderSide } from "./types";
 
 interface SideSelectorProps {
   value: OrderSide;

@@ -1,10 +1,11 @@
 import { useMemo } from "react";
+import type { OrderSide, OrderType } from "../types";
 
 interface OrderEstimateParams {
   price: string;
   size: string;
-  side: "buy" | "sell";
-  orderType: "limit" | "market";
+  side: OrderSide;
+  orderType: OrderType;
   bestBid: number | null;
   bestAsk: number | null;
   lastTradePrice: number | null;

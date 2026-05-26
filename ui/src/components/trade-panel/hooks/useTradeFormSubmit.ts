@@ -11,13 +11,7 @@ import {
 import { createActiveSigningAdapter } from "@/lib/signing-adapter";
 import { marketEcosystem } from "@/lib/wallet";
 import type { Market, Token } from "@/lib/types/exchange";
-
-interface TradeFormData {
-  side: "buy" | "sell";
-  orderType: "limit" | "market";
-  price: string;
-  size: string;
-}
+import type { TradeFormData } from "../types";
 
 interface UseTradeFormSubmitParams {
   selectedMarket: Market | undefined;
@@ -152,6 +146,15 @@ export function useTradeFormSubmit({
 
         const signerAddress = signingWallet.address;
 
+        // Post-only is limit-only. The UI already hides the toggle for
+        // market orders, but defend against a stale `postOnly: true`
+        // hanging on the form (e.g. a fast switch between order types)
+        // by forcing it to false here. Both the signing data and the
+        // SDK call read this same value, keeping the signed digest and
+        // the wire request in lock-step.
+        const effectivePostOnly =
+          data.orderType === "limit" ? data.postOnly : false;
+
         // Create order signing data
         const orderData: OrderSigningData = {
           side: data.side,
@@ -160,6 +163,7 @@ export function useTradeFormSubmit({
           marketId: selectedMarket.id,
           baseAccountAddress: signerAddress,
           quoteAccountAddress: signerAddress,
+          postOnly: effectivePostOnly,
         };
 
         // Sign the order envelope using the matched wallet. This
@@ -233,6 +237,7 @@ export function useTradeFormSubmit({
           baseAccountAddress: signerAddress,
           quoteAccountAddress: signerAddress,
           gasless,
+          postOnly: effectivePostOnly,
         });
 
         const successMessage = `Order placed! ${
@@ -252,15 +257,22 @@ export function useTradeFormSubmit({
         let errorMessage = "Failed to place order";
 
         if (err instanceof Error) {
-          if (
-            err.message.includes("rejected") ||
-            err.message.includes("denied")
-          ) {
+          const msg = err.message;
+          // Match arborter's two post-only rejection messages BEFORE the
+          // generic "rejected" branch — they contain the literal word
+          // "reject" but mean something specific the user can act on
+          // (adjust price or untoggle post-only), not the usual wallet
+          // user-cancel UX. Arborter strings come from
+          // handlers/send_order.rs and start with "post_only".
+          if (msg.includes("post_only") || msg.includes("post-only")) {
+            errorMessage =
+              "Post-only order would cross — adjust your price (or untoggle Post-only) and resubmit";
+          } else if (msg.includes("rejected") || msg.includes("denied")) {
             errorMessage = "Transaction rejected by wallet";
-          } else if (err.message.includes("unavailable")) {
+          } else if (msg.includes("unavailable")) {
             errorMessage = "Trading service temporarily unavailable";
           } else {
-            errorMessage = err.message;
+            errorMessage = msg;
           }
         }
 
