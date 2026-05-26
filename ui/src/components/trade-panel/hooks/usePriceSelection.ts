@@ -3,17 +3,10 @@ import { UseFormSetValue } from "react-hook-form";
 import { useExchangeStore } from "@/lib/store";
 import { roundToTickSize } from "@aspens/terminal-sdk";
 import type { Market, Token } from "@/lib/types/exchange";
-
-interface TradeFormData {
-  side: "buy" | "sell";
-  orderType: "limit" | "market";
-  price: string;
-  size: string;
-  postOnly: boolean;
-}
+import type { OrderType, TradeFormData } from "../types";
 
 interface UsePriceSelectionParams {
-  orderType: "limit" | "market";
+  orderType: OrderType;
   priceDecimals: number;
   selectedMarket: Market | undefined;
   baseToken: Token | undefined;

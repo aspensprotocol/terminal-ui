@@ -22,23 +22,7 @@ import {
   useTradeFormSubmit,
   usePriceSelection,
 } from "./hooks";
-
-type OrderSide = "buy" | "sell";
-type OrderType = "limit" | "market";
-
-interface TradeFormData {
-  side: OrderSide;
-  orderType: OrderType;
-  price: string;
-  size: string;
-  /**
-   * Post-only flag — only meaningful for limit orders. Kept on the form
-   * even when `orderType === "market"` is hidden, but the form submit
-   * passes `false` for market orders so the toggle's last value can't
-   * leak into the wrong order type.
-   */
-  postOnly: boolean;
-}
+import type { TradeFormData } from "./types";
 
 export function TradePanel() {
   const selectedMarketId = useExchangeStore((state) => state.selectedMarketId);

@@ -1,7 +1,8 @@
 import { formatNumber } from "@aspens/terminal-sdk";
+import type { OrderSide } from "./types";
 
 interface AvailableBalanceProps {
-  side: "buy" | "sell";
+  side: OrderSide;
   availableBase: number;
   availableQuote: number;
   baseToken: { ticker: string };

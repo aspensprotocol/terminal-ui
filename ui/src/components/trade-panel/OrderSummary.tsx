@@ -1,7 +1,6 @@
 import { formatNumber } from "@aspens/terminal-sdk";
 import type { Token } from "@/lib/types/exchange";
-
-type OrderSide = "buy" | "sell";
+import type { OrderSide } from "./types";
 
 interface OrderEstimate {
   price: number;

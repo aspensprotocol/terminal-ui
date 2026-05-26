@@ -1,8 +1,7 @@
 import { Button } from "@/components/ui/button";
 import type { Token } from "@/lib/types/exchange";
 import type { ChainEcosystem } from "@/lib/wallet/types";
-
-type OrderSide = "buy" | "sell";
+import type { OrderSide } from "./types";
 
 interface SubmitButtonProps {
   side: OrderSide;

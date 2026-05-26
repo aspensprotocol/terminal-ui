@@ -1,6 +1,5 @@
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
-type OrderType = "limit" | "market";
+import type { OrderType } from "./types";
 
 interface OrderTypeSelectorProps {
   value: OrderType;

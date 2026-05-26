@@ -11,14 +11,7 @@ import {
 import { createActiveSigningAdapter } from "@/lib/signing-adapter";
 import { marketEcosystem } from "@/lib/wallet";
 import type { Market, Token } from "@/lib/types/exchange";
-
-interface TradeFormData {
-  side: "buy" | "sell";
-  orderType: "limit" | "market";
-  price: string;
-  size: string;
-  postOnly: boolean;
-}
+import type { TradeFormData } from "../types";
 
 interface UseTradeFormSubmitParams {
   selectedMarket: Market | undefined;
