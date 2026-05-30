@@ -1,24 +1,20 @@
 /**
- * Snapshot parity tests for the gasless signing foundation.
+ * Snapshot parity tests for the order-id foundation.
  *
- * The three expected hex values in this file are pulled verbatim from
- * the Rust SDK's `aspens/tests/client_parity.rs`. Both sides MUST
- * produce the exact same bytes for the same input — a drift in either
- * (viem's EIP-712 hasher vs alloy's, hand-rolled borsh vs the Rust
- * borsh crate, u64/u128 endianness, etc.) would silently break on-chain
- * verification. If one of these tests breaks, align with the Rust
- * reference rather than updating the snapshot blindly.
+ * The expected hex is pulled verbatim from the Rust SDK's
+ * `aspens/tests/client_parity.rs`. Both sides MUST produce the exact same
+ * bytes for the same input — a drift in u64/u128 endianness or field order
+ * would silently break order-id validation. If this breaks, align with the
+ * Rust reference rather than updating the snapshot blindly. (The legacy
+ * gasless lock-signing parity tests were removed with the on-chain order
+ * machinery.)
  */
 
 import { describe, expect, test } from "bun:test";
 import {
   deriveOrderId,
-  gaslessLockSigningHash,
-  gaslessLockSigningMessage,
-  hexToBytes,
   MIDRIB_EIP712_NAME,
   MIDRIB_EIP712_VERSION,
-  type OpenOrderArgs,
 } from "./gasless.js";
 
 // -- chain-agnostic order id ---------------------------------------------
@@ -56,119 +52,12 @@ describe("deriveOrderId", () => {
   });
 });
 
-// -- EVM EIP-712 digest --------------------------------------------------
+// -- EVM domain constants ------------------------------------------------
 
-describe("gaslessLockSigningHash", () => {
-  test("pins the domain constants against the on-chain contract", () => {
+describe("EIP-712 domain constants", () => {
+  test("pin against the on-chain contract (MidribV3 bumped version to 3)", () => {
     expect(MIDRIB_EIP712_NAME).toBe("Midrib");
-    expect(MIDRIB_EIP712_VERSION).toBe("2");
-  });
-
-  test("matches Rust SDK snapshot for the pinned input vector", () => {
-    // Copied from aspens/tests/client_parity.rs
-    // `evm_gasless_lock_signing_hash_snapshot`.
-    const digest = gaslessLockSigningHash({
-      order: {
-        depositorAddress: "0x0000000000000000000000000000000000000cC3",
-        tokenContract: "0x0000000000000000000000000000000000000dD4",
-        tokenContractDestinationChain:
-          "0x0000000000000000000000000000000000000eE5",
-        destinationChainId: "8453",
-        amountIn: 1_000_000n,
-        amountOut: 2_000_000n,
-        orderId: "",
-        deadline: 1_700_000_100n,
-        nonce: 42n,
-        openDeadline: 1_700_000_000n,
-      },
-      arborterAddress: "0x0000000000000000000000000000000000000aA1",
-      originSettler: "0x0000000000000000000000000000000000000bB2",
-      originChainId: 84532n,
-    });
-    expect(digest).toBe(
-      "0xdf311c324f054e2b139a5b25950d372ef729a4e5c7132256ca0990170cf4fe40",
-    );
-  });
-
-  test("rejects zero fillDeadline / openDeadline", () => {
-    const base = {
-      order: {
-        depositorAddress: "0x0000000000000000000000000000000000000001",
-        tokenContract: "0x0000000000000000000000000000000000000002",
-        tokenContractDestinationChain:
-          "0x0000000000000000000000000000000000000003",
-        destinationChainId: "1",
-        amountIn: 10n,
-        amountOut: 10n,
-        orderId: "",
-        deadline: 0n,
-        nonce: 0n,
-        openDeadline: 100n,
-      },
-      arborterAddress:
-        "0x0000000000000000000000000000000000000000" as `0x${string}`,
-      originSettler:
-        "0x0000000000000000000000000000000000000000" as `0x${string}`,
-      originChainId: 1n,
-    };
-    expect(() => gaslessLockSigningHash(base)).toThrow(/non-zero deadline/);
-  });
-});
-
-// -- Solana borsh payload ------------------------------------------------
-
-describe("gaslessLockSigningMessage", () => {
-  test("matches Rust SDK borsh snapshot for the pinned input vector", () => {
-    // Copied from aspens/tests/client_parity.rs
-    // `solana_gasless_lock_signing_message_snapshot`.
-    const order: OpenOrderArgs = {
-      orderId: new Uint8Array(32).fill(0x55),
-      originChainId: 501n,
-      destinationChainId: 8453n,
-      inputToken: new Uint8Array(32).fill(0x33),
-      inputAmount: 1_000_000n,
-      outputToken: new Uint8Array(32).fill(0x44),
-      outputAmount: 2_000_000n,
-    };
-
-    const bytes = gaslessLockSigningMessage({
-      instance: new Uint8Array(32).fill(0x11),
-      user: new Uint8Array(32).fill(0x22),
-      deadline: 1_700_000_000n,
-      order,
-    });
-
-    expect(bytes.length).toBe(200);
-    expect(bytesToHex(bytes)).toBe(
-      "1111111111111111111111111111111111111111111111111111111111111111" +
-        "2222222222222222222222222222222222222222222222222222222222222222" +
-        "00f1536500000000" +
-        "5555555555555555555555555555555555555555555555555555555555555555" +
-        "f501000000000000" +
-        "0521000000000000" +
-        "3333333333333333333333333333333333333333333333333333333333333333" +
-        "40420f0000000000" +
-        "4444444444444444444444444444444444444444444444444444444444444444" +
-        "80841e0000000000",
-    );
-  });
-
-  test("rejects wrong-sized inputs", () => {
-    const bad = {
-      instance: new Uint8Array(31), // one short
-      user: new Uint8Array(32),
-      deadline: 0n,
-      order: {
-        orderId: new Uint8Array(32),
-        originChainId: 0n,
-        destinationChainId: 0n,
-        inputToken: new Uint8Array(32),
-        inputAmount: 0n,
-        outputToken: new Uint8Array(32),
-        outputAmount: 0n,
-      },
-    };
-    expect(() => gaslessLockSigningMessage(bad)).toThrow(/instance/);
+    expect(MIDRIB_EIP712_VERSION).toBe("3");
   });
 });
 
@@ -177,6 +66,3 @@ describe("gaslessLockSigningMessage", () => {
 function bytesToHex(b: Uint8Array): string {
   return Array.from(b, (v) => v.toString(16).padStart(2, "0")).join("");
 }
-
-// Keep TS happy about the import below if hexToBytes becomes unused here.
-void hexToBytes;

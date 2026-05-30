@@ -61,14 +61,12 @@ export interface PlaceOrderParams {
   baseAccountAddress: string;
   quoteAccountAddress: string;
   /**
-   * Optional gasless authorization. When provided, the arborter will drive
-   * the on-chain lock via the chain's gasless path (EVM: MidribV2.openFor
-   * with the user's Permit2 + EIP-712 signature; Solana: MidribOpenFor
-   * with Ed25519SigVerify precompile). On EVM chains the arborter-signed
-   * legacy path has been deprecated — consumers on EVM must populate
-   * this, built via `buildEvmGaslessAuthorization`.
+   * Order authorization carrying the SDK-derived order id + committed
+   * amount_in. Under the optimistic ledger the arborter authenticates the
+   * order via the outer envelope signature and reads only these two fields;
+   * build it via `buildEvmGaslessAuthorization` / `buildSolanaGaslessAuthorization`.
    */
-  gasless?: import("./protos/arborter_pb.js").GaslessAuthorization;
+  authorization?: import("./protos/arborter_pb.js").OrderAuthorization;
   /**
    * Post-only: when true, arborter rejects the order with
    * FAILED_PRECONDITION (no on-chain lock, no gas spent) if it would
@@ -178,12 +176,12 @@ class RestClient {
       postOnly: params.postOnly ?? false,
     });
 
-    // Send the order via gRPC, carrying the optional GaslessAuthorization
+    // Send the order via gRPC, carrying the optional OrderAuthorization
     // payload if present.
     const response = await arborterService.sendOrder(
       order,
       params.signature,
-      params.gasless,
+      params.authorization,
     );
 
     // Convert response to EnhancedOrder
