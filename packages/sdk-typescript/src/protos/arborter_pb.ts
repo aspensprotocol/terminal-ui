@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file arborter.proto.
  */
 export const file_arborter: GenFile = /*@__PURE__*/
-  fileDesc("Cg5hcmJvcnRlci5wcm90bxIWeHl6LmFzcGVucy5hcmJvcnRlci52MSIHCgVFbXB0eSJlCg9XaXRoZHJhd1JlcXVlc3QSDwoHbmV0d29yaxgBIAEoCRINCgV0b2tlbhgCIAEoCRIPCgdhY2NvdW50GAMgASgJEg4KBmFtb3VudBgEIAEoCRIRCglzaWduYXR1cmUYBSABKAwidAoQV2l0aGRyYXdSZXNwb25zZRIPCgdhY2NvdW50GAEgASgJEg0KBXRva2VuGAIgASgJEg4KBmFtb3VudBgDIAEoCRINCgVub25jZRgEIAEoBBIOCgZleHBpcnkYBSABKAQSEQoJc2lnbmF0dXJlGAYgASgMImIKEkNhbmNlbE9yZGVyUmVxdWVzdBI0CgVvcmRlchgBIAEoCzIlLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuT3JkZXJUb0NhbmNlbBIWCg5zaWduYXR1cmVfaGFzaBgCIAEoDCK1AQoTQ2FuY2VsT3JkZXJSZXNwb25zZRIWCg5vcmRlcl9jYW5jZWxlZBgBIAEoCBJDChJ0cmFuc2FjdGlvbl9oYXNoZXMYAiADKAsyJy54eXouYXNwZW5zLmFyYm9ydGVyLnYxLlRyYW5zYWN0aW9uSGFzaBJBChFjdXJyZW50X29yZGVyYm9vaxgDIAMoCzImLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuT3JkZXJib29rRW50cnkisgEKEE9yZGVyYm9va1JlcXVlc3QSFwoPY29udGludWVfc3RyZWFtGAEgASgIEhEKCW1hcmtldF9pZBgCIAEoCRIjChZoaXN0b3JpY2FsX29wZW5fb3JkZXJzGAMgASgISACIAQESHQoQZmlsdGVyX2J5X3RyYWRlchgEIAEoCUgBiAEBQhkKF19oaXN0b3JpY2FsX29wZW5fb3JkZXJzQhMKEV9maWx0ZXJfYnlfdHJhZGVyIrIBCgxUcmFkZVJlcXVlc3QSFwoPY29udGludWVfc3RyZWFtGAEgASgIEhEKCW1hcmtldF9pZBgCIAEoCRIlChhoaXN0b3JpY2FsX2Nsb3NlZF90cmFkZXMYAyABKAhIAIgBARIdChBmaWx0ZXJfYnlfdHJhZGVyGAQgASgJSAGIAQFCGwoZX2hpc3RvcmljYWxfY2xvc2VkX3RyYWRlc0ITChFfZmlsdGVyX2J5X3RyYWRlciKXAQoQU2VuZE9yZGVyUmVxdWVzdBIsCgVvcmRlchgBIAEoCzIdLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuT3JkZXISFgoOc2lnbmF0dXJlX2hhc2gYAiABKAwSPQoHZ2FzbGVzcxgDIAEoCzIsLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuR2FzbGVzc0F1dGhvcml6YXRpb24inwEKFEdhc2xlc3NBdXRob3JpemF0aW9uEhYKDnVzZXJfc2lnbmF0dXJlGAEgASgMEhAKCGRlYWRsaW5lGAIgASgEEhAKCG9yZGVyX2lkGAMgASgJEg0KBW5vbmNlGAQgASgEEhUKDW9wZW5fZGVhZGxpbmUYBSABKAQSEQoJYW1vdW50X2luGAYgASgJEhIKCmFtb3VudF9vdXQYByABKAkioQIKBU9yZGVyEioKBHNpZGUYASABKA4yHC54eXouYXNwZW5zLmFyYm9ydGVyLnYxLlNpZGUSEAoIcXVhbnRpdHkYAiABKAkSEgoFcHJpY2UYAyABKAlIAIgBARIRCgltYXJrZXRfaWQYBCABKAkSHAoUYmFzZV9hY2NvdW50X2FkZHJlc3MYBSABKAkSHQoVcXVvdGVfYWNjb3VudF9hZGRyZXNzGAYgASgJEj0KDmV4ZWN1dGlvbl90eXBlGAcgASgOMiUueHl6LmFzcGVucy5hcmJvcnRlci52MS5FeGVjdXRpb25UeXBlEhoKEm1hdGNoaW5nX29yZGVyX2lkcxgIIAMoBBIRCglwb3N0X29ubHkYCSABKAhCCAoGX3ByaWNlIsoCCgVUcmFkZRIRCgl0aW1lc3RhbXAYASABKAQSDQoFcHJpY2UYAiABKAkSCwoDcXR5GAMgASgJEhAKCG1ha2VyX2lkGAQgASgJEhAKCHRha2VyX2lkGAUgASgJEhoKEm1ha2VyX2Jhc2VfYWRkcmVzcxgGIAEoCRIbChNtYWtlcl9xdW90ZV9hZGRyZXNzGAcgASgJEhoKEnRha2VyX2Jhc2VfYWRkcmVzcxgIIAEoCRIbChN0YWtlcl9xdW90ZV9hZGRyZXNzGAkgASgJEjMKCGJ1eWVyX2lzGAogASgOMiEueHl6LmFzcGVucy5hcmJvcnRlci52MS5UcmFkZVJvbGUSNAoJc2VsbGVyX2lzGAsgASgOMiEueHl6LmFzcGVucy5hcmJvcnRlci52MS5UcmFkZVJvbGUSEQoJb3JkZXJfaGl0GAwgASgEIjgKD1RyYW5zYWN0aW9uSGFzaBIRCgloYXNoX3R5cGUYASABKAkSEgoKaGFzaF92YWx1ZRgCIAEoCSKwAgoRU2VuZE9yZGVyUmVzcG9uc2USFQoNb3JkZXJfaW5fYm9vaxgBIAEoCBIxCgVvcmRlchgCIAEoCzIdLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuT3JkZXJIAIgBARItCgZ0cmFkZXMYAyADKAsyHS54eXouYXNwZW5zLmFyYm9ydGVyLnYxLlRyYWRlEkMKEnRyYW5zYWN0aW9uX2hhc2hlcxgEIAMoCzInLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuVHJhbnNhY3Rpb25IYXNoEkEKEWN1cnJlbnRfb3JkZXJib29rGAUgAygLMiYueHl6LmFzcGVucy5hcmJvcnRlci52MS5PcmRlcmJvb2tFbnRyeRIQCghvcmRlcl9pZBgGIAEoBEIICgZfb3JkZXIidwoNT3JkZXJUb0NhbmNlbBIRCgltYXJrZXRfaWQYASABKAkSKgoEc2lkZRgCIAEoDjIcLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuU2lkZRIVCg10b2tlbl9hZGRyZXNzGAMgASgJEhAKCG9yZGVyX2lkGAQgASgEIpQCCg5PcmRlcmJvb2tFbnRyeRIRCgl0aW1lc3RhbXAYASABKAQSEAoIb3JkZXJfaWQYAiABKAQSDQoFcHJpY2UYAyABKAkSEAoIcXVhbnRpdHkYBCABKAkSKgoEc2lkZRgFIAEoDjIcLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuU2lkZRIaChJtYWtlcl9iYXNlX2FkZHJlc3MYBiABKAkSGwoTbWFrZXJfcXVvdGVfYWRkcmVzcxgHIAEoCRIRCgltYXJrZXRfaWQYCCABKAkSMQoFc3RhdGUYCSABKA4yIi54eXouYXNwZW5zLmFyYm9ydGVyLnYxLk9yZGVyU3RhdGUSEQoJcG9zdF9vbmx5GAogASgIKjgKBFNpZGUSFAoQU0lERV9VTlNQRUNJRklFRBAAEgwKCFNJREVfQklEEAESDAoIU0lERV9BU0sQAipRCg1FeGVjdXRpb25UeXBlEh4KGkVYRUNVVElPTl9UWVBFX1VOU1BFQ0lGSUVEEAASIAocRVhFQ1VUSU9OX1RZUEVfRElTQ1JFVElPTkFSWRABKqkBCgpPcmRlclN0YXRlEhsKF09SREVSX1NUQVRFX1VOU1BFQ0lGSUVEEAASFwoTT1JERVJfU1RBVEVfUEVORElORxABEhkKFU9SREVSX1NUQVRFX0NPTkZJUk1FRBACEhcKE09SREVSX1NUQVRFX01BVENIRUQQAxIYChRPUkRFUl9TVEFURV9DQU5DRUxFRBAEEhcKE09SREVSX1NUQVRFX1NFVFRMRUQQBSo9CglUcmFkZVJvbGUSGgoWVFJBREVfUk9MRV9VTlNQRUNJRklFRBAAEgkKBU1BS0VSEAESCQoFVEFLRVIQAjL2AwoPQXJib3J0ZXJTZXJ2aWNlEmIKCVNlbmRPcmRlchIoLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuU2VuZE9yZGVyUmVxdWVzdBopLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuU2VuZE9yZGVyUmVzcG9uc2UiABJoCgtDYW5jZWxPcmRlchIqLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuQ2FuY2VsT3JkZXJSZXF1ZXN0GisueHl6LmFzcGVucy5hcmJvcnRlci52MS5DYW5jZWxPcmRlclJlc3BvbnNlIgASUQoGVHJhZGVzEiQueHl6LmFzcGVucy5hcmJvcnRlci52MS5UcmFkZVJlcXVlc3QaHS54eXouYXNwZW5zLmFyYm9ydGVyLnYxLlRyYWRlIgAwARJhCglPcmRlcmJvb2sSKC54eXouYXNwZW5zLmFyYm9ydGVyLnYxLk9yZGVyYm9va1JlcXVlc3QaJi54eXouYXNwZW5zLmFyYm9ydGVyLnYxLk9yZGVyYm9va0VudHJ5IgAwARJfCghXaXRoZHJhdxInLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuV2l0aGRyYXdSZXF1ZXN0GigueHl6LmFzcGVucy5hcmJvcnRlci52MS5XaXRoZHJhd1Jlc3BvbnNlIgBCAkgBYgZwcm90bzM");
+  fileDesc("Cg5hcmJvcnRlci5wcm90bxIWeHl6LmFzcGVucy5hcmJvcnRlci52MSIHCgVFbXB0eSJlCg9XaXRoZHJhd1JlcXVlc3QSDwoHbmV0d29yaxgBIAEoCRINCgV0b2tlbhgCIAEoCRIPCgdhY2NvdW50GAMgASgJEg4KBmFtb3VudBgEIAEoCRIRCglzaWduYXR1cmUYBSABKAwidAoQV2l0aGRyYXdSZXNwb25zZRIPCgdhY2NvdW50GAEgASgJEg0KBXRva2VuGAIgASgJEg4KBmFtb3VudBgDIAEoCRINCgVub25jZRgEIAEoBBIOCgZleHBpcnkYBSABKAQSEQoJc2lnbmF0dXJlGAYgASgMImIKEkNhbmNlbE9yZGVyUmVxdWVzdBI0CgVvcmRlchgBIAEoCzIlLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuT3JkZXJUb0NhbmNlbBIWCg5zaWduYXR1cmVfaGFzaBgCIAEoDCK1AQoTQ2FuY2VsT3JkZXJSZXNwb25zZRIWCg5vcmRlcl9jYW5jZWxlZBgBIAEoCBJDChJ0cmFuc2FjdGlvbl9oYXNoZXMYAiADKAsyJy54eXouYXNwZW5zLmFyYm9ydGVyLnYxLlRyYW5zYWN0aW9uSGFzaBJBChFjdXJyZW50X29yZGVyYm9vaxgDIAMoCzImLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuT3JkZXJib29rRW50cnkisgEKEE9yZGVyYm9va1JlcXVlc3QSFwoPY29udGludWVfc3RyZWFtGAEgASgIEhEKCW1hcmtldF9pZBgCIAEoCRIjChZoaXN0b3JpY2FsX29wZW5fb3JkZXJzGAMgASgISACIAQESHQoQZmlsdGVyX2J5X3RyYWRlchgEIAEoCUgBiAEBQhkKF19oaXN0b3JpY2FsX29wZW5fb3JkZXJzQhMKEV9maWx0ZXJfYnlfdHJhZGVyIrIBCgxUcmFkZVJlcXVlc3QSFwoPY29udGludWVfc3RyZWFtGAEgASgIEhEKCW1hcmtldF9pZBgCIAEoCRIlChhoaXN0b3JpY2FsX2Nsb3NlZF90cmFkZXMYAyABKAhIAIgBARIdChBmaWx0ZXJfYnlfdHJhZGVyGAQgASgJSAGIAQFCGwoZX2hpc3RvcmljYWxfY2xvc2VkX3RyYWRlc0ITChFfZmlsdGVyX2J5X3RyYWRlciKbAQoQU2VuZE9yZGVyUmVxdWVzdBIsCgVvcmRlchgBIAEoCzIdLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuT3JkZXISFgoOc2lnbmF0dXJlX2hhc2gYAiABKAwSQQoNYXV0aG9yaXphdGlvbhgDIAEoCzIqLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuT3JkZXJBdXRob3JpemF0aW9uIjkKEk9yZGVyQXV0aG9yaXphdGlvbhIQCghvcmRlcl9pZBgBIAEoCRIRCglhbW91bnRfaW4YAiABKAkioQIKBU9yZGVyEioKBHNpZGUYASABKA4yHC54eXouYXNwZW5zLmFyYm9ydGVyLnYxLlNpZGUSEAoIcXVhbnRpdHkYAiABKAkSEgoFcHJpY2UYAyABKAlIAIgBARIRCgltYXJrZXRfaWQYBCABKAkSHAoUYmFzZV9hY2NvdW50X2FkZHJlc3MYBSABKAkSHQoVcXVvdGVfYWNjb3VudF9hZGRyZXNzGAYgASgJEj0KDmV4ZWN1dGlvbl90eXBlGAcgASgOMiUueHl6LmFzcGVucy5hcmJvcnRlci52MS5FeGVjdXRpb25UeXBlEhoKEm1hdGNoaW5nX29yZGVyX2lkcxgIIAMoBBIRCglwb3N0X29ubHkYCSABKAhCCAoGX3ByaWNlIsoCCgVUcmFkZRIRCgl0aW1lc3RhbXAYASABKAQSDQoFcHJpY2UYAiABKAkSCwoDcXR5GAMgASgJEhAKCG1ha2VyX2lkGAQgASgJEhAKCHRha2VyX2lkGAUgASgJEhoKEm1ha2VyX2Jhc2VfYWRkcmVzcxgGIAEoCRIbChNtYWtlcl9xdW90ZV9hZGRyZXNzGAcgASgJEhoKEnRha2VyX2Jhc2VfYWRkcmVzcxgIIAEoCRIbChN0YWtlcl9xdW90ZV9hZGRyZXNzGAkgASgJEjMKCGJ1eWVyX2lzGAogASgOMiEueHl6LmFzcGVucy5hcmJvcnRlci52MS5UcmFkZVJvbGUSNAoJc2VsbGVyX2lzGAsgASgOMiEueHl6LmFzcGVucy5hcmJvcnRlci52MS5UcmFkZVJvbGUSEQoJb3JkZXJfaGl0GAwgASgEIjgKD1RyYW5zYWN0aW9uSGFzaBIRCgloYXNoX3R5cGUYASABKAkSEgoKaGFzaF92YWx1ZRgCIAEoCSKwAgoRU2VuZE9yZGVyUmVzcG9uc2USFQoNb3JkZXJfaW5fYm9vaxgBIAEoCBIxCgVvcmRlchgCIAEoCzIdLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuT3JkZXJIAIgBARItCgZ0cmFkZXMYAyADKAsyHS54eXouYXNwZW5zLmFyYm9ydGVyLnYxLlRyYWRlEkMKEnRyYW5zYWN0aW9uX2hhc2hlcxgEIAMoCzInLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuVHJhbnNhY3Rpb25IYXNoEkEKEWN1cnJlbnRfb3JkZXJib29rGAUgAygLMiYueHl6LmFzcGVucy5hcmJvcnRlci52MS5PcmRlcmJvb2tFbnRyeRIQCghvcmRlcl9pZBgGIAEoBEIICgZfb3JkZXIidwoNT3JkZXJUb0NhbmNlbBIRCgltYXJrZXRfaWQYASABKAkSKgoEc2lkZRgCIAEoDjIcLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuU2lkZRIVCg10b2tlbl9hZGRyZXNzGAMgASgJEhAKCG9yZGVyX2lkGAQgASgEIpQCCg5PcmRlcmJvb2tFbnRyeRIRCgl0aW1lc3RhbXAYASABKAQSEAoIb3JkZXJfaWQYAiABKAQSDQoFcHJpY2UYAyABKAkSEAoIcXVhbnRpdHkYBCABKAkSKgoEc2lkZRgFIAEoDjIcLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuU2lkZRIaChJtYWtlcl9iYXNlX2FkZHJlc3MYBiABKAkSGwoTbWFrZXJfcXVvdGVfYWRkcmVzcxgHIAEoCRIRCgltYXJrZXRfaWQYCCABKAkSMQoFc3RhdGUYCSABKA4yIi54eXouYXNwZW5zLmFyYm9ydGVyLnYxLk9yZGVyU3RhdGUSEQoJcG9zdF9vbmx5GAogASgIKjgKBFNpZGUSFAoQU0lERV9VTlNQRUNJRklFRBAAEgwKCFNJREVfQklEEAESDAoIU0lERV9BU0sQAipRCg1FeGVjdXRpb25UeXBlEh4KGkVYRUNVVElPTl9UWVBFX1VOU1BFQ0lGSUVEEAASIAocRVhFQ1VUSU9OX1RZUEVfRElTQ1JFVElPTkFSWRABKqkBCgpPcmRlclN0YXRlEhsKF09SREVSX1NUQVRFX1VOU1BFQ0lGSUVEEAASFwoTT1JERVJfU1RBVEVfUEVORElORxABEhkKFU9SREVSX1NUQVRFX0NPTkZJUk1FRBACEhcKE09SREVSX1NUQVRFX01BVENIRUQQAxIYChRPUkRFUl9TVEFURV9DQU5DRUxFRBAEEhcKE09SREVSX1NUQVRFX1NFVFRMRUQQBSo9CglUcmFkZVJvbGUSGgoWVFJBREVfUk9MRV9VTlNQRUNJRklFRBAAEgkKBU1BS0VSEAESCQoFVEFLRVIQAjL2AwoPQXJib3J0ZXJTZXJ2aWNlEmIKCVNlbmRPcmRlchIoLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuU2VuZE9yZGVyUmVxdWVzdBopLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuU2VuZE9yZGVyUmVzcG9uc2UiABJoCgtDYW5jZWxPcmRlchIqLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuQ2FuY2VsT3JkZXJSZXF1ZXN0GisueHl6LmFzcGVucy5hcmJvcnRlci52MS5DYW5jZWxPcmRlclJlc3BvbnNlIgASUQoGVHJhZGVzEiQueHl6LmFzcGVucy5hcmJvcnRlci52MS5UcmFkZVJlcXVlc3QaHS54eXouYXNwZW5zLmFyYm9ydGVyLnYxLlRyYWRlIgAwARJhCglPcmRlcmJvb2sSKC54eXouYXNwZW5zLmFyYm9ydGVyLnYxLk9yZGVyYm9va1JlcXVlc3QaJi54eXouYXNwZW5zLmFyYm9ydGVyLnYxLk9yZGVyYm9va0VudHJ5IgAwARJfCghXaXRoZHJhdxInLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuV2l0aGRyYXdSZXF1ZXN0GigueHl6LmFzcGVucy5hcmJvcnRlci52MS5XaXRoZHJhd1Jlc3BvbnNlIgBCAkgBYgZwcm90bzM");
 
 /**
  * @generated from message xyz.aspens.arborter.v1.Empty
@@ -276,17 +276,15 @@ export type SendOrderRequest = Message<"xyz.aspens.arborter.v1.SendOrderRequest"
   signatureHash: Uint8Array;
 
   /**
-   * Gasless authorization: the arborter drives the on-chain lock via the
-   * chain's gasless path (Solana: MidribOpenFor with Ed25519 precompile;
-   * EVM: MidribV2.openFor with Permit2). Required — the legacy
-   * arborter-signed lock path has been removed. For message-typed
-   * fields, proto3 tracks presence by default, so the generated Rust
-   * API remains `Option<GaslessAuthorization>`; the arborter handler
-   * enforces presence at the request boundary.
+   * Order authorization carrying the SDK-derived canonical order id and the
+   * committed lock amount. Required. For message-typed fields proto3 tracks
+   * presence by default, so the generated Rust API is
+   * `Option<OrderAuthorization>`; the arborter handler enforces presence at
+   * the request boundary.
    *
-   * @generated from field: xyz.aspens.arborter.v1.GaslessAuthorization gasless = 3;
+   * @generated from field: xyz.aspens.arborter.v1.OrderAuthorization authorization = 3;
    */
-  gasless?: GaslessAuthorization;
+  authorization?: OrderAuthorization;
 };
 
 /**
@@ -297,87 +295,43 @@ export const SendOrderRequestSchema: GenMessage<SendOrderRequest> = /*@__PURE__*
   messageDesc(file_arborter, 7);
 
 /**
- * User-produced authorization bundle for a gasless on-chain open. The
- * signature semantics + deadline units are chain-specific and match the
- * `chain_traits::market::GaslessLockParams` fields:
- *   * Solana: 64-byte Ed25519 signature; deadline is a slot number.
- *   * EVM:    65-byte ECDSA signature; deadline is a unix timestamp.
+ * SDK-derived order authorization. Under the optimistic shadow ledger, order
+ * entry never touches the chain — the arborter authenticates the order via the
+ * outer envelope signature (`SendOrderRequest.signature_hash`) and consumes
+ * only the two fields below. The legacy gasless on-chain-lock fields
+ * (user_signature / deadline / nonce / open_deadline / amount_out) were removed
+ * with the on-chain order machinery; the message and its `SendOrderRequest`
+ * field were renamed from `GaslessAuthorization` / `gasless` to match.
  *
- * @generated from message xyz.aspens.arborter.v1.GaslessAuthorization
+ * @generated from message xyz.aspens.arborter.v1.OrderAuthorization
  */
-export type GaslessAuthorization = Message<"xyz.aspens.arborter.v1.GaslessAuthorization"> & {
+export type OrderAuthorization = Message<"xyz.aspens.arborter.v1.OrderAuthorization"> & {
   /**
-   * Raw signature bytes — see chain-specific format above.
+   * The canonical on-chain order id (32-byte hex, 0x-prefixed), derived by the
+   * SDK (`aspens::orders::derive_order_id`). The arborter uses it verbatim as
+   * the order's id throughout match / settle, so it MUST match the SDK's
+   * derivation exactly.
    *
-   * @generated from field: bytes user_signature = 1;
-   */
-  userSignature: Uint8Array;
-
-  /**
-   * Absolute deadline the arborter must land the tx before.
-   * Solana: slot number. EVM: fillDeadline (unix seconds).
-   *
-   * @generated from field: uint64 deadline = 2;
-   */
-  deadline: bigint;
-
-  /**
-   * On-chain order id (32-byte hex, 0x-prefixed) that the user's
-   * signature binds to — matches the on-chain Order PDA / EVM intent id.
-   *
-   * @generated from field: string order_id = 3;
+   * @generated from field: string order_id = 1;
    */
   orderId: string;
 
   /**
-   * Permit2 / EIP-712 nonce stamped on the user-signed EVM order.
-   * Ignored by Solana (the Order PDA init serves as the nonce).
+   * The committed lock amount on the origin chain (input token), in that
+   * token's native base units (NOT pair decimals). Decimal-string encoding of
+   * `u128` (no `0x` prefix, no separators) so values up to 2^128-1 round-trip
+   * exactly across the gRPC boundary — protobuf has no native 128-bit integer.
    *
-   * @generated from field: uint64 nonce = 4;
-   */
-  nonce: bigint;
-
-  /**
-   * EVM openDeadline (unix seconds). Ignored by Solana.
-   *
-   * @generated from field: uint64 open_deadline = 5;
-   */
-  openDeadline: bigint;
-
-  /**
-   * Amounts the user actually signed in their EIP-712 / Ed25519 payload,
-   * in the origin / destination token's native base units (NOT pair
-   * decimals). Decimal-string encoding of `u128` (no `0x` prefix, no
-   * thousands separators) so values up to 2^128-1 round-trip exactly
-   * across the gRPC boundary — protobuf has no native 128-bit integer.
-   *
-   * `amount_in` is what the user locks on the origin chain (input token).
-   * `amount_out` is what the user expects to receive on the destination
-   * chain (output token).
-   *
-   * The arborter MUST use these values verbatim when constructing the
-   * `GaslessLockParams` passed to `lock_for_order_gasless` — recomputing
-   * amounts independently from quantity / price (the prior behaviour)
-   * produces a different EIP-712 / Ed25519 digest from what the user
-   * signed and triggers `INVALID_SIGNER` revert on-chain. This makes the
-   * user-signed payload the single authoritative source of truth for
-   * the lock leg, matching the gasless-intent design pattern.
-   *
-   * @generated from field: string amount_in = 6;
+   * @generated from field: string amount_in = 2;
    */
   amountIn: string;
-
-  /**
-   * @generated from field: string amount_out = 7;
-   */
-  amountOut: string;
 };
 
 /**
- * Describes the message xyz.aspens.arborter.v1.GaslessAuthorization.
- * Use `create(GaslessAuthorizationSchema)` to create a new message.
+ * Describes the message xyz.aspens.arborter.v1.OrderAuthorization.
+ * Use `create(OrderAuthorizationSchema)` to create a new message.
  */
-export const GaslessAuthorizationSchema: GenMessage<GaslessAuthorization> = /*@__PURE__*/
+export const OrderAuthorizationSchema: GenMessage<OrderAuthorization> = /*@__PURE__*/
   messageDesc(file_arborter, 8);
 
 /**

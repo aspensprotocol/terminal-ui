@@ -1,27 +1,23 @@
 /**
- * Solana gasless-order orchestrator.
+ * Solana order-authorization builder.
  *
- * Counterpart to `gasless-evm.ts`. Given a market + order params +
- * wallet, build a `GaslessAuthorization` ready to drop into a
- * `SendOrderRequest`. The arborter rebuilds the same borsh payload,
- * verifies the user's Ed25519 signature via the Ed25519SigVerify
- * precompile, and submits `open_for` as fee-payer.
+ * Counterpart to `gasless-evm.ts`. Under the optimistic shadow ledger, order
+ * entry never touches the chain: the arborter authenticates via the outer
+ * envelope signature and consumes only `order_id` + `amount_in`. This builder
+ * resolves chains / tokens / amounts, derives the canonical 32-byte order id,
+ * and packs the `OrderAuthorization`. No borsh `open_for` payload, no Ed25519
+ * lock signature — those were removed with the on-chain order machinery.
  */
 
 import { create } from "@bufbuild/protobuf";
-import { Connection, PublicKey } from "@solana/web3.js";
+import { PublicKey } from "@solana/web3.js";
 
+import { deriveOrderId } from "./gasless.js";
 import {
-  deriveOrderId,
-  gaslessLockSigningMessage,
-  type OpenOrderArgs,
-} from "./gasless.js";
-import {
-  GaslessAuthorizationSchema,
-  type GaslessAuthorization,
+  OrderAuthorizationSchema,
+  type OrderAuthorization,
 } from "./protos/arborter_pb.js";
 import type { Configuration } from "./protos/arborter_config_pb.js";
-import type { SigningAdapter } from "./signing.js";
 import type { Market } from "./types.js";
 
 export interface BuildSolanaGaslessOpts {
@@ -34,14 +30,6 @@ export interface BuildSolanaGaslessOpts {
   amountOut: bigint;
   /** User's Solana address (base58). */
   userAddress: string;
-  /** Signing adapter; must implement `signBytes`. */
-  adapter: SigningAdapter;
-  /**
-   * Optional deadline override, in slots. Defaults to current slot + 300
-   * (~2 minutes on mainnet at 400ms slot time). If the arborter can't
-   * land the tx before this slot, the on-chain program rejects.
-   */
-  deadlineSlot?: bigint;
   /** Optional nonce override for `deriveOrderId`. Defaults to current unix ms. */
   clientNonce?: bigint;
 }
@@ -49,15 +37,9 @@ export interface BuildSolanaGaslessOpts {
 export async function buildSolanaGaslessAuthorization(
   opts: BuildSolanaGaslessOpts,
 ): Promise<{
-  authorization: GaslessAuthorization;
+  authorization: OrderAuthorization;
   orderId: string;
 }> {
-  if (!opts.adapter.signBytes) {
-    throw new Error(
-      "Solana gasless signing requires a wallet adapter with signBytes support",
-    );
-  }
-
   const originChain = resolveChain(
     opts.config,
     opts.side === "buy"
@@ -84,40 +66,18 @@ export async function buildSolanaGaslessAuthorization(
 
   const inputToken = requireTokenAddress(originChain, inputTicker);
   const outputToken = requireTokenAddress(destinationChain, outputTicker);
-  const instanceStr = originChain.tradeContract?.address;
-  if (!instanceStr) {
-    throw new Error(
-      `Solana chain '${originChain.network}' has no trade_contract.address (instance PDA)`,
-    );
-  }
 
   const user = new PublicKey(opts.userAddress);
-  const instance = new PublicKey(instanceStr);
-
   const originChainId = BigInt(originChain.chainId);
   const destinationChainId = BigInt(destinationChain.chainId);
 
-  // Solana deadlines are slot-based. If no override, pull the current
-  // slot and add a buffer — enough time for the arborter to sign, land,
-  // and confirm before the on-chain program would reject.
-  let deadline: bigint;
-  if (opts.deadlineSlot !== undefined) {
-    deadline = opts.deadlineSlot;
-  } else {
-    const slot = await new Connection(originChain.rpcUrl).getSlot();
-    deadline = BigInt(slot) + 300n;
-  }
-
   const clientNonce = opts.clientNonce ?? BigInt(Date.now());
 
-  // Derive the canonical 32-byte order id. On Solana this is also the
-  // `Order` PDA seed — the arborter uses it as the init seed when
-  // submitting `open_for`, so a mismatch fails program validation.
+  // Derive the canonical 32-byte order id. Output token may be EVM (20-byte
+  // address) or Solana (32-byte pubkey); `outputTokenBytes32` coerces both to
+  // the 32-byte form the arborter hashes on its side.
   const inputMint = new PublicKey(inputToken);
-  // Output token may be EVM (20-byte address) or Solana (32-byte pubkey).
-  // For the order-id hash we pass the raw bytes we'll also put in the
-  // borsh payload; `outputTokenBytesForBorsh` handles both forms.
-  const outputTokenBytes = outputTokenBytesForBorsh(
+  const outputTokenBytes = outputTokenBytes32(
     outputToken,
     destinationChain.architecture,
   );
@@ -133,32 +93,9 @@ export async function buildSolanaGaslessAuthorization(
   });
   const orderId = `0x${bytesToHex(orderIdBytes)}`;
 
-  const order: OpenOrderArgs = {
-    orderId: orderIdBytes,
-    originChainId,
-    destinationChainId,
-    inputToken: inputMint.toBuffer(),
-    inputAmount: opts.amountIn,
-    outputToken: outputTokenBytes,
-    outputAmount: opts.amountOut,
-  };
-
-  const message = gaslessLockSigningMessage({
-    instance: instance.toBuffer(),
-    user: user.toBuffer(),
-    deadline,
-    order,
-  });
-
-  const signatureBytes = await opts.adapter.signBytes(message);
-
-  // `nonce` and `openDeadline` are ignored by the Solana path on the
-  // arborter (the Order PDA's init serves as the nonce; there's no
-  // openDeadline concept). Leave them at their proto-default zero.
-  const authorization = create(GaslessAuthorizationSchema, {
-    userSignature: signatureBytes,
-    deadline,
+  const authorization = create(OrderAuthorizationSchema, {
     orderId,
+    amountIn: opts.amountIn.toString(),
   });
 
   return { authorization, orderId };
@@ -193,15 +130,13 @@ function requireTokenAddress(chain: ConfigChain, symbol: string): string {
 }
 
 /**
- * Coerce an output-token identifier into the 32-byte form borsh expects.
+ * Coerce an output-token identifier into the 32-byte form the order-id hash
+ * expects.
  *
  *   - Solana destination: parse as base58 → 32 bytes directly.
- *   - EVM destination: parse as 0x-hex address (20 bytes), left-pad to
- *     32 with zeros. The on-chain program treats it as an opaque
- *     identifier — the exact framing just has to match what the
- *     arborter does on its side.
+ *   - EVM destination: parse as 0x-hex address (20 bytes), left-pad to 32.
  */
-function outputTokenBytesForBorsh(
+function outputTokenBytes32(
   tokenAddress: string,
   architecture: string,
 ): Uint8Array {
@@ -213,7 +148,7 @@ function outputTokenBytesForBorsh(
   const raw = hexToBytesLocal(hex);
   if (raw.length > 32) {
     throw new Error(
-      `output token '${tokenAddress}' exceeds 32 bytes; cannot embed in borsh payload`,
+      `output token '${tokenAddress}' exceeds 32 bytes; cannot embed in order-id hash`,
     );
   }
   const out = new Uint8Array(32);

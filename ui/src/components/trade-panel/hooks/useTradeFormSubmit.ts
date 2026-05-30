@@ -5,7 +5,7 @@ import {
   buildEvmGaslessAuthorization,
   buildSolanaGaslessAuthorization,
   signOrder,
-  type GaslessAuthorization,
+  type OrderAuthorization,
   type OrderSigningData,
 } from "@aspens/terminal-sdk";
 import { createActiveSigningAdapter } from "@/lib/signing-adapter";
@@ -172,10 +172,10 @@ export function useTradeFormSubmit({
         const signingAdapter = createActiveSigningAdapter();
         const signature = await signOrder(orderData, signingAdapter);
 
-        // Build the gasless authorization for every chain architecture.
-        // Arborter's legacy arborter-signed path was deprecated on EVM
-        // (it still serves Hedera / legacy-only chains). For EVM +
-        // Solana a `GaslessAuthorization` is required.
+        // Build the order authorization. Under the optimistic ledger the
+        // arborter authenticates the order via the outer envelope signature
+        // and reads only order_id + amount_in from this payload (no on-chain
+        // lock signature).
         const config = client.cache.getConfig();
         if (!config) {
           throw new Error(
@@ -200,7 +200,7 @@ export function useTradeFormSubmit({
                   Math.pow(10, pairDecimals),
               ),
         );
-        let gasless: GaslessAuthorization | undefined;
+        let orderAuthorization: OrderAuthorization | undefined;
         if (requiredEcosystem === "evm") {
           const { authorization } = await buildEvmGaslessAuthorization({
             market: selectedMarket,
@@ -209,9 +209,8 @@ export function useTradeFormSubmit({
             amountIn,
             amountOut,
             userAddress: signerAddress as `0x${string}`,
-            adapter: signingAdapter,
           });
-          gasless = authorization;
+          orderAuthorization = authorization;
         } else if (requiredEcosystem === "solana") {
           const { authorization } = await buildSolanaGaslessAuthorization({
             market: selectedMarket,
@@ -220,9 +219,8 @@ export function useTradeFormSubmit({
             amountIn,
             amountOut,
             userAddress: signerAddress,
-            adapter: signingAdapter,
           });
-          gasless = authorization;
+          orderAuthorization = authorization;
         }
 
         // Place the order via SDK
@@ -236,7 +234,7 @@ export function useTradeFormSubmit({
           signature,
           baseAccountAddress: signerAddress,
           quoteAccountAddress: signerAddress,
-          gasless,
+          authorization: orderAuthorization,
           postOnly: effectivePostOnly,
         });
 

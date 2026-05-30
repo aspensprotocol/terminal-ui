@@ -83,19 +83,15 @@ export {
   type CancelSigningData,
 } from "./signing.js";
 
-// Gasless order-signing foundation (pure, framework-agnostic helpers).
+// Order-id derivation foundation (pure, framework-agnostic).
 export {
   deriveOrderId,
-  gaslessLockSigningHash,
-  gaslessLockSigningMessage,
   MIDRIB_EIP712_NAME,
   MIDRIB_EIP712_VERSION,
-  type GaslessLockParams,
-  type OpenOrderArgs,
 } from "./gasless.js";
 
-// Chain-specific gasless orchestrators: build the GaslessAuthorization
-// proto end-to-end from a market + order + wallet.
+// Chain-specific order-authorization builders: derive the order id + pack the
+// OrderAuthorization proto from a market + order params.
 export {
   buildEvmGaslessAuthorization,
   type BuildEvmGaslessOpts,
@@ -106,7 +102,7 @@ export {
 } from "./gasless-solana.js";
 
 // Proto types consumers populate on PlaceOrderParams / SendOrderRequest.
-export type { GaslessAuthorization } from "./protos/arborter_pb.js";
+export type { OrderAuthorization } from "./protos/arborter_pb.js";
 
 // On-chain balance queries (shared by the balances panel + deposit UI).
 export {
