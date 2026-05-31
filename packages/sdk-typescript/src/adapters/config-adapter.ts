@@ -97,7 +97,6 @@ export interface ChainInfo {
   rpcUrl: string;
   explorerUrl?: string;
   factoryAddress: string;
-  permit2Address: string;
   tradeContractAddress?: string;
 }
 
@@ -111,7 +110,6 @@ export function toChains(config: Configuration): ChainInfo[] {
     rpcUrl: chain.rpcUrl,
     explorerUrl: chain.explorerUrl,
     factoryAddress: chain.factoryAddress,
-    permit2Address: chain.permit2Address,
     tradeContractAddress: chain.tradeContract?.address,
   }));
 }
