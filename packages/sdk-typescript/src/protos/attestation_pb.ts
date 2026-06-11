@@ -10,16 +10,21 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file attestation.proto.
  */
 export const file_attestation: GenFile = /*@__PURE__*/
-  fileDesc("ChFhdHRlc3RhdGlvbi5wcm90bxIZeHl6LmFzcGVucy5hdHRlc3RhdGlvbi52MSJBChVHZXRBdHRlc3RhdGlvblJlcXVlc3QSGAoLcmVwb3J0X2RhdGEYASABKAxIAIgBAUIOCgxfcmVwb3J0X2RhdGEiVgoWR2V0QXR0ZXN0YXRpb25SZXNwb25zZRI8CgZyZXBvcnQYASABKAsyLC54eXouYXNwZW5zLmF0dGVzdGF0aW9uLnYxLkF0dGVzdGF0aW9uUmVwb3J0IrQCChFBdHRlc3RhdGlvblJlcG9ydBITCgt0ZWVfdGNiX3N2bhgBIAEoCRIPCgdtcl9zZWFtGAIgASgJEhYKDm1yX3NpZ25lcl9zZWFtGAMgASgJEhcKD3NlYW1fYXR0cmlidXRlcxgEIAEoCRIVCg10ZF9hdHRyaWJ1dGVzGAUgASgJEgwKBHhmYW0YBiABKAkSDQoFbXJfdGQYByABKAkSFAoMbXJfY29uZmlnX2lkGAggASgJEhAKCG1yX293bmVyGAkgASgJEhcKD21yX293bmVyX2NvbmZpZxgKIAEoCRIOCgZydF9tcjAYCyABKAkSDgoGcnRfbXIxGAwgASgJEg4KBnJ0X21yMhgNIAEoCRIOCgZydF9tcjMYDiABKAkSEwoLcmVwb3J0X2RhdGEYDyABKAkyjQEKEkF0dGVzdGF0aW9uU2VydmljZRJ3Cg5HZXRBdHRlc3RhdGlvbhIwLnh5ei5hc3BlbnMuYXR0ZXN0YXRpb24udjEuR2V0QXR0ZXN0YXRpb25SZXF1ZXN0GjEueHl6LmFzcGVucy5hdHRlc3RhdGlvbi52MS5HZXRBdHRlc3RhdGlvblJlc3BvbnNlIgBCAkgBYgZwcm90bzM");
+  fileDesc("ChFhdHRlc3RhdGlvbi5wcm90bxIZeHl6LmFzcGVucy5hdHRlc3RhdGlvbi52MSJBChVHZXRBdHRlc3RhdGlvblJlcXVlc3QSGAoLcmVwb3J0X2RhdGEYASABKAxIAIgBAUIOCgxfcmVwb3J0X2RhdGEiVgoWR2V0QXR0ZXN0YXRpb25SZXNwb25zZRI8CgZyZXBvcnQYASABKAsyLC54eXouYXNwZW5zLmF0dGVzdGF0aW9uLnYxLkF0dGVzdGF0aW9uUmVwb3J0IvECChFBdHRlc3RhdGlvblJlcG9ydBITCgt0ZWVfdGNiX3N2bhgBIAEoCRIPCgdtcl9zZWFtGAIgASgJEhYKDm1yX3NpZ25lcl9zZWFtGAMgASgJEhcKD3NlYW1fYXR0cmlidXRlcxgEIAEoCRIVCg10ZF9hdHRyaWJ1dGVzGAUgASgJEgwKBHhmYW0YBiABKAkSDQoFbXJfdGQYByABKAkSFAoMbXJfY29uZmlnX2lkGAggASgJEhAKCG1yX293bmVyGAkgASgJEhcKD21yX293bmVyX2NvbmZpZxgKIAEoCRIOCgZydF9tcjAYCyABKAkSDgoGcnRfbXIxGAwgASgJEg4KBnJ0X21yMhgNIAEoCRIOCgZydF9tcjMYDiABKAkSEwoLcmVwb3J0X2RhdGEYDyABKAkSEQoJcmF3X3F1b3RlGBAgASgMEhIKCmNlcnRfY2hhaW4YESABKAwSFAoMaW1hZ2VfZGlnZXN0GBIgASgMMo0BChJBdHRlc3RhdGlvblNlcnZpY2USdwoOR2V0QXR0ZXN0YXRpb24SMC54eXouYXNwZW5zLmF0dGVzdGF0aW9uLnYxLkdldEF0dGVzdGF0aW9uUmVxdWVzdBoxLnh5ei5hc3BlbnMuYXR0ZXN0YXRpb24udjEuR2V0QXR0ZXN0YXRpb25SZXNwb25zZSIAQgJIAWIGcHJvdG8z");
 
 /**
  * @generated from message xyz.aspens.attestation.v1.GetAttestationRequest
  */
 export type GetAttestationRequest = Message<"xyz.aspens.attestation.v1.GetAttestationRequest"> & {
   /**
-   * Optional user-provided data to bind to the attestation report.
-   * Must be at most 64 bytes. If provided, it will be included in the
-   * REPORTDATA field of the TDX attestation report.
+   * Caller-supplied freshness nonce (anti-replay). At most 64 bytes.
+   *
+   * NOTE: semantics narrowed (see ATTESTATION_QUOTE_DESIGN.md §6). The signer no
+   * longer writes these bytes directly into REPORTDATA; it assembles REPORTDATA
+   * server-side as SHA-512(domain_tag || signer_pubkey || nonce || image_digest)
+   * so the quote binds the signing key it actually holds. This field now carries
+   * only the `nonce`. Kept wire-compatible (still <=64 opaque bytes); rename to
+   * `nonce` at the next proto cleanup.
    *
    * @generated from field: optional bytes report_data = 1;
    */
@@ -158,6 +163,31 @@ export type AttestationReport = Message<"xyz.aspens.attestation.v1.AttestationRe
    * @generated from field: string report_data = 15;
    */
   reportData: string;
+
+  /**
+   * Raw signed TD Quote (DCAP/QVL-verifiable): ECDSA chain to the Intel SGX
+   * Root CA over the TDREPORT. Empty on non-TDX / legacy builds.
+   *
+   * @generated from field: bytes raw_quote = 16;
+   */
+  rawQuote: Uint8Array;
+
+  /**
+   * Optional collateral the verifier couldn't otherwise obtain (PCK chain /
+   * auxblob). Usually empty -- DCAP fetches collateral from Intel PCS/PCCS and
+   * the PCK chain is embedded in the quote's certification data.
+   *
+   * @generated from field: bytes cert_chain = 17;
+   */
+  certChain: Uint8Array;
+
+  /**
+   * Self-reported running image digest(s) (see design §4.7). Trust rests on the
+   * MRTD/RTMR measurement policy, not on this self-report.
+   *
+   * @generated from field: bytes image_digest = 18;
+   */
+  imageDigest: Uint8Array;
 };
 
 /**
