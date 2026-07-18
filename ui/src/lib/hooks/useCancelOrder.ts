@@ -85,6 +85,12 @@ export function useCancelOrder() {
           cancelledAt: Date.now(),
           userAddress,
         });
+
+        // A cancelled hidden order must also leave the local tracking
+        // slice, or setOrders would re-inject it forever.
+        if (order.hidden) {
+          useExchangeStore.getState().removeHiddenOrder(orderId);
+        }
       } catch (err) {
         console.error(`[useCancelOrder] Failed to cancel ${orderId}:`, err);
         throw err;

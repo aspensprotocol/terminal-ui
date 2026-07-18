@@ -64,6 +64,41 @@ function saveCancelledOrders(entries: CancelledOrderEntry[]): void {
   }
 }
 
+const HIDDEN_ORDERS_STORAGE_KEY = "aspens.hiddenOrders.v1";
+
+/**
+ * Locally-tracked hidden orders. A hidden order appears in NO server
+ * stream — not even to its owner (response-only tracking) — so the
+ * `EnhancedOrder` captured from the SendOrder response is the ONLY
+ * record of it. Persisted so it survives reloads; removed on cancel or
+ * by the user. Status never auto-updates on fill (nothing to observe).
+ */
+function loadHiddenOrders(): Order[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(HIDDEN_ORDERS_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveHiddenOrders(entries: Order[]): void {
+  if (typeof window === "undefined") return;
+  try {
+    // Cap well past what one user places; ceiling against a wedged loop.
+    const capped = entries.slice(-100);
+    window.localStorage.setItem(
+      HIDDEN_ORDERS_STORAGE_KEY,
+      JSON.stringify(capped),
+    );
+  } catch {
+    // quota exhausted / private browsing; a missed persist is survivable
+  }
+}
+
 // ============================================================================
 // State Interface
 // ============================================================================
@@ -112,6 +147,13 @@ interface ExchangeState {
    * tab can still show them.
    */
   cancelledOrders: CancelledOrderEntry[];
+  /**
+   * Client-side tracking of the user's hidden orders. A hidden order
+   * appears in NO server stream — not even to its owner — so the
+   * `EnhancedOrder` captured from the SendOrder response is the ONLY
+   * record of it. See `recordHiddenOrder` / `removeHiddenOrder`.
+   */
+  hiddenOrders: Order[];
 
   // Multi-wallet state
   connectedWallets: Record<string, ConnectedWallet>; // Keyed by wallet id
@@ -150,6 +192,10 @@ interface ExchangeState {
   ) => void;
   /** Append a cancelled order to the persisted history log. */
   recordCancelledOrder: (entry: CancelledOrderEntry) => void;
+  /** Track a newly-placed hidden order locally (response-only record). */
+  recordHiddenOrder: (order: Order) => void;
+  /** Drop a hidden order from local tracking (e.g. on cancel). */
+  removeHiddenOrder: (orderId: string) => void;
   updateBalance: (
     tokenTicker: string,
     available: string,
@@ -193,6 +239,7 @@ const initialState = {
   userOrders: {} as Record<string, Order>,
   userTrades: [],
   cancelledOrders: loadCancelledOrders(),
+  hiddenOrders: loadHiddenOrders(),
 
   // Multi-wallet
   connectedWallets: {} as Record<string, ConnectedWallet>,
@@ -386,6 +433,31 @@ export const useExchangeStore = create<ExchangeState>()(
           saveCancelledOrders(state.cancelledOrders);
         }),
 
+      recordHiddenOrder: (order) =>
+        set((state) => {
+          const existingIdx = state.hiddenOrders.findIndex(
+            (o) => o.id === order.id,
+          );
+          if (existingIdx >= 0) {
+            state.hiddenOrders[existingIdx] = order;
+          } else {
+            state.hiddenOrders.push(order);
+          }
+          saveHiddenOrders(state.hiddenOrders);
+          // Inject immediately so the open-orders panel shows it without
+          // waiting for the next getOrders poll (which never returns it).
+          state.userOrders[order.id] = order;
+        }),
+
+      removeHiddenOrder: (orderId) =>
+        set((state) => {
+          state.hiddenOrders = state.hiddenOrders.filter(
+            (o) => o.id !== orderId,
+          );
+          saveHiddenOrders(state.hiddenOrders);
+          delete state.userOrders[orderId];
+        }),
+
       updateBalance: (tokenTicker, available, locked) =>
         set((state) => {
           const existing = state.userBalances[tokenTicker];
@@ -444,6 +516,17 @@ export const useExchangeStore = create<ExchangeState>()(
             },
             {} as Record<string, Order>,
           );
+          // Hidden orders are response-only-tracked: no stream ever
+          // returns them, so every poll rebuild would drop them. Re-inject
+          // the active user's locally tracked entries.
+          for (const hidden of state.hiddenOrders) {
+            if (
+              hidden.user_address === state.userAddress &&
+              !state.userOrders[hidden.id]
+            ) {
+              state.userOrders[hidden.id] = hidden;
+            }
+          }
         }),
 
       updateOrder: (orderId, status, filledSize) =>

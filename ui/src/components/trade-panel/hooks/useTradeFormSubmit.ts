@@ -240,6 +240,17 @@ export function useTradeFormSubmit({
           hidden: data.hidden,
         });
 
+        // A hidden order that rested exists in NO server stream — this
+        // response is the only record of it. Track it locally so the
+        // open-orders panel can show and cancel it (status: "pending"
+        // here means arborter reported order_in_book).
+        if (data.hidden && result.status === "pending") {
+          useExchangeStore.getState().recordHiddenOrder({
+            ...result,
+            trades: [],
+          });
+        }
+
         const successMessage = data.hidden
           ? `Hidden order placed (id ${result.id}) — tracked locally only`
           : `Order placed! ${

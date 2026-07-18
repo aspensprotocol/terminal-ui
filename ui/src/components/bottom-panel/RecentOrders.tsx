@@ -7,7 +7,7 @@ import { useUserOrders, useCancelOrder } from "@/lib/hooks";
 import type { Order } from "@/lib/types/exchange";
 import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
-import { X } from "lucide-react";
+import { X, EyeOff } from "lucide-react";
 
 export function RecentOrders() {
   const selectedMarketId = useExchangeStore((state) => state.selectedMarketId);
@@ -59,8 +59,16 @@ export function RecentOrders() {
         accessorKey: "market_id",
         header: "Market",
         cell: ({ row }) => (
-          <div className="font-medium text-foreground/90">
+          <div className="font-medium text-foreground/90 flex items-center gap-1.5">
             {row.getValue("market_id")}
+            {row.original.hidden && (
+              <span
+                title="Hidden order — invisible to the market; tracked locally only, status won't auto-update after fills"
+                className="text-muted-foreground"
+              >
+                <EyeOff className="h-3 w-3" aria-label="hidden order" />
+              </span>
+            )}
           </div>
         ),
         size: 100,
