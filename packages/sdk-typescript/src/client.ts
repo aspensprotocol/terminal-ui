@@ -17,7 +17,6 @@ import {
   configService,
   arborterService,
   create,
-  OrderSchema,
   OrderToCancelSchema,
   type Order,
   type OrderToCancel,
@@ -32,7 +31,8 @@ import {
   toEnhancedTrades,
   getPairDecimals,
 } from "./adapters/index.js";
-import { Side as ProtoSide, ExecutionType } from "./protos/arborter_pb.js";
+import { Side as ProtoSide } from "./protos/arborter_pb.js";
+import { createOrderMessage } from "./signing.js";
 import { fetchOnChainBalances, type WalletBinding } from "./balances.js";
 import { formatDisplayNumber } from "./decimals.js";
 
@@ -79,6 +79,12 @@ export interface PlaceOrderParams {
    * signed-envelope digests stay byte-identical for legacy callers.
    */
   postOnly?: boolean;
+  /**
+   * Hidden ("invisible") order — see `OrderSigningData.hidden`. Valid
+   * for both limit and market orders (a hidden market order is an
+   * anonymous taker). Defaults to false (wire-skipped).
+   */
+  hidden?: boolean;
 }
 
 export interface CancelOrderParams {
@@ -163,17 +169,20 @@ class RestClient {
     const priceRaw = this.decimalToRaw(priceDecimal, pairDecimals);
     const sizeRaw = this.decimalToRaw(sizeDecimal, pairDecimals);
 
-    // Create the protobuf Order
-    const order: Order = create(OrderSchema, {
-      side: params.side === "buy" ? ProtoSide.BID : ProtoSide.ASK,
+    // Build the wire Order with the SAME builder the signing path uses
+    // (`createOrderMessage`) — the envelope signature is over these
+    // bytes as arborter re-encodes them, so constructing the proto in
+    // two places invites a silent digest mismatch. One build site makes
+    // that class of bug unrepresentable.
+    const order: Order = createOrderMessage({
+      side: params.side,
       quantity: sizeRaw,
       price: params.orderType === "limit" ? priceRaw : undefined,
       marketId: params.marketId,
       baseAccountAddress: params.baseAccountAddress,
       quoteAccountAddress: params.quoteAccountAddress,
-      executionType: ExecutionType.UNSPECIFIED,
-      matchingOrderIds: [],
       postOnly: params.postOnly ?? false,
+      hidden: params.hidden ?? false,
     });
 
     // Send the order via gRPC, carrying the optional OrderAuthorization
@@ -234,6 +243,7 @@ class RestClient {
       side: params.side,
       order_type: params.orderType,
       status: response.orderInBook ? "pending" : "filled",
+      hidden: params.hidden ?? false,
       filled_size: "0",
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),

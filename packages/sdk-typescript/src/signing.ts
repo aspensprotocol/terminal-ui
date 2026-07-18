@@ -76,6 +76,14 @@ export interface OrderSigningData {
    * produced — existing signatures remain valid.
    */
   postOnly?: boolean;
+  /**
+   * Hidden ("invisible") order: matched normally but excluded from the
+   * public orderbook stream and response-embedded books; fills print
+   * with this side's identity redacted. Signed-over like postOnly;
+   * proto3 wire-skips `false`, so omitting it keeps legacy digests
+   * byte-identical.
+   */
+  hidden?: boolean;
 }
 
 /**
@@ -145,6 +153,7 @@ export function createOrderMessage(data: OrderSigningData): Order {
     executionType: ExecutionType.UNSPECIFIED,
     matchingOrderIds: data.matchingOrderIds?.map((id) => BigInt(id)) || [],
     postOnly: data.postOnly ?? false,
+    hidden: data.hidden ?? false,
   });
 }
 
