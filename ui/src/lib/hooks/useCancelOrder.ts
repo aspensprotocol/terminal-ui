@@ -92,6 +92,32 @@ export function useCancelOrder() {
           useExchangeStore.getState().removeHiddenOrder(orderId);
         }
       } catch (err) {
+        // A hidden order the arborter no longer knows about (already
+        // filled, so it's gone from the engine) fails cancel with a
+        // not-found-style error. From the user's perspective the row
+        // should just disappear — it's the same outcome a successful
+        // cancel would have produced locally, and there's no live order
+        // left for a wallet signature to act on. Any other error still
+        // propagates so the caller can surface it.
+        const message = err instanceof Error ? err.message : String(err);
+        const isNotFound = /not[ _-]?found/i.test(message);
+        if (order.hidden && isNotFound) {
+          console.warn(
+            `[useCancelOrder] Hidden order ${orderId} already gone at arborter (stale fill) — removing local row`,
+            err,
+          );
+          useExchangeStore.getState().recordCancelledOrder({
+            orderId,
+            marketId: order.market_id,
+            side: order.side,
+            priceDisplay: order.priceDisplay ?? order.price ?? "",
+            sizeDisplay: order.sizeDisplay ?? order.size ?? "",
+            cancelledAt: Date.now(),
+            userAddress,
+          });
+          useExchangeStore.getState().removeHiddenOrder(orderId);
+          return;
+        }
         console.error(`[useCancelOrder] Failed to cancel ${orderId}:`, err);
         throw err;
       } finally {
