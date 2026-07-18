@@ -7,7 +7,7 @@ import { useUserOrders, useCancelOrder } from "@/lib/hooks";
 import type { Order } from "@/lib/types/exchange";
 import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
-import { X } from "lucide-react";
+import { X, EyeOff, Trash2 } from "lucide-react";
 
 export function RecentOrders() {
   const selectedMarketId = useExchangeStore((state) => state.selectedMarketId);
@@ -39,6 +39,10 @@ export function RecentOrders() {
     }
   }, [userAddress, selectedMarketId, cancelAllOrders]);
 
+  const handleRemoveHidden = useCallback((orderId: string) => {
+    useExchangeStore.getState().removeHiddenOrder(orderId);
+  }, []);
+
   const hasOpenOrders = orders.some(
     (o) => o.status === "pending" || o.status === "partially_filled",
   );
@@ -48,19 +52,44 @@ export function RecentOrders() {
       {
         accessorKey: "created_at",
         header: "Time",
-        cell: ({ row }) => (
-          <div className="text-muted-foreground/80 text-xs">
-            {(row.getValue("created_at") as Date).toLocaleTimeString()}
-          </div>
-        ),
+        cell: ({ row }) => {
+          // Every producer we've seen hands back an ISO string (or a
+          // numeric epoch), not a Date — normalise defensively the same
+          // way OrderHistory.tsx does for its timestamp column.
+          const rawCreatedAt = row.getValue("created_at") as
+            | Date
+            | string
+            | number;
+          const createdAt =
+            rawCreatedAt instanceof Date
+              ? rawCreatedAt
+              : new Date(rawCreatedAt);
+          return (
+            <div className="text-muted-foreground/80 text-xs">
+              {createdAt.toLocaleTimeString()}
+            </div>
+          );
+        },
         size: 90,
       },
       {
         accessorKey: "market_id",
         header: "Market",
         cell: ({ row }) => (
-          <div className="font-medium text-foreground/90">
+          <div className="font-medium text-foreground/90 flex items-center gap-1.5">
             {row.getValue("market_id")}
+            {row.original.hidden && (
+              <span
+                title="Hidden order — invisible to the market; tracked locally only, status won't auto-update after fills"
+                className="text-muted-foreground"
+              >
+                <EyeOff
+                  className="h-3 w-3"
+                  role="img"
+                  aria-label="hidden order"
+                />
+              </span>
+            )}
           </div>
         ),
         size: 100,
@@ -210,6 +239,17 @@ export function RecentOrders() {
               >
                 <X className="h-4 w-4" />
               </Button>
+              {order.hidden && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleRemoveHidden(order.id)}
+                  title="Remove from local list (does not touch the exchange — use Cancel to pull a resting order)"
+                  className="h-7 w-7 p-0 text-muted-foreground hover:text-red-500 cursor-pointer"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              )}
             </div>
           );
         },
@@ -222,6 +262,7 @@ export function RecentOrders() {
       cancellingAll,
       handleCancelAll,
       handleCancelOrder,
+      handleRemoveHidden,
     ],
   );
 

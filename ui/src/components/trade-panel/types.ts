@@ -31,4 +31,10 @@ export interface TradeFormData {
    * in lock-step.
    */
   postOnly: boolean;
+  /**
+   * Hidden ("invisible") order — valid for BOTH limit and market
+   * orders (a hidden market order is an anonymous taker), so unlike
+   * postOnly it is neither gated on orderType nor reset on a switch.
+   */
+  hidden: boolean;
 }

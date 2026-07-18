@@ -49,6 +49,12 @@ export interface ApiOrder {
   side: Side;
   order_type: OrderType;
   status: OrderStatus;
+  /**
+   * Locally-known hidden flag. True only for orders this client placed
+   * with `hidden: true` — the backend never echoes hidden orders in any
+   * stream, so this cannot be learned from server data after the fact.
+   */
+  hidden?: boolean;
   filled_size: string;
   created_at: string;
   updated_at: string;

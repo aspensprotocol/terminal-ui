@@ -164,6 +164,7 @@ export function useTradeFormSubmit({
           baseAccountAddress: signerAddress,
           quoteAccountAddress: signerAddress,
           postOnly: effectivePostOnly,
+          hidden: data.hidden,
         };
 
         // Sign the order envelope using the matched wallet. This
@@ -236,13 +237,27 @@ export function useTradeFormSubmit({
           quoteAccountAddress: signerAddress,
           authorization: orderAuthorization,
           postOnly: effectivePostOnly,
+          hidden: data.hidden,
         });
 
-        const successMessage = `Order placed! ${
-          result.trades && result.trades.length > 0
-            ? `Filled ${result.trades.length} trade(s)`
-            : "Order in book"
-        }`;
+        // A hidden order that rested exists in NO server stream — this
+        // response is the only record of it. Track it locally so the
+        // open-orders panel can show and cancel it (status: "pending"
+        // here means arborter reported order_in_book).
+        if (data.hidden && result.status === "pending") {
+          useExchangeStore.getState().recordHiddenOrder({
+            ...result,
+            trades: [],
+          });
+        }
+
+        const successMessage = data.hidden
+          ? `Hidden order placed (id ${result.id}) — tracked locally only`
+          : `Order placed! ${
+              result.trades && result.trades.length > 0
+                ? `Filled ${result.trades.length} trade(s)`
+                : "Order in book"
+            }`;
         setSuccess(successMessage);
 
         // Call onSuccess callback

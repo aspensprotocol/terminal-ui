@@ -1,19 +1,21 @@
 /**
  * Parity tests for the wallet-signature normalization layer.
  *
- * The arborter accepts a 64-byte `r||s` signature regardless of the
- * signing curve. EVM wallets return 65 bytes (ECDSA, with trailing
- * recovery byte) and Solana wallets return 64 bytes (Ed25519). This
- * regression suite pins both paths so a future refactor can't silently
- * corrupt one of them.
+ * Arborter requires curve-native signature lengths with no tolerance:
+ * exactly 65 bytes for Secp256k1 (EVM, `r||s||v`) and exactly 64 bytes
+ * for Ed25519 (Solana, `r||s`). EVM wallets return 65 bytes and Solana
+ * wallets return 64 bytes; both pass through unchanged. This regression
+ * suite pins both paths so a future refactor can't silently corrupt one
+ * of them (e.g. by re-introducing the old, incorrect 64-byte slice).
  */
 
 import { describe, expect, test } from "bun:test";
 import { normalizeWalletSignature } from "./signing.js";
 
 describe("normalizeWalletSignature", () => {
-  test("strips the recovery byte from a 65-byte EVM ECDSA signature", () => {
-    // r[32] || s[32] || v[1] — the EVM wire format from wagmi/viem/ethers.
+  test("passes a 65-byte EVM ECDSA signature through unchanged", () => {
+    // r[32] || s[32] || v[1] — the EVM wire format from wagmi/viem/ethers,
+    // and the exact wire format arborter's Secp256k1 verifier requires.
     const r = new Uint8Array(32).fill(0x11);
     const s = new Uint8Array(32).fill(0x22);
     const v = new Uint8Array([0x1c]); // recovery byte (27 / 28 canonical)
@@ -21,10 +23,11 @@ describe("normalizeWalletSignature", () => {
 
     const out = normalizeWalletSignature(sig);
 
-    expect(out.length).toBe(64);
+    expect(out.length).toBe(65);
+    expect(out).toEqual(sig);
     expect(out.slice(0, 32)).toEqual(r);
     expect(out.slice(32, 64)).toEqual(s);
-    // v is dropped — arborter recovers the address from message + r||s.
+    expect(out.slice(64, 65)).toEqual(v);
   });
 
   test("passes a 64-byte Solana Ed25519 signature through unchanged", () => {

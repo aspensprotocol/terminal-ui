@@ -8,18 +8,6 @@ import { rawToDecimal } from "./orderbook-adapter.js";
 import { toDisplayValueCapped } from "../decimals.js";
 
 /**
- * Convert TradeRole enum to side string
- * If buyer_is === MAKER (1), then the maker is buying, so the trade side is "buy"
- * If buyer_is === TAKER (2), then the taker is buying, so the trade side is "buy"
- */
-function getTradeRole(buyerIs: TradeRole): Side {
-  // MAKER = 1, TAKER = 2
-  // If buyer_is is MAKER (1) or TAKER (2), the side is "buy"
-  // The actual side depends on perspective, but we use the buyer's role to determine
-  return "buy"; // Trades are always recorded from buyer's perspective for side
-}
-
-/**
  * Determine the trade side based on buyer/seller roles
  */
 function getTradeSide(buyerIs: TradeRole, sellerIs: TradeRole): Side {
@@ -34,6 +22,30 @@ function getTradeSide(buyerIs: TradeRole, sellerIs: TradeRole): Side {
   }
   // Default to buy if unclear
   return "buy";
+}
+
+/**
+ * Resolve buyer/seller addresses strictly by role. `buyerIs` names WHICH
+ * position (maker=1 / taker=2) bought; the other position sold. Never
+ * fall back across positions: a redacted hidden side must keep its empty
+ * address rather than borrow the visible side's — consumers infer the
+ * user's own side by comparing these addresses, and a borrowed address
+ * flips that comparison.
+ */
+function addressesByRole(trade: ProtoTrade): {
+  buyer_address: string;
+  seller_address: string;
+} {
+  const takerBought = trade.buyerIs === 2; // TAKER
+  return takerBought
+    ? {
+        buyer_address: trade.takerBaseAddress,
+        seller_address: trade.makerBaseAddress,
+      }
+    : {
+        buyer_address: trade.makerBaseAddress,
+        seller_address: trade.takerBaseAddress,
+      };
 }
 
 /**
@@ -53,8 +65,14 @@ export function toEnhancedTrade(
   // Determine side based on buyer/seller roles
   const side = getTradeSide(trade.buyerIs, trade.sellerIs);
 
-  // Create a unique ID from timestamp and order_hit
-  const id = `${trade.timestamp}-${trade.orderHit}`;
+  // Unique-enough stable id. orderHit alone stopped sufficing once
+  // redaction zeroed it for hidden fills (`${ts}-0` collided); price+qty
+  // disambiguate all but byte-identical simultaneous redacted fills.
+  // Do NOT add a positional index — ids must be stable across polls or
+  // the store double-counts trades.
+  const id = `${trade.timestamp}-${trade.orderHit}-${trade.price}-${trade.qty}`;
+
+  const { buyer_address, seller_address } = addressesByRole(trade);
 
   // Convert timestamp from bigint to ISO string
   const timestamp = new Date(Number(trade.timestamp)).toISOString();
@@ -62,8 +80,8 @@ export function toEnhancedTrade(
   return {
     id,
     market_id: marketId,
-    buyer_address: trade.takerBaseAddress || trade.makerBaseAddress,
-    seller_address: trade.makerBaseAddress || trade.takerBaseAddress,
+    buyer_address,
+    seller_address,
     buyer_order_id: trade.orderHit.toString(),
     seller_order_id: trade.makerId,
     price: trade.price,
