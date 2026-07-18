@@ -97,18 +97,25 @@ export interface CancelSigningData {
 }
 
 /**
- * Normalize a wallet signature to the 64-byte wire format the arborter
- * expects. Branches on input length:
+ * Normalize a wallet signature to the curve-native wire format arborter
+ * requires. Arborter's verifier checks lengths with no tolerance — exactly
+ * 65 bytes for Secp256k1 (EVM), exactly 64 bytes for Ed25519 (Solana) — so
+ * this function passes both through unchanged and only validates length:
  *
- * - **65 bytes** — EVM ECDSA (`r[32] || s[32] || v[1]`). Drop the trailing
- *   recovery byte; arborter recovers the address from message + `r||s`.
- * - **64 bytes** — Solana Ed25519 (already `r||s`). Passthrough.
+ * - **65 bytes** — EVM ECDSA (`r[32] || s[32] || v[1]`). Passthrough; this
+ *   is the full signature arborter expects, recovery byte included.
+ * - **64 bytes** — Solana Ed25519 (`r||s`). Passthrough.
  * - Anything else — throw. A wallet adapter returned something this code
  *   doesn't know how to hand off; fail loudly rather than ship a bogus
  *   signature that the arborter will silently reject.
+ *
+ * Historical note: this used to slice 65-byte EVM signatures down to 64
+ * bytes (dropping the recovery byte). That was wrong — arborter's
+ * Secp256k1 check requires exactly 65 bytes, so a 64-byte signature was
+ * rejected with FAILED_PRECONDITION ("invalid or missing signature").
  */
 export function normalizeWalletSignature(sig: Uint8Array): Uint8Array {
-  if (sig.length === 65) return sig.slice(0, 64);
+  if (sig.length === 65) return sig;
   if (sig.length === 64) return sig;
   throw new Error(
     `unexpected wallet signature length ${sig.length}; expected 65 (EVM ECDSA) or 64 (Solana Ed25519)`,
