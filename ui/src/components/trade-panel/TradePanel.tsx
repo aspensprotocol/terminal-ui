@@ -10,6 +10,7 @@ import { OrderTypeSelector } from "./OrderTypeSelector";
 import { SideSelector } from "./SideSelector";
 import { PriceInput } from "./PriceInput";
 import { PostOnlyToggle } from "./PostOnlyToggle";
+import { HiddenToggle } from "./HiddenToggle";
 import { SizeInput } from "./SizeInput";
 import { OrderSummary } from "./OrderSummary";
 import { SubmitButton } from "./SubmitButton";
@@ -43,6 +44,7 @@ export function TradePanel() {
       price: "",
       size: "",
       postOnly: false,
+      hidden: false,
     },
   });
 
@@ -215,6 +217,13 @@ export function TradePanel() {
               />
             </>
           )}
+
+          {/* Hidden — valid for both limit and market, so not inside the
+              limit-only block above */}
+          <HiddenToggle
+            value={formData.hidden}
+            onChange={(value) => setValue("hidden", value)}
+          />
 
           {/* Size */}
           <SizeInput

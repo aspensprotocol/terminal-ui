@@ -164,6 +164,7 @@ export function useTradeFormSubmit({
           baseAccountAddress: signerAddress,
           quoteAccountAddress: signerAddress,
           postOnly: effectivePostOnly,
+          hidden: data.hidden,
         };
 
         // Sign the order envelope using the matched wallet. This
@@ -236,13 +237,16 @@ export function useTradeFormSubmit({
           quoteAccountAddress: signerAddress,
           authorization: orderAuthorization,
           postOnly: effectivePostOnly,
+          hidden: data.hidden,
         });
 
-        const successMessage = `Order placed! ${
-          result.trades && result.trades.length > 0
-            ? `Filled ${result.trades.length} trade(s)`
-            : "Order in book"
-        }`;
+        const successMessage = data.hidden
+          ? `Hidden order placed (id ${result.id}) — tracked locally only`
+          : `Order placed! ${
+              result.trades && result.trades.length > 0
+                ? `Filled ${result.trades.length} trade(s)`
+                : "Order in book"
+            }`;
         setSuccess(successMessage);
 
         // Call onSuccess callback
