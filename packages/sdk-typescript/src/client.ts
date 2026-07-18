@@ -359,6 +359,25 @@ export class ExchangeClient {
   }
 
   /**
+   * Request a TEE-signed withdrawal voucher (Track A §8) for
+   * `MidribV3.withdraw(voucher, signature)`. The caller signs the canonical
+   * request bytes `"network|token|account|amount"` with the withdrawer's
+   * wallet (EIP-191 personal-sign on EVM, Ed25519 on Solana) and passes the
+   * signature here; errors from the arborter (e.g. insufficient withdrawable
+   * balance) propagate to the caller.
+   */
+  async requestWithdrawVoucher(params: {
+    network: string;
+    token: string;
+    account: string;
+    /** Amount in token base units, as a decimal string. */
+    amount: string;
+    signature: Uint8Array;
+  }) {
+    return arborterService.requestWithdrawVoucher(params);
+  }
+
+  /**
    * Get OHLCV candle data for charting
    * Note: Stub implementation - Arborter doesn't have a candle endpoint
    */

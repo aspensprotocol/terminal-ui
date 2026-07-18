@@ -18,7 +18,7 @@
 
 import { useMemo, useState } from "react";
 import { ArrowDownToLine, ArrowUpFromLine, Wallet } from "lucide-react";
-import type { ChainBalanceSlice } from "@aspens/terminal-sdk";
+import { isWsolMint, type ChainBalanceSlice } from "@aspens/terminal-sdk";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -53,6 +53,8 @@ interface TransferDialogProps {
 interface TokenChoice {
   chainNetwork: string;
   tokenTicker: string;
+  /** What the user sees: "SOL" for the WSOL mint, else the config symbol. */
+  displayTicker: string;
   tokenAddress: string;
   decimals: number;
   architecture: string;
@@ -100,6 +102,11 @@ export function TransferDialog({
         out.push({
           chainNetwork: chain.network,
           tokenTicker: ticker,
+          // Native SOL trades as the WSOL mint on-venue, but users think
+          // in SOL — the hook wraps/unwraps transparently. EVM native
+          // tokens (the sentinel address) already carry their native
+          // symbol (ETH/C2FLR/...) in config.
+          displayTicker: isWsolMint(token.address) ? "SOL" : ticker,
           tokenAddress: token.address,
           decimals: token.decimals,
           architecture: chain.architecture,
@@ -344,7 +351,7 @@ function TransferForm({
                 key={`${c.chainNetwork}::${c.tokenTicker}`}
                 value={`${c.chainNetwork}::${c.tokenTicker}`}
               >
-                <span className="font-semibold">{c.tokenTicker}</span>
+                <span className="font-semibold">{c.displayTicker}</span>
                 <span className="text-muted-foreground text-xs ml-2">
                   on {c.chainNetwork}
                 </span>
