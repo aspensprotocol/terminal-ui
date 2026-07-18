@@ -443,6 +443,12 @@ export const useExchangeStore = create<ExchangeState>()(
           } else {
             state.hiddenOrders.push(order);
           }
+          // Mirror the cap `saveHiddenOrders` applies to the persisted
+          // copy, or the in-memory array could grow unbounded across a
+          // long session even though localStorage stays capped.
+          if (state.hiddenOrders.length > 100) {
+            state.hiddenOrders = state.hiddenOrders.slice(-100);
+          }
           saveHiddenOrders(state.hiddenOrders);
           // Inject immediately so the open-orders panel shows it without
           // waiting for the next getOrders poll (which never returns it).
@@ -518,10 +524,17 @@ export const useExchangeStore = create<ExchangeState>()(
           );
           // Hidden orders are response-only-tracked: no stream ever
           // returns them, so every poll rebuild would drop them. Re-inject
-          // the active user's locally tracked entries.
+          // the active user's locally tracked entries. Compare
+          // case-insensitively — EVM wallets report inconsistent
+          // checksum/lowercase casing across sessions, and a case miss
+          // would make the order's ONLY record invisible. Guard on a
+          // truthy `state.userAddress` first so two absent addresses
+          // (both undefined after `?.toLowerCase()`) never compare equal.
           for (const hidden of state.hiddenOrders) {
             if (
-              hidden.user_address === state.userAddress &&
+              state.userAddress &&
+              hidden.user_address?.toLowerCase() ===
+                state.userAddress.toLowerCase() &&
               !state.userOrders[hidden.id]
             ) {
               state.userOrders[hidden.id] = hidden;

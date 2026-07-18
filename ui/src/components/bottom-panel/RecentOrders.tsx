@@ -83,7 +83,11 @@ export function RecentOrders() {
                 title="Hidden order — invisible to the market; tracked locally only, status won't auto-update after fills"
                 className="text-muted-foreground"
               >
-                <EyeOff className="h-3 w-3" aria-label="hidden order" />
+                <EyeOff
+                  className="h-3 w-3"
+                  role="img"
+                  aria-label="hidden order"
+                />
               </span>
             )}
           </div>

@@ -203,12 +203,8 @@ export async function signOrder(
   // Convert to hex string for signing
   const hexString = bytesToHex(protobufBytes);
 
-  console.log("[Signing] Order bytes hex:", hexString);
-
   // Sign using the adapter (uses personal_sign under the hood)
   const signature = await adapter.signMessage(hexString);
-
-  console.log("[Signing] Signature received:", signature);
 
   return normalizeWalletSignature(hexToBytes(signature));
 }
