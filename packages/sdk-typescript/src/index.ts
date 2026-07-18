@@ -125,7 +125,19 @@ export {
   SPL_TOKEN_PROGRAM_ID,
   ATA_PROGRAM_ID,
   type DepositWithdrawIxOpts,
+  createIdempotentAtaIx,
+  syncNativeIx,
+  closeAccountIx,
 } from "./solana-ix.js";
+
+// Native-asset identities (EVM sentinel + WSOL mint) shared by the
+// deposit/withdraw UI.
+export {
+  NATIVE_TOKEN_SENTINEL,
+  isNativeToken,
+  WSOL_MINT,
+  isWsolMint,
+} from "./native.js";
 
 // Utility functions
 import type { Token } from "./types.js";

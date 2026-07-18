@@ -20,6 +20,9 @@ import {
   type TradeRequest,
   TradeRequestSchema,
   type OrderToCancel,
+  type WithdrawRequest,
+  WithdrawRequestSchema,
+  type WithdrawResponse,
 } from "./protos/arborter_pb.js";
 
 import {
@@ -237,6 +240,34 @@ export const arborterService = {
         }
       }
 
+      throw error;
+    }
+  },
+
+  /**
+   * Request a TEE-signed withdrawal voucher (Track A §8). Under the
+   * optimistic shadow ledger the chain can no longer self-judge a
+   * withdrawal — the arborter places an off-chain hold and returns a
+   * voucher the holder submits to `MidribV3.withdraw(voucher, signature)`.
+   *
+   * `params.signature` must be the withdrawer's signature over the
+   * canonical request bytes `"network|token|account|amount"` (EIP-191
+   * personal-sign on EVM, Ed25519 on Solana) — the caller signs; this
+   * function only carries the request.
+   */
+  async requestWithdrawVoucher(params: {
+    network: string;
+    token: string;
+    account: string;
+    /** Amount in token base units, as a decimal string. */
+    amount: string;
+    signature: Uint8Array;
+  }): Promise<WithdrawResponse> {
+    try {
+      const request: WithdrawRequest = create(WithdrawRequestSchema, params);
+      return await getArborterClient().withdraw(request);
+    } catch (error) {
+      console.error("[gRPC] Error requesting withdrawal voucher:", error);
       throw error;
     }
   },

@@ -185,3 +185,65 @@ export function withdrawIx(
     data: encodeAmountData("withdraw", opts.amount) as unknown as Buffer,
   });
 }
+
+// -- Native-SOL (WSOL) wrap/unwrap helpers ---------------------------------
+
+/**
+ * Idempotent "create associated token account" (ATA program discriminant 1).
+ * No-op if `ata` already exists, so it is safe to submit unconditionally.
+ * `payer` funds the rent (~0.002 SOL when actually created) and signs.
+ */
+export function createIdempotentAtaIx(
+  payer: PublicKey,
+  owner: PublicKey,
+  mint: PublicKey,
+  ata: PublicKey,
+): TransactionInstruction {
+  return new TransactionInstruction({
+    programId: ATA_PROGRAM_ID,
+    keys: [
+      { pubkey: payer, isSigner: true, isWritable: true },
+      { pubkey: ata, isSigner: false, isWritable: true },
+      { pubkey: owner, isSigner: false, isWritable: false },
+      { pubkey: mint, isSigner: false, isWritable: false },
+      { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+      { pubkey: SPL_TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
+    ],
+    data: new Uint8Array([1]) as unknown as Buffer, // CreateIdempotent
+  });
+}
+
+/**
+ * SPL Token `SyncNative` (discriminant 17): syncs a WSOL token account's
+ * recorded amount up to its lamport balance. Submit after a system transfer
+ * of lamports into the ATA to complete a wrap.
+ */
+export function syncNativeIx(ata: PublicKey): TransactionInstruction {
+  return new TransactionInstruction({
+    programId: SPL_TOKEN_PROGRAM_ID,
+    keys: [{ pubkey: ata, isSigner: false, isWritable: true }],
+    data: new Uint8Array([17]) as unknown as Buffer,
+  });
+}
+
+/**
+ * SPL Token `CloseAccount` (discriminant 9): closes `ata` and sends its
+ * ENTIRE lamport balance — wrapped SOL plus rent — to `dest`. This is the
+ * WSOL unwrap; it unwraps the account's whole balance, not just a withdrawn
+ * amount (standard wallet behavior).
+ */
+export function closeAccountIx(
+  ata: PublicKey,
+  dest: PublicKey,
+  owner: PublicKey,
+): TransactionInstruction {
+  return new TransactionInstruction({
+    programId: SPL_TOKEN_PROGRAM_ID,
+    keys: [
+      { pubkey: ata, isSigner: false, isWritable: true },
+      { pubkey: dest, isSigner: false, isWritable: true },
+      { pubkey: owner, isSigner: true, isWritable: false },
+    ],
+    data: new Uint8Array([9]) as unknown as Buffer,
+  });
+}
