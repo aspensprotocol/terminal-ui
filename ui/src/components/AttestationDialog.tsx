@@ -3,20 +3,24 @@
 /**
  * TEE attestation viewer.
  *
- * Fetches `ConfigService.GetAttestation` on open and renders the raw
- * report fields. Users care about being able to *inspect* the report
- * (mr_td, rt_mr*, report_data, etc.) and copy values for offline
- * verification — so the UI is intentionally a flat key/value list of
- * monospace hex strings rather than a curated summary.
+ * Fetches `ConfigService.GetAttestation` on open and renders the report
+ * fields (mr_td, rt_mr*, report_data, etc.) for inspection / copy.
+ *
+ * The signer returns only the authoritative `raw_quote` and leaves the proto's
+ * string measurement fields empty on purpose (design §4.6) — measurements are
+ * meant to be read from the *verified* quote body, not trusted as loose server
+ * strings. So we decode them client-side from `raw_quote` (display-only; not a
+ * verification) and fall back to any string field the server did populate.
  *
  * Lazy fetch: we don't request the report until the dialog actually
  * opens. The signer call is cheap but not free, and most users will
  * never click the link.
  */
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { AttestationReport } from "@aspens/terminal-sdk";
 import { getExchangeClient } from "@/lib/api";
+import { parseTdxQuote, type ParsedTdxQuote } from "@/lib/tdx-quote";
 import {
   Dialog,
   DialogContent,
@@ -93,6 +97,23 @@ export function AttestationDialog({
     }
   }, [open, fetchReport]);
 
+  // Decode the measurement fields from the raw TD Quote (the server leaves the
+  // string fields empty by design). Memoized on the quote bytes.
+  const parsed: ParsedTdxQuote | null = useMemo(
+    () => parseTdxQuote(report?.rawQuote),
+    [report?.rawQuote],
+  );
+
+  // Prefer any server-set string field; otherwise use the value decoded from
+  // the quote body. Keys line up between AttestationReport and ParsedTdxQuote.
+  const fieldValue = (key: keyof AttestationReport): string => {
+    const fromReport = report?.[key];
+    if (typeof fromReport === "string" && fromReport.length > 0)
+      return fromReport;
+    const fromQuote = parsed?.[key as keyof ParsedTdxQuote];
+    return typeof fromQuote === "string" ? fromQuote : "";
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl">
@@ -117,9 +138,16 @@ export function AttestationDialog({
 
         {!loading && !error && report && (
           <div className="max-h-[60vh] overflow-y-auto pr-1">
+            {parsed && (
+              <p className="text-[11px] text-muted-foreground/70 mb-2">
+                Measurements decoded from the TD Quote (v{parsed.version},{" "}
+                {report.rawQuote.length} bytes, TEE {parsed.teeType}).
+                Display-only — not a verification.
+              </p>
+            )}
             <dl className="grid grid-cols-[max-content_1fr] gap-x-3 gap-y-1.5 text-[11px] font-mono">
               {REPORT_FIELDS.map(({ key, label }) => {
-                const value = (report[key] as string | undefined) ?? "";
+                const value = fieldValue(key);
                 return (
                   <div key={key} className="contents">
                     <dt className="text-muted-foreground/80 whitespace-nowrap py-1">
