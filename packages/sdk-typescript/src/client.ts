@@ -31,13 +31,41 @@ import {
   toEnhancedTrades,
   getPairDecimals,
 } from "./adapters/index.js";
-import { Side as ProtoSide } from "./protos/arborter_pb.js";
+import {
+  Side as ProtoSide,
+  WithdrawResponseSchema,
+  type WithdrawResponse,
+} from "./protos/arborter_pb.js";
 import { createOrderMessage } from "./signing.js";
 import { fetchOnChainBalances, type WalletBinding } from "./balances.js";
 import { formatDisplayNumber } from "./decimals.js";
+import { bytesToHex } from "viem";
+import {
+  FceClient,
+  hexBytesToBytes,
+  type FceClientOptions,
+} from "./fce/index.js";
 
 export interface ExchangeClientConfig {
   grpcUrl: string;
+  /**
+   * Action transport. `"grpc"` (default) talks to arborter through Envoy.
+   * `"fce"` routes write actions (place / cancel / withdraw) through the Flare
+   * Confidential Extension ext-proxy instead — config discovery, reads, and
+   * polling streams stay on gRPC either way. Requires `fce` to be set.
+   */
+  transport?: "grpc" | "fce";
+  /** ext-proxy connection, required when `transport === "fce"`. */
+  fce?: FceClientOptions;
+}
+
+/** Build the FCE client iff the config selects the fce transport. */
+function buildFceClient(config: ExchangeClientConfig): FceClient | undefined {
+  if (config.transport !== "fce") return undefined;
+  if (!config.fce) {
+    throw new Error('ExchangeClientConfig.transport="fce" requires config.fce');
+  }
+  return new FceClient(config.fce);
 }
 
 export interface CandlesParams {
@@ -157,6 +185,7 @@ class RestClient {
   constructor(
     private config: ExchangeClientConfig,
     private cache: CacheManager,
+    private fce?: FceClient,
   ) {}
 
   async placeOrderDecimal(params: PlaceOrderParams): Promise<EnhancedOrder> {
@@ -168,6 +197,10 @@ class RestClient {
 
     const priceRaw = this.decimalToRaw(priceDecimal, pairDecimals);
     const sizeRaw = this.decimalToRaw(sizeDecimal, pairDecimals);
+
+    if (this.fce) {
+      return this.placeOrderFce(params, priceRaw, sizeRaw, pairDecimals);
+    }
 
     // Build the wire Order with the SAME builder the signing path uses
     // (`createOrderMessage`) — the envelope signature is over these
@@ -197,7 +230,74 @@ class RestClient {
     return this.responseToEnhancedOrder(response, params, pairDecimals);
   }
 
+  /**
+   * FCE variant of `placeOrderDecimal`. The ext-proxy adapter *reconstructs*
+   * the arborter Order from these scalar fields with `hidden=false` and empty
+   * `matching_order_ids` (proto3 defaults), then verifies `params.signature`
+   * against that reconstruction. So the signature the caller passed must have
+   * been produced over a `hidden=false` order — a hidden order can't round-trip
+   * this channel byte-identically, so reject it rather than fail silently
+   * downstream. `authorization` carries the id + committed amount the adapter
+   * needs and is mandatory here.
+   */
+  private async placeOrderFce(
+    params: PlaceOrderParams,
+    priceRaw: string,
+    sizeRaw: string,
+    pairDecimals: number,
+  ): Promise<EnhancedOrder> {
+    if (params.hidden) {
+      throw new Error(
+        "FCE transport does not support hidden orders (the adapter reconstructs hidden=false, breaking signature parity)",
+      );
+    }
+    if (!params.authorization) {
+      throw new Error(
+        "FCE placeOrder requires params.authorization (orderId + amountIn)",
+      );
+    }
+
+    const out = await this.fce!.placeOrder({
+      side: params.side === "buy" ? "BID" : "ASK",
+      quantity: sizeRaw,
+      price: params.orderType === "limit" ? priceRaw : undefined,
+      marketId: params.marketId,
+      baseAccountAddress: params.baseAccountAddress,
+      quoteAccountAddress: params.quoteAccountAddress,
+      postOnly: params.postOnly ? true : undefined,
+      signatureHash: bytesToHex(params.signature),
+      orderId: params.authorization.orderId,
+      amountIn: params.authorization.amountIn,
+    });
+
+    if (out.status !== 1 || !out.data) {
+      throw new Error(`FCE placeOrder failed: ${out.log}`);
+    }
+
+    // Shim the direct-action response into the gRPC response shape the
+    // enhancer expects (it reads only orderId + orderInBook).
+    const shim = {
+      orderId: BigInt(out.data.orderId),
+      orderInBook: out.data.orderInBook,
+    } as SendOrderResponse;
+    return this.responseToEnhancedOrder(shim, params, pairDecimals);
+  }
+
   async cancelOrder(params: CancelOrderParams): Promise<{ order_id: string }> {
+    if (this.fce) {
+      const out = await this.fce.cancelOrder({
+        marketId: params.marketId,
+        side: params.side === "buy" ? "BID" : "ASK",
+        tokenAddress: params.tokenAddress,
+        orderId: Number(params.orderId),
+        signatureHash: bytesToHex(params.signature),
+      });
+      if (out.status !== 1) {
+        throw new Error(`FCE cancelOrder failed: ${out.log}`);
+      }
+      return { order_id: params.orderId };
+    }
+
     const orderToCancel: OrderToCancel = create(OrderToCancelSchema, {
       marketId: params.marketId,
       side: params.side === "buy" ? ProtoSide.BID : ProtoSide.ASK,
@@ -265,6 +365,7 @@ export class ExchangeClient {
   public readonly cache: CacheManager;
   public readonly rest: RestClient;
   private config: ExchangeClientConfig;
+  private fce?: FceClient;
   private pollingIntervals: Map<string, ReturnType<typeof setInterval>> =
     new Map();
   private isConnected = false;
@@ -276,9 +377,11 @@ export class ExchangeClient {
       this.config = configOrUrl;
     }
     this.cache = new CacheManager();
-    this.rest = new RestClient(this.config, this.cache);
+    this.fce = buildFceClient(this.config);
+    this.rest = new RestClient(this.config, this.cache, this.fce);
 
-    // Set the gRPC base URL
+    // Set the gRPC base URL — config discovery and reads/polling stay on gRPC
+    // even when writes route through the FCE ext-proxy.
     setGrpcBaseUrl(this.config.grpcUrl);
     resetTransport();
   }
@@ -373,7 +476,31 @@ export class ExchangeClient {
     /** Amount in token base units, as a decimal string. */
     amount: string;
     signature: Uint8Array;
-  }) {
+  }): Promise<WithdrawResponse> {
+    if (this.fce) {
+      const out = await this.fce.withdraw({
+        network: params.network,
+        token: params.token,
+        account: params.account,
+        amount: params.amount,
+        signature: bytesToHex(params.signature),
+      });
+      if (out.status !== 1 || !out.data) {
+        throw new Error(`FCE withdraw failed: ${out.log}`);
+      }
+      const v = out.data;
+      // Re-shape the direct-action voucher into the gRPC WithdrawResponse the
+      // MidribV3.withdraw(...) caller expects (nonce/expiry widen to bigint;
+      // the TEE signature decodes from 0x-hex back to raw bytes).
+      return create(WithdrawResponseSchema, {
+        account: v.account,
+        token: v.token,
+        amount: v.amount,
+        nonce: BigInt(v.nonce),
+        expiry: BigInt(v.expiry),
+        signature: hexBytesToBytes(v.signature),
+      });
+    }
     return arborterService.requestWithdrawVoucher(params);
   }
 

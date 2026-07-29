@@ -42,6 +42,37 @@ export {
   resetTransport,
 } from "./grpc-transport.js";
 
+// FCE (Flare Confidential Extension) direct-action transport. Opt in via
+// `new ExchangeClient({ grpcUrl, transport: "fce", fce: { proxyUrl, apiKey } })`;
+// the low-level `FceClient` is exported for advanced/standalone use.
+export {
+  FceClient,
+  type FceClientOptions,
+  type Outcome,
+  OP_TYPE_ASPENS,
+  OP_COMMAND,
+  type OpCommand,
+  toBytes32,
+  toBytes32Hex,
+  buildDirectInstruction,
+  type DirectInstruction,
+  type PlaceOrderRequest,
+  type PlaceOrderResponse,
+  type CancelOrderRequest,
+  type CancelOrderResponse,
+  type WithdrawRequest as FceWithdrawRequest,
+  type WithdrawVoucher,
+  type GetMyStateRequest,
+  type GetMyStateResponse,
+  type OpenOrder,
+  type GetBookStateRequest,
+  type GetBookStateResponse,
+  type BookLevel,
+  type ExportHistoryRequest,
+  type ExportHistoryResponse,
+  type TradeRecord,
+} from "./fce/index.js";
+
 // Re-export the protobuf-generated Configuration type so consumers
 // (e.g. the terminal-ui Zustand store mirror) can hold it without
 // reaching into `./protos/...` paths that aren't part of the public
