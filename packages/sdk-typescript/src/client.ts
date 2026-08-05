@@ -45,6 +45,9 @@ import {
   hexBytesToBytes,
   type FceClientOptions,
   decodeConfigEnvelope,
+  fceBookToEnhanced,
+  fceOpenOrdersToEnhanced,
+  fceTradesToEnhanced,
 } from "./fce/index.js";
 
 export interface ExchangeClientConfig {
@@ -592,6 +595,18 @@ export class ExchangeClient {
 
     try {
       const pairDecimals = this.cache.getPairDecimals(marketId);
+      if (this.fce) {
+        const out = await this.fce.getMyState({ marketId, trader: userAddress });
+        if (out.status !== 1 || !out.data) {
+          throw new Error(`GET_MY_STATE failed: ${out.log || "no data"}`);
+        }
+        return fceOpenOrdersToEnhanced(
+          out.data,
+          marketId,
+          userAddress,
+          pairDecimals,
+        );
+      }
       const entries = await arborterService.getOrderbook(
         marketId,
         false,
@@ -644,6 +659,16 @@ export class ExchangeClient {
 
     try {
       const pairDecimals = this.cache.getPairDecimals(marketId);
+      if (this.fce) {
+        const out = await this.fce.exportHistory({
+          marketId,
+          trader: userAddress,
+        });
+        if (out.status !== 1 || !out.data) {
+          throw new Error(`EXPORT_HISTORY failed: ${out.log || "no data"}`);
+        }
+        return fceTradesToEnhanced(out.data, marketId, pairDecimals);
+      }
       const trades = await arborterService.getTrades(
         marketId,
         false,
@@ -672,8 +697,17 @@ export class ExchangeClient {
     const poll = async () => {
       try {
         const pairDecimals = this.cache.getPairDecimals(marketId);
-        const trades = await arborterService.getTrades(marketId, false, true);
-        const enhancedTrades = toEnhancedTrades(trades, marketId, pairDecimals);
+        let enhancedTrades: EnhancedTrade[];
+        if (this.fce) {
+          const out = await this.fce.exportHistory({ marketId, trader: "" });
+          enhancedTrades =
+            out.status === 1 && out.data
+              ? fceTradesToEnhanced(out.data, marketId, pairDecimals)
+              : [];
+        } else {
+          const trades = await arborterService.getTrades(marketId, false, true);
+          enhancedTrades = toEnhancedTrades(trades, marketId, pairDecimals);
+        }
 
         for (const trade of enhancedTrades) {
           const tradeTimestamp = BigInt(new Date(trade.timestamp).getTime());
@@ -690,8 +724,9 @@ export class ExchangeClient {
     // Initial poll
     poll();
 
-    // Set up polling interval (5 seconds)
-    const interval = setInterval(poll, 5000);
+    // Every FCE read is a submit plus a poll cycle, so it cannot sustain the
+    // gRPC cadence — a 5s trades poll against that would queue behind itself.
+    const interval = setInterval(poll, this.fce ? 10000 : 5000);
     this.pollingIntervals.set(key, interval);
 
     return () => {
@@ -715,6 +750,14 @@ export class ExchangeClient {
     const poll = async () => {
       try {
         const pairDecimals = this.cache.getPairDecimals(marketId);
+        if (this.fce) {
+          const out = await this.fce.getBookState({ marketId, depth: 0 });
+          if (out.status !== 1 || !out.data) {
+            throw new Error(`GET_BOOK_STATE failed: ${out.log || "no data"}`);
+          }
+          callback(fceBookToEnhanced(out.data, pairDecimals));
+          return;
+        }
         const entries = await arborterService.getOrderbook(
           marketId,
           false,
@@ -732,8 +775,8 @@ export class ExchangeClient {
     // Initial poll
     poll();
 
-    // Set up polling interval (3 seconds for orderbook)
-    const interval = setInterval(poll, 3000);
+    // As above: 3s is far inside one FCE round trip.
+    const interval = setInterval(poll, this.fce ? 6000 : 3000);
     this.pollingIntervals.set(key, interval);
 
     return () => {

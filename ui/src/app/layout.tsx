@@ -24,6 +24,10 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  // Server Component: `EXT_PROXY_URL` is read here and NEVER forwarded. Only
+  // the boolean crosses into the client tree — the URL and `DIRECT_API_KEY`
+  // stay server-side, reachable solely through the /fce-proxy relay.
+  const fceEnabled = Boolean(process.env.EXT_PROXY_URL);
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -35,7 +39,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.className} ${geistMono.className} font-sans antialiased`}
       >
-        <Providers>{children}</Providers>
+        <Providers fceEnabled={fceEnabled}>{children}</Providers>
         <Toaster richColors position="bottom-right" />
       </body>
     </html>
