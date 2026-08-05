@@ -14,6 +14,22 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+/**
+ * The root layout reads `EXT_PROXY_URL` at REQUEST time, so it must not be
+ * prerendered.
+ *
+ * Without this the shell is statically generated at BUILD time, when the var
+ * does not exist, and `fceEnabled: false` is baked into the RSC payload —
+ * shipping a UI that ignores its own runtime configuration and calls arborter
+ * gRPC anyway. That is the same build-time-env footgun `next.config.ts`
+ * documents for the envoy upstream, and it fails SILENTLY: the page renders,
+ * and only the data calls fail.
+ *
+ * Cost is nil here — this is a live trading terminal whose every view is
+ * request-scoped, so there was no meaningful static shell to keep.
+ */
+export const dynamic = "force-dynamic";
+
 export const metadata = {
   title: "Aspens",
   description: "Trading exchange application",
