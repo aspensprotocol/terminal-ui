@@ -36,7 +36,11 @@ export function getExchangeClient(fceEnabled = false): ExchangeClient {
       ? new ExchangeClient({
           grpcUrl,
           transport: "fce",
-          fce: { proxyUrl: "/fce-proxy", pollIntervalMs: 500, pollAttempts: 60 },
+          fce: {
+            proxyUrl: "/fce-proxy",
+            pollIntervalMs: 500,
+            pollAttempts: 60,
+          },
         })
       : new ExchangeClient({ grpcUrl });
   }

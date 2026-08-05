@@ -596,7 +596,10 @@ export class ExchangeClient {
     try {
       const pairDecimals = this.cache.getPairDecimals(marketId);
       if (this.fce) {
-        const out = await this.fce.getMyState({ marketId, trader: userAddress });
+        const out = await this.fce.getMyState({
+          marketId,
+          trader: userAddress,
+        });
         if (out.status !== 1 || !out.data) {
           throw new Error(`GET_MY_STATE failed: ${out.log || "no data"}`);
         }
