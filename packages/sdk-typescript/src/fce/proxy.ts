@@ -27,6 +27,7 @@ import type {
   WithdrawRequest,
   WithdrawVoucher,
 } from "./payloads.js";
+import type { GetConfigEnvelope } from "./config.js";
 
 export interface FceClientOptions {
   /** ext-proxy EXTERNAL endpoint (host :6674, i.e. EXT_PROXY_URL). */
@@ -101,6 +102,15 @@ export class FceClient {
     req: ExportHistoryRequest,
   ): Promise<Outcome<ExportHistoryResponse>> {
     return this.action(OP_COMMAND.EXPORT_HISTORY, req);
+  }
+
+  /**
+   * Config discovery over FCE — the arborter's `GetConfigResponse` as opaque
+   * protobuf bytes. Lets a client build signed orders with no arborter gRPC
+   * reachability at all. Decode with `decodeConfigEnvelope`.
+   */
+  getConfig(): Promise<Outcome<GetConfigEnvelope>> {
+    return this.action(OP_COMMAND.GET_CONFIG, {});
   }
 
   // ---- generic action = submit + poll + decode ----

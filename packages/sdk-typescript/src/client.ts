@@ -44,6 +44,10 @@ import {
   FceClient,
   hexBytesToBytes,
   type FceClientOptions,
+  decodeConfigEnvelope,
+  fceBookToEnhanced,
+  fceOpenOrdersToEnhanced,
+  fceTradesToEnhanced,
 } from "./fce/index.js";
 
 export interface ExchangeClientConfig {
@@ -380,8 +384,9 @@ export class ExchangeClient {
     this.fce = buildFceClient(this.config);
     this.rest = new RestClient(this.config, this.cache, this.fce);
 
-    // Set the gRPC base URL — config discovery and reads/polling stay on gRPC
-    // even when writes route through the FCE ext-proxy.
+    // Set the gRPC base URL. Config discovery routes over FCE when an ext-proxy
+    // is configured (see `fetchConfiguration`); reads/polling still use gRPC, so
+    // this is set regardless and is simply unused on the FCE-only path.
     setGrpcBaseUrl(this.config.grpcUrl);
     resetTransport();
   }
@@ -391,15 +396,47 @@ export class ExchangeClient {
   // ============================================================================
 
   /**
-   * Get all available markets from gRPC backend
-   * Falls back to stub data if backend is unavailable
+   * Fetch the arborter configuration, over FCE when an ext-proxy is configured
+   * and over gRPC otherwise.
+   *
+   * Config discovery is what makes an FCE-only client possible: building a
+   * signed order needs the market's pair decimals and the base/quote chains'
+   * curves, and before `GET_CONFIG` existed those came only from arborter gRPC
+   * — so a client could place writes through the proxy but could not learn what
+   * to write. Mirrors `AspensClient::fetch_config` in the Rust SDK.
+   *
+   * Returns `null` on failure so the existing stub-data fallbacks are unchanged.
+   */
+  private async fetchConfiguration(): Promise<Configuration | null> {
+    if (this.fce) {
+      const cached = this.cache.getConfig();
+      // Each /direct action costs a submit plus a poll cycle, and getMarkets +
+      // getTokens are normally called back to back. Reuse the cached config
+      // rather than paying that twice on startup.
+      if (cached) return cached;
+
+      const out = await this.fce.getConfig();
+      if (out.status !== 1 || !out.data) {
+        throw new Error(
+          `GET_CONFIG failed over FCE: ${out.log || "no data returned"}`,
+        );
+      }
+      return decodeConfigEnvelope(out.data);
+    }
+    const response = await configService.getConfig();
+    return response.config ?? null;
+  }
+
+  /**
+   * Get all available markets from the arborter (FCE or gRPC).
+   * Falls back to stub data if the backend is unavailable.
    */
   async getMarkets(): Promise<Market[]> {
     try {
-      const response = await configService.getConfig();
-      if (response.config && response.config.markets.length > 0) {
-        this.cache.setConfig(response.config);
-        const markets = toMarkets(response.config);
+      const config = await this.fetchConfiguration();
+      if (config && config.markets.length > 0) {
+        this.cache.setConfig(config);
+        const markets = toMarkets(config);
         this.cache.setMarkets(markets);
         return markets;
       }
@@ -422,10 +459,10 @@ export class ExchangeClient {
    */
   async getTokens(): Promise<Token[]> {
     try {
-      const response = await configService.getConfig();
-      if (response.config && response.config.chains.length > 0) {
-        this.cache.setConfig(response.config);
-        const tokens = toTokens(response.config);
+      const config = await this.fetchConfiguration();
+      if (config && config.chains.length > 0) {
+        this.cache.setConfig(config);
+        const tokens = toTokens(config);
         this.cache.setTokens(tokens);
         return tokens;
       }
@@ -558,6 +595,21 @@ export class ExchangeClient {
 
     try {
       const pairDecimals = this.cache.getPairDecimals(marketId);
+      if (this.fce) {
+        const out = await this.fce.getMyState({
+          marketId,
+          trader: userAddress,
+        });
+        if (out.status !== 1 || !out.data) {
+          throw new Error(`GET_MY_STATE failed: ${out.log || "no data"}`);
+        }
+        return fceOpenOrdersToEnhanced(
+          out.data,
+          marketId,
+          userAddress,
+          pairDecimals,
+        );
+      }
       const entries = await arborterService.getOrderbook(
         marketId,
         false,
@@ -610,6 +662,16 @@ export class ExchangeClient {
 
     try {
       const pairDecimals = this.cache.getPairDecimals(marketId);
+      if (this.fce) {
+        const out = await this.fce.exportHistory({
+          marketId,
+          trader: userAddress,
+        });
+        if (out.status !== 1 || !out.data) {
+          throw new Error(`EXPORT_HISTORY failed: ${out.log || "no data"}`);
+        }
+        return fceTradesToEnhanced(out.data, marketId, pairDecimals);
+      }
       const trades = await arborterService.getTrades(
         marketId,
         false,
@@ -638,8 +700,17 @@ export class ExchangeClient {
     const poll = async () => {
       try {
         const pairDecimals = this.cache.getPairDecimals(marketId);
-        const trades = await arborterService.getTrades(marketId, false, true);
-        const enhancedTrades = toEnhancedTrades(trades, marketId, pairDecimals);
+        let enhancedTrades: EnhancedTrade[];
+        if (this.fce) {
+          const out = await this.fce.exportHistory({ marketId, trader: "" });
+          enhancedTrades =
+            out.status === 1 && out.data
+              ? fceTradesToEnhanced(out.data, marketId, pairDecimals)
+              : [];
+        } else {
+          const trades = await arborterService.getTrades(marketId, false, true);
+          enhancedTrades = toEnhancedTrades(trades, marketId, pairDecimals);
+        }
 
         for (const trade of enhancedTrades) {
           const tradeTimestamp = BigInt(new Date(trade.timestamp).getTime());
@@ -656,8 +727,9 @@ export class ExchangeClient {
     // Initial poll
     poll();
 
-    // Set up polling interval (5 seconds)
-    const interval = setInterval(poll, 5000);
+    // Every FCE read is a submit plus a poll cycle, so it cannot sustain the
+    // gRPC cadence — a 5s trades poll against that would queue behind itself.
+    const interval = setInterval(poll, this.fce ? 10000 : 5000);
     this.pollingIntervals.set(key, interval);
 
     return () => {
@@ -681,6 +753,14 @@ export class ExchangeClient {
     const poll = async () => {
       try {
         const pairDecimals = this.cache.getPairDecimals(marketId);
+        if (this.fce) {
+          const out = await this.fce.getBookState({ marketId, depth: 0 });
+          if (out.status !== 1 || !out.data) {
+            throw new Error(`GET_BOOK_STATE failed: ${out.log || "no data"}`);
+          }
+          callback(fceBookToEnhanced(out.data, pairDecimals));
+          return;
+        }
         const entries = await arborterService.getOrderbook(
           marketId,
           false,
@@ -698,8 +778,8 @@ export class ExchangeClient {
     // Initial poll
     poll();
 
-    // Set up polling interval (3 seconds for orderbook)
-    const interval = setInterval(poll, 3000);
+    // As above: 3s is far inside one FCE round trip.
+    const interval = setInterval(poll, this.fce ? 6000 : 3000);
     this.pollingIntervals.set(key, interval);
 
     return () => {

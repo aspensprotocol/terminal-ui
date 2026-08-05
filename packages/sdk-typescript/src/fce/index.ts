@@ -20,6 +20,16 @@ export {
   hexJsonToObject,
   type DirectInstruction,
 } from "./wire.js";
+export {
+  fceBookToEnhanced,
+  fceOpenOrdersToEnhanced,
+  fceTradesToEnhanced,
+} from "./reads.js";
+export {
+  decodeConfigEnvelope,
+  type GetConfigEnvelope,
+  type GetConfigRequest,
+} from "./config.js";
 export type {
   PlaceOrderRequest,
   PlaceOrderResponse,

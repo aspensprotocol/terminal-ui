@@ -5,8 +5,15 @@ import { ThemeProvider } from "./theme-provider";
 import { WagmiProvider } from "./wagmi-provider";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { useExchangeStore } from "@/lib/store";
+import { FceProvider } from "./fce-context";
 
-export function Providers({ children }: { children: React.ReactNode }) {
+export function Providers({
+  children,
+  fceEnabled = false,
+}: {
+  children: React.ReactNode;
+  fceEnabled?: boolean;
+}) {
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [minTimeElapsed, setMinTimeElapsed] = useState(false);
   const markets = useExchangeStore((state) => state.markets);
@@ -43,7 +50,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
       disableTransitionOnChange
     >
       <LoadingScreen isLoading={isInitialLoad} />
-      <WagmiProvider>{children}</WagmiProvider>
+      <FceProvider enabled={fceEnabled}>
+        <WagmiProvider>{children}</WagmiProvider>
+      </FceProvider>
     </ThemeProvider>
   );
 }

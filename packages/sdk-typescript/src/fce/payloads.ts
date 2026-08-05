@@ -109,9 +109,23 @@ export interface ExportHistoryRequest {
 export interface ExportHistoryResponse {
   trades: TradeRecord[];
 }
+/**
+ * Mirrors the adapter's `types.TradeRecord`. The role and address fields are
+ * NOT derivable client-side: without `buyerIs`/`sellerIs` there is no way to
+ * tell a buy from a sell, and without the addresses no way to attribute a fill
+ * to a user. A hidden side arrives already redacted (empty addresses) — keep it
+ * empty rather than substituting the visible side's.
+ */
 export interface TradeRecord {
   timestamp: number;
   price: string;
   quantity: string;
   orderHit: number;
+  /** "MAKER" | "TAKER" | "" — "" when the arborter left the role unset. */
+  buyerIs: string;
+  sellerIs: string;
+  makerBaseAddress: string;
+  makerQuoteAddress: string;
+  takerBaseAddress: string;
+  takerQuoteAddress: string;
 }
