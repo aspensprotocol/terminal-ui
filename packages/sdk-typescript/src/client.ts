@@ -44,6 +44,7 @@ import {
   FceClient,
   hexBytesToBytes,
   type FceClientOptions,
+  decodeConfigEnvelope,
 } from "./fce/index.js";
 
 export interface ExchangeClientConfig {
@@ -380,8 +381,9 @@ export class ExchangeClient {
     this.fce = buildFceClient(this.config);
     this.rest = new RestClient(this.config, this.cache, this.fce);
 
-    // Set the gRPC base URL — config discovery and reads/polling stay on gRPC
-    // even when writes route through the FCE ext-proxy.
+    // Set the gRPC base URL. Config discovery routes over FCE when an ext-proxy
+    // is configured (see `fetchConfiguration`); reads/polling still use gRPC, so
+    // this is set regardless and is simply unused on the FCE-only path.
     setGrpcBaseUrl(this.config.grpcUrl);
     resetTransport();
   }
@@ -391,15 +393,47 @@ export class ExchangeClient {
   // ============================================================================
 
   /**
-   * Get all available markets from gRPC backend
-   * Falls back to stub data if backend is unavailable
+   * Fetch the arborter configuration, over FCE when an ext-proxy is configured
+   * and over gRPC otherwise.
+   *
+   * Config discovery is what makes an FCE-only client possible: building a
+   * signed order needs the market's pair decimals and the base/quote chains'
+   * curves, and before `GET_CONFIG` existed those came only from arborter gRPC
+   * — so a client could place writes through the proxy but could not learn what
+   * to write. Mirrors `AspensClient::fetch_config` in the Rust SDK.
+   *
+   * Returns `null` on failure so the existing stub-data fallbacks are unchanged.
+   */
+  private async fetchConfiguration(): Promise<Configuration | null> {
+    if (this.fce) {
+      const cached = this.cache.getConfig();
+      // Each /direct action costs a submit plus a poll cycle, and getMarkets +
+      // getTokens are normally called back to back. Reuse the cached config
+      // rather than paying that twice on startup.
+      if (cached) return cached;
+
+      const out = await this.fce.getConfig();
+      if (out.status !== 1 || !out.data) {
+        throw new Error(
+          `GET_CONFIG failed over FCE: ${out.log || "no data returned"}`,
+        );
+      }
+      return decodeConfigEnvelope(out.data);
+    }
+    const response = await configService.getConfig();
+    return response.config ?? null;
+  }
+
+  /**
+   * Get all available markets from the arborter (FCE or gRPC).
+   * Falls back to stub data if the backend is unavailable.
    */
   async getMarkets(): Promise<Market[]> {
     try {
-      const response = await configService.getConfig();
-      if (response.config && response.config.markets.length > 0) {
-        this.cache.setConfig(response.config);
-        const markets = toMarkets(response.config);
+      const config = await this.fetchConfiguration();
+      if (config && config.markets.length > 0) {
+        this.cache.setConfig(config);
+        const markets = toMarkets(config);
         this.cache.setMarkets(markets);
         return markets;
       }
@@ -422,10 +456,10 @@ export class ExchangeClient {
    */
   async getTokens(): Promise<Token[]> {
     try {
-      const response = await configService.getConfig();
-      if (response.config && response.config.chains.length > 0) {
-        this.cache.setConfig(response.config);
-        const tokens = toTokens(response.config);
+      const config = await this.fetchConfiguration();
+      if (config && config.chains.length > 0) {
+        this.cache.setConfig(config);
+        const tokens = toTokens(config);
         this.cache.setTokens(tokens);
         return tokens;
       }

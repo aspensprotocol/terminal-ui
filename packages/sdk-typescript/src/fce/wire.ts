@@ -26,6 +26,12 @@ export const OP_COMMAND = {
   GET_MY_STATE: "GET_MY_STATE",
   GET_BOOK_STATE: "GET_BOOK_STATE",
   EXPORT_HISTORY: "EXPORT_HISTORY",
+  /**
+   * Config discovery over FCE. Without it a client can read but not WRITE:
+   * building a signed order needs the market's pair decimals and the
+   * base/quote chains' curves, which live only in the arborter config.
+   */
+  GET_CONFIG: "GET_CONFIG",
 } as const;
 export type OpCommand = (typeof OP_COMMAND)[keyof typeof OP_COMMAND];
 

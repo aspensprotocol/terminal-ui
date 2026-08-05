@@ -88,3 +88,18 @@ describe("hexutil.Bytes decoding", () => {
     expect(hexJsonToObject(hex)).toEqual(obj);
   });
 });
+
+describe("GET_CONFIG (config discovery over FCE)", () => {
+  test("golden vector matches the Rust SDK and the Go adapter", () => {
+    // G=47 E=45 T=54 _=5f C=43 O=4f N=4e F=46 I=49 G=47 — 10 content bytes,
+    // right-zero-padded to 32. Must equal the Go adapter's
+    // teeutils.ToHash("GET_CONFIG") and the Rust OP_GET_CONFIG.
+    expect(toBytes32Hex(OP_COMMAND.GET_CONFIG)).toBe(
+      "0x4745545f434f4e46494700000000000000000000000000000000000000000000",
+    );
+  });
+
+  test("is part of OP_COMMAND", () => {
+    expect(OP_COMMAND.GET_CONFIG).toBe("GET_CONFIG");
+  });
+});
