@@ -1,6 +1,7 @@
 import "@/styles/globals.css";
 import { Geist, Geist_Mono } from "next/font/google";
 import Script from "next/script";
+import { parseRpcUrlMap } from "@aspens/terminal-sdk";
 import { Providers } from "@/lib/providers";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -44,6 +45,11 @@ export default function RootLayout({
   // the boolean crosses into the client tree — the URL and `DIRECT_API_KEY`
   // stay server-side, reachable solely through the /fce-proxy relay.
   const fceEnabled = Boolean(process.env.EXT_PROXY_URL);
+  // `CHAIN_RPC_URLS` DOES cross into the client tree, deliberately: the
+  // browser reads token/trade-contract balances directly and the arborter
+  // masks `rpc_url` in GetConfig, so without this every balance is skipped.
+  // Public endpoints only — see `lib/providers/rpc-context.tsx`.
+  const rpcUrls = parseRpcUrlMap(process.env.CHAIN_RPC_URLS);
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -55,7 +61,9 @@ export default function RootLayout({
       <body
         className={`${geistSans.className} ${geistMono.className} font-sans antialiased`}
       >
-        <Providers fceEnabled={fceEnabled}>{children}</Providers>
+        <Providers fceEnabled={fceEnabled} rpcUrls={rpcUrls}>
+          {children}
+        </Providers>
         <Toaster richColors position="bottom-right" />
       </body>
     </html>

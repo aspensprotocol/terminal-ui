@@ -45,12 +45,36 @@ import {
   isNativeToken,
   isWsolMint,
   bytesToHex,
+  resolveRpcUrl,
+  type RpcUrlMap,
+  type RpcResolvableChain,
 } from "@aspens/terminal-sdk";
 import { toast } from "sonner";
 
 import { getWagmiConfig } from "@/lib/web3modal-config";
 import { getSolanaWalletContext } from "@/lib/wallet/solana-adapter";
 import { useExchangeClient } from "./useExchangeClient";
+import { useRpcUrls } from "../providers/rpc-context";
+
+/**
+ * Endpoint for a Solana chain's own RPC calls. The EVM paths go through
+ * wagmi (the wallet supplies the transport), but Solana builds its own
+ * `Connection`, so it hits the same masked-`rpc_url` problem the balances
+ * panel does — see `rpc-urls.ts` in the SDK.
+ */
+function resolveSolanaRpcUrl(
+  chain: RpcResolvableChain,
+  rpcUrls: RpcUrlMap,
+): string {
+  const url = resolveRpcUrl(chain, rpcUrls);
+  if (!url) {
+    throw new Error(
+      `No RPC endpoint configured for '${chain.network}'. The arborter masks ` +
+        `rpc_url in GetConfig — set CHAIN_RPC_URLS for this deployment.`,
+    );
+  }
+  return url;
+}
 
 const ERC20_ABI = parseAbi([
   "function allowance(address owner, address spender) view returns (uint256)",
@@ -142,6 +166,7 @@ async function submitSolanaIxs(opts: {
 
 export function useDepositWithdraw(): UseDepositWithdrawResult {
   const client = useExchangeClient();
+  const rpcUrls = useRpcUrls();
   const [pending, setPending] = useState(false);
 
   const resolveChainAndToken = useCallback(
@@ -179,7 +204,7 @@ export function useDepositWithdraw(): UseDepositWithdrawResult {
         if (chain.architecture.match(/^solana$/i)) {
           const wrapSol = isWsolMint(token.address);
           await submitSolanaIxs({
-            chainRpcUrl: chain.rpcUrl,
+            chainRpcUrl: resolveSolanaRpcUrl(chain, rpcUrls),
             // For Solana: `factory_address` is the program id, and
             // `trade_contract.address` is the instance PDA. Both are
             // required to build deposit_ix.
@@ -285,7 +310,7 @@ export function useDepositWithdraw(): UseDepositWithdrawResult {
         setPending(false);
       }
     },
-    [resolveChainAndToken],
+    [resolveChainAndToken, rpcUrls],
   );
 
   const withdraw = useCallback(
@@ -300,7 +325,7 @@ export function useDepositWithdraw(): UseDepositWithdrawResult {
         if (chain.architecture.match(/^solana$/i)) {
           const unwrapSol = isWsolMint(token.address);
           await submitSolanaIxs({
-            chainRpcUrl: chain.rpcUrl,
+            chainRpcUrl: resolveSolanaRpcUrl(chain, rpcUrls),
             programIdStr:
               chain.factoryAddress || chain.tradeContract?.contractId || "",
             instanceStr: midrib,
@@ -388,7 +413,7 @@ export function useDepositWithdraw(): UseDepositWithdrawResult {
         setPending(false);
       }
     },
-    [client, resolveChainAndToken],
+    [client, resolveChainAndToken, rpcUrls],
   );
 
   return { deposit, withdraw, pending };

@@ -25,6 +25,7 @@ import { Connection, PublicKey } from "@solana/web3.js";
 
 import type { Configuration } from "./protos/arborter_config_pb.js";
 import type { EnhancedBalance } from "./types.js";
+import { resolveRpcUrl, type RpcUrlMap } from "./rpc-urls.js";
 
 /** SPL Token program id — well-known constant. */
 const SPL_TOKEN_PROGRAM_ID = new PublicKey(
@@ -73,31 +74,55 @@ export interface ChainBalanceSlice {
 export async function fetchOnChainBalances(opts: {
   wallets: WalletBinding[];
   config: Configuration;
+  rpcUrls?: RpcUrlMap;
 }): Promise<EnhancedBalance[]> {
   const slices = await fetchChainBalanceSlices(opts);
   return aggregateSlicesToEnhancedBalances(slices, opts.wallets);
 }
 
-/** Same as `fetchOnChainBalances` but without the per-ticker aggregation. */
+/**
+ * Same as `fetchOnChainBalances` but without the per-ticker aggregation.
+ *
+ * `rpcUrls` maps `chain.network` to an endpoint the browser can dial. It is
+ * required in practice: the arborter masks `rpc_url` in `GetConfig`, so a
+ * chain with no override has no reachable endpoint. Such chains are SKIPPED
+ * with a console warning rather than contributing silent zeros — see
+ * `rpc-urls.ts`.
+ */
 export async function fetchChainBalanceSlices(opts: {
   wallets: WalletBinding[];
   config: Configuration;
+  rpcUrls?: RpcUrlMap;
 }): Promise<ChainBalanceSlice[]> {
   const walletByEcosystem = new Map<string, WalletBinding>();
   for (const w of opts.wallets) walletByEcosystem.set(w.ecosystem, w);
 
   const tasks: Promise<ChainBalanceSlice[]>[] = [];
+  const unreachable: string[] = [];
   for (const chain of opts.config.chains) {
     const arch = chain.architecture.toLowerCase();
     if (arch !== "evm" && arch !== "solana") continue;
     const wallet = walletByEcosystem.get(arch);
     if (!wallet) continue;
 
-    if (arch === "evm") {
-      tasks.push(fetchEvmChainSlices(chain, wallet.address));
-    } else {
-      tasks.push(fetchSolanaChainSlices(chain, wallet.address));
+    const rpcUrl = resolveRpcUrl(chain, opts.rpcUrls);
+    if (!rpcUrl) {
+      unreachable.push(chain.network);
+      continue;
     }
+
+    if (arch === "evm") {
+      tasks.push(fetchEvmChainSlices(chain, wallet.address, rpcUrl));
+    } else {
+      tasks.push(fetchSolanaChainSlices(chain, wallet.address, rpcUrl));
+    }
+  }
+  if (unreachable.length > 0) {
+    console.warn(
+      `[balances] no usable RPC endpoint for ${unreachable.join(", ")} — ` +
+        `balances for these chains are OMITTED, not zero. The arborter masks ` +
+        `rpc_url in GetConfig; supply an endpoint per chain (CHAIN_RPC_URLS).`,
+    );
   }
   const results = await Promise.all(tasks);
   return results.flat();
@@ -108,10 +133,19 @@ export async function fetchWalletBalance(opts: {
   chain: ChainConfig;
   tokenAddress: string;
   user: string;
+  /** Overrides the (masked) `chain.rpcUrl`; see `rpc-urls.ts`. */
+  rpcUrls?: RpcUrlMap;
 }): Promise<bigint> {
   const arch = opts.chain.architecture.toLowerCase();
+  const rpcUrl = resolveRpcUrl(opts.chain, opts.rpcUrls);
+  if (!rpcUrl) {
+    throw new Error(
+      `no usable RPC endpoint for chain '${opts.chain.network}' ` +
+        `(GetConfig masks rpc_url — supply one via CHAIN_RPC_URLS)`,
+    );
+  }
   if (arch === "evm") {
-    const client = createPublicClient({ transport: http(opts.chain.rpcUrl) });
+    const client = createPublicClient({ transport: http(rpcUrl) });
     const raw = await client.readContract({
       address: getAddress(opts.tokenAddress),
       abi: ERC20_ABI,
@@ -121,7 +155,7 @@ export async function fetchWalletBalance(opts: {
     return raw;
   }
   if (arch === "solana") {
-    const conn = new Connection(opts.chain.rpcUrl);
+    const conn = new Connection(rpcUrl);
     const mint = new PublicKey(opts.tokenAddress);
     const owner = new PublicKey(opts.user);
     const ata = deriveAssociatedTokenAccount(owner, mint);
@@ -144,8 +178,9 @@ type ChainConfig = Configuration["chains"][number];
 async function fetchEvmChainSlices(
   chain: ChainConfig,
   userAddress: string,
+  rpcUrl: string,
 ): Promise<ChainBalanceSlice[]> {
-  const client = createPublicClient({ transport: http(chain.rpcUrl) });
+  const client = createPublicClient({ transport: http(rpcUrl) });
   const user = getAddress(userAddress);
   const midrib = chain.tradeContract?.address
     ? getAddress(chain.tradeContract.address)
@@ -207,8 +242,9 @@ async function fetchEvmChainSlices(
 async function fetchSolanaChainSlices(
   chain: ChainConfig,
   userAddress: string,
+  rpcUrl: string,
 ): Promise<ChainBalanceSlice[]> {
-  const conn = new Connection(chain.rpcUrl);
+  const conn = new Connection(rpcUrl);
   const owner = new PublicKey(userAddress);
 
   // Program id + instance PDA for the Midrib trade program on this chain.
