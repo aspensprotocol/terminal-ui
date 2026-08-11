@@ -6,13 +6,17 @@ import { WagmiProvider } from "./wagmi-provider";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { useExchangeStore } from "@/lib/store";
 import { FceProvider } from "./fce-context";
+import { RpcUrlsProvider } from "./rpc-context";
+import type { RpcUrlMap } from "@aspens/terminal-sdk";
 
 export function Providers({
   children,
   fceEnabled = false,
+  rpcUrls = {},
 }: {
   children: React.ReactNode;
   fceEnabled?: boolean;
+  rpcUrls?: RpcUrlMap;
 }) {
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [minTimeElapsed, setMinTimeElapsed] = useState(false);
@@ -51,7 +55,9 @@ export function Providers({
     >
       <LoadingScreen isLoading={isInitialLoad} />
       <FceProvider enabled={fceEnabled}>
-        <WagmiProvider>{children}</WagmiProvider>
+        <RpcUrlsProvider rpcUrls={rpcUrls}>
+          <WagmiProvider>{children}</WagmiProvider>
+        </RpcUrlsProvider>
       </FceProvider>
     </ThemeProvider>
   );

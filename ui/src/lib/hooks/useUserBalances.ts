@@ -22,12 +22,14 @@ import {
 } from "@aspens/terminal-sdk";
 import { useExchangeStore } from "../store";
 import { useExchangeClient } from "./useExchangeClient";
+import { useRpcUrls } from "../providers/rpc-context";
 
 /** How often to re-fetch balances from RPC. Cheap enough at room temperature. */
 const BALANCE_POLL_INTERVAL_MS = 15_000;
 
 export function useUserBalances() {
   const client = useExchangeClient();
+  const rpcUrls = useRpcUrls();
   const isAuthenticated = useExchangeStore((state) => state.isAuthenticated);
   const setBalances = useExchangeStore((state) => state.setBalances);
   const setChainBalanceSlices = useExchangeStore(
@@ -56,6 +58,15 @@ export function useUserBalances() {
     [wallets],
   );
 
+  const rpcUrlsKey = useMemo(
+    () =>
+      Object.entries(rpcUrls)
+        .map(([network, url]) => `${network}=${url}`)
+        .sort()
+        .join("|"),
+    [rpcUrls],
+  );
+
   const balances = useMemo(
     () => Object.values(balancesRecord),
     [balancesRecord],
@@ -73,7 +84,11 @@ export function useUserBalances() {
       const config = client.cache.getConfig();
       if (!config) return;
       try {
-        const slices = await fetchChainBalanceSlices({ wallets, config });
+        const slices = await fetchChainBalanceSlices({
+          wallets,
+          config,
+          rpcUrls,
+        });
         if (cancelled) return;
         setChainBalanceSlices(slices);
         setBalances(aggregateSlicesByTicker(slices));
@@ -90,8 +105,17 @@ export function useUserBalances() {
     };
     // walletKey captures the meaningful identity of `wallets`; adding
     // the array itself would re-run every render because of .map().
+    // rpcUrlsKey does the same for the endpoint map, which is a fresh
+    // object whenever the server component re-renders.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, walletKey, client, setBalances, setChainBalanceSlices]);
+  }, [
+    isAuthenticated,
+    walletKey,
+    rpcUrlsKey,
+    client,
+    setBalances,
+    setChainBalanceSlices,
+  ]);
 
   return balances;
 }

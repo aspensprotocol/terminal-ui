@@ -144,6 +144,17 @@ export {
   type ChainBalanceSlice,
 } from "./balances.js";
 
+// RPC endpoint resolution. `GetConfig` masks every chain's `rpc_url`, so
+// browser-side chain reads need endpoints supplied by the host application.
+export {
+  MASKED_RPC_URL,
+  isUsableRpcUrl,
+  resolveRpcUrl,
+  parseRpcUrlMap,
+  type RpcUrlMap,
+  type RpcResolvableChain,
+} from "./rpc-urls.js";
+
 // Solana Midrib instruction builders (deposit / withdraw).
 export {
   depositIx,
