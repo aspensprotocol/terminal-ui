@@ -144,6 +144,13 @@ export {
   type ChainBalanceSlice,
 } from "./balances.js";
 
+// Chain-correct viem clients for EVM reads + the wallet-network guard.
+export {
+  publicClientFor,
+  walletChainMismatch,
+  type EvmChainRef,
+} from "./evm-client.js";
+
 // RPC endpoint resolution. `GetConfig` masks every chain's `rpc_url`, so
 // browser-side chain reads need endpoints supplied by the host application.
 export {
