@@ -8,7 +8,7 @@ import {
   sepolia,
 } from "wagmi/chains";
 import { coinbaseWallet, injected, walletConnect } from "wagmi/connectors";
-import { type Chain as ViemChain, defineChain } from "viem";
+import { defineChain } from "viem";
 
 // WalletConnect project ID - you should get your own at https://cloud.walletconnect.com
 const projectId =
@@ -16,24 +16,43 @@ const projectId =
   "c3690594c774dccbd4a0272ae38f1953";
 
 // Flare Coston2 — also covers the local anvil-fork dev setup where two
-// "networks" (flare-coston2 and flare-coston2-quote) share chainId 114
-// and run on adjacent ports. wagmi keys by chainId, so a single entry
-// is enough for the connector to accept the chain when MetaMask is on
-// it. Actual chain reads in the gasless flow go via the per-network
-// rpcUrl from arborter's Configuration, not via wagmi's transports.
+// "networks" (flare-coston2 and flare-coston2-quote) share chainId 114.
+// wagmi keys by chainId, so a single entry is enough for the connector to
+// accept the chain when the wallet is on it.
+//
+// These entries exist so the CONNECTOR knows the chain (name, currency,
+// explorer, and a network to offer when adding it to a wallet). Deposit and
+// withdraw no longer read through wagmi's transports at all — they build a
+// client from the arborter config plus CHAIN_RPC_URLS; see the SDK's
+// evm-client.ts. This URL was `http://localhost:8545`, which no deployed
+// browser can reach, and the omission of HyperEVM below meant wagmi had no
+// entry for it whatsoever.
 const flareCoston2 = defineChain({
   id: 114,
   name: "Flare Coston2",
   nativeCurrency: { name: "Coston2 Flare", symbol: "C2FLR", decimals: 18 },
   rpcUrls: {
-    default: { http: ["http://localhost:8545"] },
-    public: { http: ["http://localhost:8545"] },
+    default: { http: ["https://coston2-api.flare.network/ext/C/rpc"] },
+    public: { http: ["https://coston2-api.flare.network/ext/C/rpc"] },
   },
   blockExplorers: {
     default: {
       name: "Coston2 Explorer",
       url: "https://coston2-explorer.flare.network",
     },
+  },
+});
+
+const hyperEvmTestnet = defineChain({
+  id: 998,
+  name: "HyperEVM Testnet",
+  nativeCurrency: { name: "HYPE", symbol: "HYPE", decimals: 18 },
+  rpcUrls: {
+    default: { http: ["https://rpc.hyperliquid-testnet.xyz/evm"] },
+    public: { http: ["https://rpc.hyperliquid-testnet.xyz/evm"] },
+  },
+  blockExplorers: {
+    default: { name: "Purrsec", url: "https://testnet.purrsec.com" },
   },
 });
 
@@ -46,6 +65,7 @@ const defaultChains = [
   optimism,
   optimismSepolia,
   flareCoston2,
+  hyperEvmTestnet,
 ] as const;
 
 // Create initial wagmi config with default chains only
@@ -110,57 +130,14 @@ export function getWagmiConfig(): Config {
 
 export { createWagmiConfig };
 
-// Chain configuration from gRPC backend
-export interface GrpcChain {
-  chainId: number;
-  network: string;
-  rpcUrl: string;
-  explorerUrl?: string;
-}
-
-// Utility function to create dynamic chains from gRPC config
-export const createDynamicChains = (grpcChains: GrpcChain[]): ViemChain[] => {
-  return grpcChains.map((chain) =>
-    defineChain({
-      id: chain.chainId,
-      name: chain.network,
-      network: chain.network,
-      nativeCurrency: {
-        decimals: 18,
-        name: "Ether",
-        symbol: "ETH",
-      },
-      rpcUrls: {
-        default: { http: [chain.rpcUrl] },
-        public: { http: [chain.rpcUrl] },
-      },
-      blockExplorers: chain.explorerUrl
-        ? {
-            default: { name: "Explorer", url: chain.explorerUrl },
-          }
-        : undefined,
-    }),
-  );
-};
-
-// Track if we've already updated the config to prevent multiple initializations
-let hasUpdatedConfig = false;
-
-// Function to update the wagmi config with chains from gRPC config
-export const updateWagmiConfig = (grpcChains: GrpcChain[]): Config => {
-  if (hasUpdatedConfig) {
-    return getWagmiConfig();
-  }
-
-  const dynamicChains = createDynamicChains(grpcChains);
-  _wagmiConfig = createWagmiConfig(dynamicChains);
-  hasUpdatedConfig = true;
-
-  return _wagmiConfig;
-};
+// NOTE: a `createDynamicChains` / `updateWagmiConfig` pair used to live here,
+// intended to rebuild this config from the arborter's chain list. Nothing ever
+// called it, and it could not have worked: it fed wagmi the `rpc_url` from
+// GetConfig, which the arborter masks, and hardcoded every chain's native
+// currency to ETH/18. Chain reads now bypass wagmi transports entirely
+// (see the SDK's evm-client.ts), so it has been removed rather than fixed.
 
 // Reset the config (useful for testing)
 export const resetWagmiConfig = (): void => {
-  hasUpdatedConfig = false;
   _wagmiConfig = null;
 };

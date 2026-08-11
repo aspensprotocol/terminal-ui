@@ -20,13 +20,7 @@
  */
 
 import { useCallback, useState } from "react";
-import {
-  getAccount,
-  readContract,
-  signMessage,
-  waitForTransactionReceipt,
-  writeContract,
-} from "wagmi/actions";
+import { getAccount, signMessage, writeContract } from "wagmi/actions";
 import { parseAbi, type Address, type Hex } from "viem";
 import {
   Connection,
@@ -46,6 +40,8 @@ import {
   isWsolMint,
   bytesToHex,
   resolveRpcUrl,
+  publicClientFor,
+  walletChainMismatch,
   type RpcUrlMap,
   type RpcResolvableChain,
 } from "@aspens/terminal-sdk";
@@ -245,8 +241,17 @@ export function useDepositWithdraw(): UseDepositWithdrawResult {
         const wagmi = getWagmiConfig();
         const tokenAddr = token.address as Address;
         const midribAddr = midrib as Address;
-        const account = getAccount(wagmi).address as Address | undefined;
+        const acct = getAccount(wagmi);
+        const account = acct.address as Address | undefined;
         if (!account) throw new Error("Connect an EVM wallet to deposit");
+        // Writes go through the wallet on whatever chain it is currently on,
+        // so a wallet left on another network would broadcast there. Refuse
+        // instead.
+        const mismatch = walletChainMismatch(chain, acct.chainId);
+        if (mismatch) throw new Error(mismatch);
+        // Reads use the chain's OWN endpoint, never wagmi's transports —
+        // see evm-client.ts for why.
+        const pub = publicClientFor(chain, rpcUrls);
 
         // Native asset (sentinel token): no ERC-20 approve — the value
         // rides the payable depositNative call.
@@ -258,7 +263,7 @@ export function useDepositWithdraw(): UseDepositWithdrawResult {
             functionName: "depositNative",
             value: params.amount,
           });
-          await waitForTransactionReceipt(wagmi, { hash: depositHash });
+          await pub.waitForTransactionReceipt({ hash: depositHash });
           toast.success("Deposit confirmed", {
             description: `${params.tokenTicker} on ${chain.network}`,
           });
@@ -268,7 +273,7 @@ export function useDepositWithdraw(): UseDepositWithdrawResult {
         // 1. Top up the ERC-20 allowance to MidribV3 if short. Reusing an
         // existing allowance when it's sufficient spares the user a
         // needless approval prompt.
-        const allowance = (await readContract(wagmi, {
+        const allowance = (await pub.readContract({
           address: tokenAddr,
           abi: ERC20_ABI,
           functionName: "allowance",
@@ -285,7 +290,7 @@ export function useDepositWithdraw(): UseDepositWithdrawResult {
             functionName: "approve",
             args: [midribAddr, params.amount],
           });
-          await waitForTransactionReceipt(wagmi, { hash: approveHash });
+          await pub.waitForTransactionReceipt({ hash: approveHash });
         }
 
         // 2. Move funds into the trade contract.
@@ -296,7 +301,7 @@ export function useDepositWithdraw(): UseDepositWithdrawResult {
           functionName: "deposit",
           args: [tokenAddr, params.amount],
         });
-        await waitForTransactionReceipt(wagmi, { hash: depositHash });
+        await pub.waitForTransactionReceipt({ hash: depositHash });
         toast.success("Deposit confirmed", {
           description: `${params.tokenTicker} on ${chain.network}`,
         });
@@ -357,8 +362,14 @@ export function useDepositWithdraw(): UseDepositWithdrawResult {
         // withdrawable balance net of off-chain reservations) signs a
         // voucher this wallet then submits on-chain.
         const wagmi = getWagmiConfig();
-        const account = getAccount(wagmi).address as Address | undefined;
+        const acct = getAccount(wagmi);
+        const account = acct.address as Address | undefined;
         if (!account) throw new Error("Connect an EVM wallet to withdraw");
+        // Same guard as deposit: the voucher is bound to this chain, so a
+        // wallet on another network must not submit it there.
+        const mismatch = walletChainMismatch(chain, acct.chainId);
+        if (mismatch) throw new Error(mismatch);
+        const pub = publicClientFor(chain, rpcUrls);
 
         // 1. Authenticate the voucher request: EIP-191 personal-sign over
         // the canonical bytes the arborter rebuilds.
@@ -399,7 +410,7 @@ export function useDepositWithdraw(): UseDepositWithdrawResult {
             bytesToHex(voucher.signature) as Hex,
           ],
         });
-        await waitForTransactionReceipt(wagmi, { hash });
+        await pub.waitForTransactionReceipt({ hash });
         toast.success("Withdraw confirmed", {
           description: `${params.tokenTicker} on ${chain.network}`,
         });
