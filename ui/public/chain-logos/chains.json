@@ -1,0 +1,578 @@
+[
+  {
+    "id": 1,
+    "name": "ethereum",
+    "displayName": "Ethereum",
+    "vmType": "evm",
+    "light": "/chain-logos/1-light.png",
+    "dark": "/chain-logos/1-dark.png"
+  },
+  {
+    "id": 10,
+    "name": "optimism",
+    "displayName": "Optimism",
+    "vmType": "evm",
+    "light": "/chain-logos/10-light.png",
+    "dark": "/chain-logos/10-dark.png"
+  },
+  {
+    "id": 14,
+    "name": "flare",
+    "displayName": "Flare",
+    "vmType": "evm",
+    "light": "/chain-logos/14-light.png",
+    "dark": "/chain-logos/14-dark.png"
+  },
+  {
+    "id": 19,
+    "name": "songbird",
+    "displayName": "Songbird",
+    "vmType": "evm",
+    "light": "/chain-logos/19-light.png",
+    "dark": "/chain-logos/19-dark.png"
+  },
+  {
+    "id": 25,
+    "name": "cronos",
+    "displayName": "Cronos",
+    "vmType": "evm",
+    "light": "/chain-logos/25-light.png",
+    "dark": "/chain-logos/25-dark.png"
+  },
+  {
+    "id": 56,
+    "name": "bsc",
+    "displayName": "BNB",
+    "vmType": "evm",
+    "light": "/chain-logos/56-light.png",
+    "dark": "/chain-logos/56-dark.png"
+  },
+  {
+    "id": 100,
+    "name": "gnosis",
+    "displayName": "Gnosis",
+    "vmType": "evm",
+    "light": "/chain-logos/100-light.png",
+    "dark": "/chain-logos/100-dark.png"
+  },
+  {
+    "id": 114,
+    "name": "coston2",
+    "displayName": "Coston2",
+    "vmType": "evm",
+    "light": "/chain-logos/114-light.png",
+    "dark": "/chain-logos/114-dark.png"
+  },
+  {
+    "id": 130,
+    "name": "unichain",
+    "displayName": "Unichain",
+    "vmType": "evm",
+    "light": "/chain-logos/130-light.png",
+    "dark": "/chain-logos/130-dark.png"
+  },
+  {
+    "id": 137,
+    "name": "polygon",
+    "displayName": "Polygon",
+    "vmType": "evm",
+    "light": "/chain-logos/137-light.png",
+    "dark": "/chain-logos/137-dark.png"
+  },
+  {
+    "id": 143,
+    "name": "monad",
+    "displayName": "Monad",
+    "vmType": "evm",
+    "light": "/chain-logos/143-light.png",
+    "dark": "/chain-logos/143-dark.png"
+  },
+  {
+    "id": 146,
+    "name": "sonic",
+    "displayName": "Sonic",
+    "vmType": "evm",
+    "light": "/chain-logos/146-light.png",
+    "dark": "/chain-logos/146-dark.png"
+  },
+  {
+    "id": 169,
+    "name": "manta-pacific",
+    "displayName": "Manta Pacific",
+    "vmType": "evm",
+    "light": "/chain-logos/169-light.png",
+    "dark": "/chain-logos/169-dark.png"
+  },
+  {
+    "id": 288,
+    "name": "boba",
+    "displayName": "Boba Network",
+    "vmType": "evm",
+    "light": "/chain-logos/288-light.png",
+    "dark": "/chain-logos/288-dark.png"
+  },
+  {
+    "id": 324,
+    "name": "zksync",
+    "displayName": "zkSync Era",
+    "vmType": "evm",
+    "light": "/chain-logos/324-light.png",
+    "dark": "/chain-logos/324-dark.png"
+  },
+  {
+    "id": 360,
+    "name": "shape",
+    "displayName": "Shape",
+    "vmType": "evm",
+    "light": "/chain-logos/360-light.png",
+    "dark": "/chain-logos/360-dark.png"
+  },
+  {
+    "id": 480,
+    "name": "world-chain",
+    "displayName": "World Chain",
+    "vmType": "evm",
+    "light": "/chain-logos/480-light.png",
+    "dark": "/chain-logos/480-dark.png"
+  },
+  {
+    "id": 747,
+    "name": "flow-evm",
+    "displayName": "Flow EVM",
+    "vmType": "evm",
+    "light": "/chain-logos/747-light.png",
+    "dark": "/chain-logos/747-dark.png"
+  },
+  {
+    "id": 988,
+    "name": "stable",
+    "displayName": "Stable",
+    "vmType": "evm",
+    "light": "/chain-logos/988-light.png",
+    "dark": "/chain-logos/988-dark.png"
+  },
+  {
+    "id": 998,
+    "name": "hyperevm-testnet",
+    "displayName": "HyperEVM Testnet",
+    "vmType": "evm",
+    "light": "/chain-logos/998-light.png",
+    "dark": "/chain-logos/998-dark.png"
+  },
+  {
+    "id": 999,
+    "name": "hyperevm",
+    "displayName": "HyperEVM",
+    "vmType": "evm",
+    "light": "/chain-logos/999-light.png",
+    "dark": "/chain-logos/999-dark.png"
+  },
+  {
+    "id": 1088,
+    "name": "metis",
+    "displayName": "Metis",
+    "vmType": "evm",
+    "light": "/chain-logos/1088-light.png",
+    "dark": "/chain-logos/1088-dark.png"
+  },
+  {
+    "id": 1135,
+    "name": "lisk",
+    "displayName": "Lisk",
+    "vmType": "evm",
+    "light": "/chain-logos/1135-light.png",
+    "dark": "/chain-logos/1135-dark.png"
+  },
+  {
+    "id": 1329,
+    "name": "sei",
+    "displayName": "Sei",
+    "vmType": "evm",
+    "light": "/chain-logos/1329-light.png",
+    "dark": "/chain-logos/1329-dark.png"
+  },
+  {
+    "id": 1337,
+    "name": "hyperliquid",
+    "displayName": "Hyperliquid",
+    "vmType": "hypevm",
+    "light": "/chain-logos/1337-light.png",
+    "dark": "/chain-logos/1337-dark.png"
+  },
+  {
+    "id": 1514,
+    "name": "data",
+    "displayName": "Data",
+    "vmType": "evm",
+    "light": "/chain-logos/1514-light.png",
+    "dark": "/chain-logos/1514-dark.png"
+  },
+  {
+    "id": 1868,
+    "name": "soneium",
+    "displayName": "Soneium",
+    "vmType": "evm",
+    "light": "/chain-logos/1868-light.png",
+    "dark": "/chain-logos/1868-dark.png"
+  },
+  {
+    "id": 2020,
+    "name": "ronin",
+    "displayName": "Ronin",
+    "vmType": "evm",
+    "light": "/chain-logos/2020-light.png",
+    "dark": "/chain-logos/2020-dark.png"
+  },
+  {
+    "id": 2741,
+    "name": "abstract",
+    "displayName": "Abstract",
+    "vmType": "evm",
+    "light": "/chain-logos/2741-light.png",
+    "dark": "/chain-logos/2741-dark.png"
+  },
+  {
+    "id": 2818,
+    "name": "morph",
+    "displayName": "Morph",
+    "vmType": "evm",
+    "light": "/chain-logos/2818-light.png",
+    "dark": "/chain-logos/2818-dark.png"
+  },
+  {
+    "id": 4217,
+    "name": "tempo",
+    "displayName": "Tempo",
+    "vmType": "evm",
+    "light": "/chain-logos/4217-light.png",
+    "dark": "/chain-logos/4217-dark.png"
+  },
+  {
+    "id": 4326,
+    "name": "megaeth",
+    "displayName": "MegaETH",
+    "vmType": "evm",
+    "light": "/chain-logos/4326-light.png",
+    "dark": "/chain-logos/4326-dark.png"
+  },
+  {
+    "id": 4663,
+    "name": "robinhood",
+    "displayName": "Robinhood Chain",
+    "vmType": "evm",
+    "light": "/chain-logos/4663-light.png",
+    "dark": "/chain-logos/4663-dark.png"
+  },
+  {
+    "id": 5000,
+    "name": "mantle",
+    "displayName": "Mantle",
+    "vmType": "evm",
+    "light": "/chain-logos/5000-light.png",
+    "dark": "/chain-logos/5000-dark.png"
+  },
+  {
+    "id": 5031,
+    "name": "somnia",
+    "displayName": "Somnia",
+    "vmType": "evm",
+    "light": "/chain-logos/5031-light.png",
+    "dark": "/chain-logos/5031-dark.png"
+  },
+  {
+    "id": 5330,
+    "name": "superseed",
+    "displayName": "Superseed",
+    "vmType": "evm",
+    "light": "/chain-logos/5330-light.png",
+    "dark": "/chain-logos/5330-dark.png"
+  },
+  {
+    "id": 7560,
+    "name": "cyber",
+    "displayName": "Cyber",
+    "vmType": "evm",
+    "light": "/chain-logos/7560-light.png",
+    "dark": "/chain-logos/7560-dark.png"
+  },
+  {
+    "id": 8333,
+    "name": "B3",
+    "displayName": "B3",
+    "vmType": "evm",
+    "light": "/chain-logos/8333-light.png",
+    "dark": "/chain-logos/8333-dark.png"
+  },
+  {
+    "id": 8453,
+    "name": "base",
+    "displayName": "Base",
+    "vmType": "evm",
+    "light": "/chain-logos/8453-light.png",
+    "dark": "/chain-logos/8453-dark.png"
+  },
+  {
+    "id": 9745,
+    "name": "plasma",
+    "displayName": "Plasma",
+    "vmType": "evm",
+    "light": "/chain-logos/9745-light.png",
+    "dark": "/chain-logos/9745-dark.png"
+  },
+  {
+    "id": 33139,
+    "name": "apechain",
+    "displayName": "ApeChain",
+    "vmType": "evm",
+    "light": "/chain-logos/33139-light.png",
+    "dark": "/chain-logos/33139-dark.png"
+  },
+  {
+    "id": 34443,
+    "name": "mode",
+    "displayName": "Mode",
+    "vmType": "evm",
+    "light": "/chain-logos/34443-light.png",
+    "dark": "/chain-logos/34443-dark.png"
+  },
+  {
+    "id": 42018,
+    "name": "mythos",
+    "displayName": "Mythos",
+    "vmType": "evm",
+    "light": "/chain-logos/42018-light.png",
+    "dark": "/chain-logos/42018-dark.png"
+  },
+  {
+    "id": 42161,
+    "name": "arbitrum",
+    "displayName": "Arbitrum",
+    "vmType": "evm",
+    "light": "/chain-logos/42161-light.png",
+    "dark": "/chain-logos/42161-dark.png"
+  },
+  {
+    "id": 42170,
+    "name": "arbitrum-nova",
+    "displayName": "Arbitrum Nova",
+    "vmType": "evm",
+    "light": "/chain-logos/42170-light.png",
+    "dark": "/chain-logos/42170-dark.png"
+  },
+  {
+    "id": 42220,
+    "name": "celo",
+    "displayName": "Celo",
+    "vmType": "evm",
+    "light": "/chain-logos/42220-light.png",
+    "dark": "/chain-logos/42220-dark.png"
+  },
+  {
+    "id": 43111,
+    "name": "hemi",
+    "displayName": "Hemi",
+    "vmType": "evm",
+    "light": "/chain-logos/43111-light.png",
+    "dark": "/chain-logos/43111-dark.png"
+  },
+  {
+    "id": 43114,
+    "name": "avalanche",
+    "displayName": "Avalanche",
+    "vmType": "evm",
+    "light": "/chain-logos/43114-light.png",
+    "dark": "/chain-logos/43114-dark.png"
+  },
+  {
+    "id": 43419,
+    "name": "gunz",
+    "displayName": "Gunz",
+    "vmType": "evm",
+    "light": "/chain-logos/43419-light.png",
+    "dark": "/chain-logos/43419-dark.png"
+  },
+  {
+    "id": 48900,
+    "name": "zircuit",
+    "displayName": "Zircuit",
+    "vmType": "evm",
+    "light": "/chain-logos/48900-light.png",
+    "dark": "/chain-logos/48900-dark.png"
+  },
+  {
+    "id": 55244,
+    "name": "superposition",
+    "displayName": "Superposition",
+    "vmType": "evm",
+    "light": "/chain-logos/55244-light.png",
+    "dark": "/chain-logos/55244-dark.png"
+  },
+  {
+    "id": 57073,
+    "name": "ink",
+    "displayName": "Ink",
+    "vmType": "evm",
+    "light": "/chain-logos/57073-light.png",
+    "dark": "/chain-logos/57073-dark.png"
+  },
+  {
+    "id": 59144,
+    "name": "linea",
+    "displayName": "Linea",
+    "vmType": "evm",
+    "light": "/chain-logos/59144-light.png",
+    "dark": "/chain-logos/59144-dark.png"
+  },
+  {
+    "id": 60808,
+    "name": "bob",
+    "displayName": "BOB",
+    "vmType": "evm",
+    "light": "/chain-logos/60808-light.png",
+    "dark": "/chain-logos/60808-dark.png"
+  },
+  {
+    "id": 69000,
+    "name": "animechain",
+    "displayName": "Animechain",
+    "vmType": "evm",
+    "light": "/chain-logos/69000-light.png",
+    "dark": "/chain-logos/69000-dark.png"
+  },
+  {
+    "id": 80094,
+    "name": "berachain",
+    "displayName": "Berachain",
+    "vmType": "evm",
+    "light": "/chain-logos/80094-light.png",
+    "dark": "/chain-logos/80094-dark.png"
+  },
+  {
+    "id": 81457,
+    "name": "blast",
+    "displayName": "Blast",
+    "vmType": "evm",
+    "light": "/chain-logos/81457-light.png",
+    "dark": "/chain-logos/81457-dark.png"
+  },
+  {
+    "id": 97477,
+    "name": "doma",
+    "displayName": "Doma",
+    "vmType": "evm",
+    "light": "/chain-logos/97477-light.png",
+    "dark": "/chain-logos/97477-dark.png"
+  },
+  {
+    "id": 98866,
+    "name": "plume",
+    "displayName": "Plume",
+    "vmType": "evm",
+    "light": "/chain-logos/98866-light.png",
+    "dark": "/chain-logos/98866-dark.png"
+  },
+  {
+    "id": 534352,
+    "name": "scroll",
+    "displayName": "Scroll",
+    "vmType": "evm",
+    "light": "/chain-logos/534352-light.png",
+    "dark": "/chain-logos/534352-dark.png"
+  },
+  {
+    "id": 537724,
+    "name": "xrp",
+    "displayName": "XRP",
+    "vmType": "xrpvm",
+    "light": "/chain-logos/537724-light.png",
+    "dark": "/chain-logos/537724-dark.png"
+  },
+  {
+    "id": 685689,
+    "name": "gensyn",
+    "displayName": "Gensyn",
+    "vmType": "evm",
+    "light": "/chain-logos/685689-light.png",
+    "dark": "/chain-logos/685689-dark.png"
+  },
+  {
+    "id": 747474,
+    "name": "katana",
+    "displayName": "Katana",
+    "vmType": "evm",
+    "light": "/chain-logos/747474-light.png",
+    "dark": "/chain-logos/747474-dark.png"
+  },
+  {
+    "id": 3586256,
+    "name": "lighter",
+    "displayName": "Lighter",
+    "vmType": "lvm",
+    "light": "/chain-logos/3586256-light.png",
+    "dark": "/chain-logos/3586256-dark.png"
+  },
+  {
+    "id": 5064014,
+    "name": "ethereal",
+    "displayName": "Ethereal",
+    "vmType": "evm",
+    "light": "/chain-logos/5064014-light.png",
+    "dark": "/chain-logos/5064014-dark.png"
+  },
+  {
+    "id": 7777777,
+    "name": "zora",
+    "displayName": "Zora",
+    "vmType": "evm",
+    "light": "/chain-logos/7777777-light.png",
+    "dark": "/chain-logos/7777777-dark.png"
+  },
+  {
+    "id": 8253038,
+    "name": "bitcoin",
+    "displayName": "Bitcoin",
+    "vmType": "bvm",
+    "light": "/chain-logos/8253038-light.png",
+    "dark": "/chain-logos/8253038-dark.png"
+  },
+  {
+    "id": 9286185,
+    "name": "eclipse",
+    "displayName": "Eclipse",
+    "vmType": "svm",
+    "light": "/chain-logos/9286185-light.png",
+    "dark": "/chain-logos/9286185-dark.png"
+  },
+  {
+    "id": 224235520,
+    "name": "ton",
+    "displayName": "TON",
+    "vmType": "tonvm",
+    "light": "/chain-logos/224235520-light.png",
+    "dark": "/chain-logos/224235520-dark.png"
+  },
+  {
+    "id": 666666666,
+    "name": "degen",
+    "displayName": "Degen",
+    "vmType": "evm",
+    "light": "/chain-logos/666666666-light.png",
+    "dark": "/chain-logos/666666666-dark.png"
+  },
+  {
+    "id": 728126428,
+    "name": "tron",
+    "displayName": "Tron",
+    "vmType": "tvm",
+    "light": "/chain-logos/728126428-light.png",
+    "dark": "/chain-logos/728126428-dark.png"
+  },
+  {
+    "id": 792703809,
+    "name": "solana",
+    "displayName": "Solana",
+    "vmType": "svm",
+    "light": "/chain-logos/792703809-light.png",
+    "dark": "/chain-logos/792703809-dark.png"
+  }
+]
