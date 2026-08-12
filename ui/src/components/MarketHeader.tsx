@@ -6,6 +6,7 @@ import { useMarkets } from "@/lib/hooks";
 import { WalletManager } from "@/components/WalletManager";
 import { TransferDialog } from "@/components/TransferDialog";
 import { AttestationDialog } from "@/components/AttestationDialog";
+import { ChainLogo } from "@/components/ChainLogo";
 import { toDisplayValue } from "@aspens/terminal-sdk";
 import { formatWithoutTrailingZeros } from "@/lib/format";
 import {
@@ -99,23 +100,18 @@ export function MarketHeader() {
             {selectedMarket && baseToken && quoteToken && (
               <>
                 {/* Cross-chain pair label — base and quote tokens often live on
-                    different networks, so spell out (token, chain) for each
-                    side. Surfacing the chain inline is what tells the user at
-                    a glance "this is cross-chain". */}
+                    different networks, so each side carries its chain's mark.
+                    The network name is on the mark's title/alt. */}
                 <div className="flex items-center gap-1.5 font-mono whitespace-nowrap">
                   <span className="text-foreground/90 font-semibold">
                     {selectedMarket.base_ticker}
                   </span>
-                  <span className="text-muted-foreground/60">
-                    ({selectedMarket.baseChainNetwork})
-                  </span>
+                  <ChainLogo network={selectedMarket.baseChainNetwork} />
                   <span className="text-muted-foreground/50">/</span>
                   <span className="text-foreground/90 font-semibold">
                     {selectedMarket.quote_ticker}
                   </span>
-                  <span className="text-muted-foreground/60">
-                    ({selectedMarket.quoteChainNetwork})
-                  </span>
+                  <ChainLogo network={selectedMarket.quoteChainNetwork} />
                 </div>
                 <div className="h-3.5 w-px bg-primary/40"></div>
                 <div className="flex items-center gap-1.5">
