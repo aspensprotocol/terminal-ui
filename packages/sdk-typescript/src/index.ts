@@ -150,7 +150,9 @@ export {
 export {
   publicClientFor,
   walletChainMismatch,
+  ensureWalletChain,
   type EvmChainRef,
+  type WalletChainDeps,
 } from "./evm-client.js";
 
 // RPC endpoint resolution. `GetConfig` masks every chain's `rpc_url`, so

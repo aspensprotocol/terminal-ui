@@ -20,7 +20,12 @@
  */
 
 import { useCallback, useState } from "react";
-import { getAccount, signMessage, writeContract } from "wagmi/actions";
+import {
+  getAccount,
+  signMessage,
+  switchChain,
+  writeContract,
+} from "wagmi/actions";
 import { parseAbi, type Address, type Hex } from "viem";
 import {
   Connection,
@@ -41,7 +46,7 @@ import {
   bytesToHex,
   resolveRpcUrl,
   publicClientFor,
-  walletChainMismatch,
+  ensureWalletChain,
   type RpcUrlMap,
   type RpcResolvableChain,
 } from "@aspens/terminal-sdk";
@@ -58,6 +63,30 @@ import { useRpcUrls } from "../providers/rpc-context";
  * `Connection`, so it hits the same masked-`rpc_url` problem the balances
  * panel does — see `rpc-urls.ts` in the SDK.
  */
+/**
+ * Wallet hooks for `ensureWalletChain`, bound to the wagmi config.
+ *
+ * `switchChain` prompts `wallet_switchEthereumChain`, and wagmi's injected
+ * connector falls back to `wallet_addEthereumChain` when the wallet does not
+ * know the chain yet — so both Coston2 and HyperEVM must stay registered in
+ * web3modal-config.ts with real RPC URLs for this to work.
+ */
+function walletChainDeps(
+  wagmi: ReturnType<typeof getWagmiConfig>,
+  label: string,
+) {
+  return {
+    currentChainId: () => getAccount(wagmi).chainId,
+    requestSwitch: async (chainId: number) => {
+      await switchChain(wagmi, { chainId });
+    },
+    onSwitching: () =>
+      toast.info("Switching network…", {
+        description: `Approve the change in your wallet to ${label}`,
+      }),
+  };
+}
+
 function resolveSolanaRpcUrl(
   chain: RpcResolvableChain,
   rpcUrls: RpcUrlMap,
@@ -247,8 +276,7 @@ export function useDepositWithdraw(): UseDepositWithdrawResult {
         // Writes go through the wallet on whatever chain it is currently on,
         // so a wallet left on another network would broadcast there. Refuse
         // instead.
-        const mismatch = walletChainMismatch(chain, acct.chainId);
-        if (mismatch) throw new Error(mismatch);
+        await ensureWalletChain(chain, walletChainDeps(wagmi, chain.network));
         // Reads use the chain's OWN endpoint, never wagmi's transports —
         // see evm-client.ts for why.
         const pub = publicClientFor(chain, rpcUrls);
@@ -367,8 +395,7 @@ export function useDepositWithdraw(): UseDepositWithdrawResult {
         if (!account) throw new Error("Connect an EVM wallet to withdraw");
         // Same guard as deposit: the voucher is bound to this chain, so a
         // wallet on another network must not submit it there.
-        const mismatch = walletChainMismatch(chain, acct.chainId);
-        if (mismatch) throw new Error(mismatch);
+        await ensureWalletChain(chain, walletChainDeps(wagmi, chain.network));
         const pub = publicClientFor(chain, rpcUrls);
 
         // 1. Authenticate the voucher request: EIP-191 personal-sign over
