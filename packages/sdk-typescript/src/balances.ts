@@ -20,12 +20,20 @@
  * already consumes.
  */
 
-import { createPublicClient, getAddress, http, parseAbi } from "viem";
+import {
+  createPublicClient,
+  getAddress,
+  http,
+  parseAbi,
+  type Address,
+  type PublicClient,
+} from "viem";
 import { Connection, PublicKey } from "@solana/web3.js";
 
 import type { Configuration } from "./protos/arborter_config_pb.js";
 import type { EnhancedBalance } from "./types.js";
 import { resolveRpcUrl, type RpcUrlMap } from "./rpc-urls.js";
+import { isNativeToken, isWsolMint } from "./native.js";
 
 /** SPL Token program id — well-known constant. */
 const SPL_TOKEN_PROGRAM_ID = new PublicKey(
@@ -146,29 +154,53 @@ export async function fetchWalletBalance(opts: {
   }
   if (arch === "evm") {
     const client = createPublicClient({ transport: http(rpcUrl) });
-    const raw = await client.readContract({
-      address: getAddress(opts.tokenAddress),
-      abi: ERC20_ABI,
-      functionName: "balanceOf",
-      args: [getAddress(opts.user)],
-    });
-    return raw;
+    return readEvmWalletBalance(
+      client,
+      opts.tokenAddress,
+      getAddress(opts.user),
+    );
   }
   if (arch === "solana") {
     const conn = new Connection(rpcUrl);
     const mint = new PublicKey(opts.tokenAddress);
     const owner = new PublicKey(opts.user);
     const ata = deriveAssociatedTokenAccount(owner, mint);
-    try {
-      const info = await conn.getTokenAccountBalance(ata);
-      return BigInt(info.value.amount);
-    } catch {
-      return 0n; // account not yet created => zero balance
-    }
+    return solanaNativeWallet(conn, opts.tokenAddress, owner, ata);
   }
   throw new Error(
     `unsupported chain architecture '${opts.chain.architecture}'`,
   );
+}
+
+/**
+ * A user's on-chain holding of `tokenAddress`, native asset included.
+ *
+ * The native asset is keyed in MidribV3 by a SENTINEL address
+ * (`0xEeee…EEeE`) that has no code deployed at it. Calling ERC-20 `balanceOf`
+ * on it always reverts, and the revert used to be swallowed into `0n` — so a
+ * wallet holding 94 C2FLR showed as empty and the deposit dialog capped the
+ * amount at zero. Native balances come from `getBalance`; only real tokens go
+ * through `balanceOf`.
+ *
+ * Failures still degrade to `0n`: one flaky token must not blank the panel.
+ */
+export async function readEvmWalletBalance(
+  client: Pick<PublicClient, "getBalance" | "readContract">,
+  tokenAddress: string,
+  user: Address,
+): Promise<bigint> {
+  if (isNativeToken(tokenAddress)) {
+    return client.getBalance({ address: user }).catch(() => 0n);
+  }
+  return client
+    .readContract({
+      address: getAddress(tokenAddress),
+      abi: ERC20_ABI,
+      functionName: "balanceOf",
+      args: [user],
+    })
+    .then((v) => v as bigint)
+    .catch(() => 0n);
 }
 
 // -- EVM path ------------------------------------------------------------
@@ -194,14 +226,7 @@ async function fetchEvmChainSlices(
     // (e.g. an RPC hiccup or a token that doesn't implement balanceOf)
     // degrades to zero for that slice rather than failing the whole panel.
     const [walletRaw, depositedRaw, lockedRaw] = await Promise.all([
-      client
-        .readContract({
-          address: tokenAddr,
-          abi: ERC20_ABI,
-          functionName: "balanceOf",
-          args: [user],
-        })
-        .catch(() => 0n),
+      readEvmWalletBalance(client, token.address, user),
       midrib
         ? client
             .readContract({
@@ -237,6 +262,38 @@ async function fetchEvmChainSlices(
   return results;
 }
 
+/**
+ * A user's holding of `mintAddress` on Solana.
+ *
+ * Native SOL trades as WSOL, and the SDK wraps client-side at deposit time —
+ * so for the WSOL mint the depositable holding is the account's LAMPORTS plus
+ * whatever is already wrapped in its token account. Reading only the token
+ * account (the previous behaviour) reported 0 for a user with plenty of SOL
+ * and no WSOL account yet, the Solana twin of the EVM sentinel bug.
+ *
+ * Caveat: the deposit flow wraps the full requested amount from lamports, so a
+ * deposit that leans on the already-wrapped portion will fail until that flow
+ * learns to spend existing WSOL. Reporting the true holding is still right —
+ * understating it hides funds.
+ */
+export async function solanaNativeWallet(
+  conn: Pick<Connection, "getBalance" | "getTokenAccountBalance">,
+  mintAddress: string,
+  owner: PublicKey,
+  ata: PublicKey,
+): Promise<bigint> {
+  const wrapped = await conn
+    .getTokenAccountBalance(ata)
+    .then((r) => BigInt(r.value.amount))
+    .catch(() => 0n); // account not yet created => nothing wrapped
+  if (!isWsolMint(mintAddress)) return wrapped;
+  const lamports = await conn
+    .getBalance(owner)
+    .then((v) => BigInt(v))
+    .catch(() => 0n);
+  return wrapped + lamports;
+}
+
 // -- Solana path ---------------------------------------------------------
 
 async function fetchSolanaChainSlices(
@@ -259,12 +316,15 @@ async function fetchSolanaChainSlices(
     const mint = new PublicKey(token.address);
     const ata = deriveAssociatedTokenAccount(owner, mint);
 
-    // Wallet balance via the ATA. Deposited / locked via the UserBalance
-    // PDA if the program + instance are configured; otherwise zero.
-    const walletPromise: Promise<bigint> = conn
-      .getTokenAccountBalance(ata)
-      .then((r) => BigInt(r.value.amount))
-      .catch(() => 0n);
+    // Wallet balance via the ATA, plus lamports for the native (WSOL) leg.
+    // Deposited / locked via the UserBalance PDA if the program + instance
+    // are configured; otherwise zero.
+    const walletPromise: Promise<bigint> = solanaNativeWallet(
+      conn,
+      token.address,
+      owner,
+      ata,
+    );
 
     let depositedPromise = Promise.resolve(0n);
     let lockedPromise = Promise.resolve(0n);

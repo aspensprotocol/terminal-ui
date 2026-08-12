@@ -140,6 +140,8 @@ export {
   fetchOnChainBalances,
   fetchChainBalanceSlices,
   fetchWalletBalance,
+  readEvmWalletBalance,
+  solanaNativeWallet,
   type WalletBinding,
   type ChainBalanceSlice,
 } from "./balances.js";
