@@ -1,4 +1,17 @@
 /**
+ * u64 fields cross this wire as QUOTED STRINGS, never bare numbers.
+ *
+ * JSON.parse rounds any integer above 2^53, because JS numbers are doubles.
+ * That silently broke cancel in production: the arborter held order
+ * 173852891691592598, the browser read 173852891691592600, sent it back, and
+ * find_order missed — the order stayed in the book with its collateral
+ * reserved. Keep these as strings end to end; convert with BigInt only where
+ * arithmetic is genuinely needed, never via Number().
+ *
+ * Matches the Go side's types.U64String and proto3's JSON mapping for 64-bit
+ * integers, and the u128 amounts that were already strings here.
+ */
+/**
  * Direct-action request/response payloads — the JSON that rides in
  * `DirectInstruction.message`. Field-for-field with the adapter's
  * `extension/pkg/types/types.go` (camelCase; u128 decimal-string amounts;
@@ -30,7 +43,7 @@ export interface PlaceOrderRequest {
 }
 
 export interface PlaceOrderResponse {
-  orderId: number;
+  orderId: string;
   orderInBook: boolean;
   fills: number;
 }
@@ -41,7 +54,7 @@ export interface CancelOrderRequest {
   marketId: string;
   side: "BID" | "ASK";
   tokenAddress: string;
-  orderId: number;
+  orderId: string;
   signatureHash: Hex;
 }
 
@@ -64,8 +77,8 @@ export interface WithdrawVoucher {
   account: string;
   token: string;
   amount: string;
-  nonce: number;
-  expiry: number;
+  nonce: string;
+  expiry: string;
   signature: Hex;
 }
 
@@ -79,7 +92,7 @@ export interface GetMyStateResponse {
   openOrders: OpenOrder[];
 }
 export interface OpenOrder {
-  orderId: number;
+  orderId: string;
   marketId: string;
   side: string;
   price: string;
@@ -117,10 +130,10 @@ export interface ExportHistoryResponse {
  * empty rather than substituting the visible side's.
  */
 export interface TradeRecord {
-  timestamp: number;
+  timestamp: string;
   price: string;
   quantity: string;
-  orderHit: number;
+  orderHit: string;
   /** "MAKER" | "TAKER" | "" — "" when the arborter left the role unset. */
   buyerIs: string;
   sellerIs: string;
