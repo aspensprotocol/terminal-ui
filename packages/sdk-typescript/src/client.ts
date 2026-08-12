@@ -293,7 +293,10 @@ class RestClient {
         marketId: params.marketId,
         side: params.side === "buy" ? "BID" : "ASK",
         tokenAddress: params.tokenAddress,
-        orderId: Number(params.orderId),
+        // Pass the id through as a STRING. Number() rounds anything above
+        // 2^53 — this line is what sent 173852891691592600 for order
+        // 173852891691592598 and made every cancel fail with NotFound.
+        orderId: params.orderId,
         signatureHash: bytesToHex(params.signature),
       });
       if (out.status !== 1) {
