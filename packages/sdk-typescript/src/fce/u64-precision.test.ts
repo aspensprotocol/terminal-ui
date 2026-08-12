@@ -12,14 +12,29 @@ const TRUE_ID = "173852891691592598";
 const OTHER_ID = "6755360711411187334";
 
 const toHexJson = (o: unknown) =>
-  ("0x" + Buffer.from(JSON.stringify(o), "utf8").toString("hex")) as `0x${string}`;
+  ("0x" +
+    Buffer.from(JSON.stringify(o), "utf8").toString("hex")) as `0x${string}`;
 
 describe("u64 ids on the FCE wire", () => {
   it("survives decoding when the arborter quotes it", () => {
     const wire = toHexJson({
       openOrders: [
-        { orderId: TRUE_ID, marketId: "m", side: "ASK", price: "1", quantity: "2", state: "CONFIRMED" },
-        { orderId: OTHER_ID, marketId: "m", side: "ASK", price: "1", quantity: "2", state: "CONFIRMED" },
+        {
+          orderId: TRUE_ID,
+          marketId: "m",
+          side: "ASK",
+          price: "1",
+          quantity: "2",
+          state: "CONFIRMED",
+        },
+        {
+          orderId: OTHER_ID,
+          marketId: "m",
+          side: "ASK",
+          price: "1",
+          quantity: "2",
+          state: "CONFIRMED",
+        },
       ],
     });
     const decoded = hexJsonToObject<GetMyStateResponse>(wire);
