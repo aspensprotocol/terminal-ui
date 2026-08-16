@@ -166,10 +166,10 @@ export {
   type RpcResolvableChain,
 } from "./rpc-urls.js";
 
-// Solana Midrib instruction builders (deposit / withdraw).
+// Solana Midrib instruction builders (deposit only — the program's
+// permissionless `withdraw` was removed; see solana-ix.ts).
 export {
   depositIx,
-  withdrawIx,
   deriveAssociatedTokenAccount,
   deriveUserBalancePda,
   deriveInstanceVaultPda,
@@ -177,7 +177,7 @@ export {
   anchorIxDiscriminator,
   SPL_TOKEN_PROGRAM_ID,
   ATA_PROGRAM_ID,
-  type DepositWithdrawIxOpts,
+  type DepositIxOpts,
   createIdempotentAtaIx,
   syncNativeIx,
   closeAccountIx,

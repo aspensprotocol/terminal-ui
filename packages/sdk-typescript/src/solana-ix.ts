@@ -1,5 +1,5 @@
 /**
- * Solana Midrib instruction builders — deposit / withdraw.
+ * Solana Midrib instruction builders — deposit only.
  *
  * Client-side counterpart to the Rust SDK's `aspens::solana` module.
  * Layouts match the on-chain `midrib` Anchor program verbatim; a drift
@@ -7,6 +7,17 @@
  * validation silently.
  *
  *   data = sha256("global:<method>")[..8] || u64_le(amount)
+ *
+ * There is deliberately NO withdraw builder here. The program's
+ * permissionless self-service `withdraw` instruction was removed: order
+ * reservations live off-chain in the optimistic shadow ledger, so the
+ * program's own `available()` check could not see them and a user could
+ * drain the collateral backing a resting order. The TEE-signed
+ * `withdraw_voucher` instruction is the only exit, and it needs a
+ * voucher fetched from the arborter plus an Ed25519 sibling instruction
+ * — none of which this client implements yet. Building a `withdraw`
+ * instruction again would only produce a transaction whose discriminator
+ * no longer resolves (Anchor `InstructionFallbackNotFound`, 101).
  */
 
 import {
@@ -105,7 +116,7 @@ function encodeAmountData(method: string, amount: bigint): Uint8Array {
   return out;
 }
 
-export interface DepositWithdrawIxOpts {
+export interface DepositIxOpts {
   programId: PublicKey;
   instance: PublicKey;
   user: PublicKey;
@@ -119,7 +130,7 @@ export interface DepositWithdrawIxOpts {
  * must sign the resulting transaction. Initialises UserBalance /
  * instance_vault PDAs on first call via the program's init_if_needed.
  */
-export function depositIx(opts: DepositWithdrawIxOpts): TransactionInstruction {
+export function depositIx(opts: DepositIxOpts): TransactionInstruction {
   const userAta = deriveAssociatedTokenAccount(opts.user, opts.mint);
   const userBalance = deriveUserBalancePda(
     opts.instance,
@@ -150,39 +161,6 @@ export function depositIx(opts: DepositWithdrawIxOpts): TransactionInstruction {
     // Cast to `Buffer` — the runtime is a Uint8Array and web3.js reads
     // it bytewise; the Node-typed constructor signature is just strict.
     data: encodeAmountData("deposit", opts.amount) as unknown as Buffer,
-  });
-}
-
-/** Midrib `withdraw` instruction. User-signed. */
-export function withdrawIx(
-  opts: DepositWithdrawIxOpts,
-): TransactionInstruction {
-  const userAta = deriveAssociatedTokenAccount(opts.user, opts.mint);
-  const userBalance = deriveUserBalancePda(
-    opts.instance,
-    opts.user,
-    opts.mint,
-    opts.programId,
-  );
-  const instanceVault = deriveInstanceVaultPda(
-    opts.instance,
-    opts.mint,
-    opts.programId,
-  );
-  const vaultAuthority = deriveVaultAuthorityPda(opts.instance, opts.programId);
-  return new TransactionInstruction({
-    programId: opts.programId,
-    keys: [
-      { pubkey: opts.instance, isSigner: false, isWritable: false },
-      { pubkey: opts.mint, isSigner: false, isWritable: false },
-      { pubkey: userBalance, isSigner: false, isWritable: true },
-      { pubkey: userAta, isSigner: false, isWritable: true },
-      { pubkey: instanceVault, isSigner: false, isWritable: true },
-      { pubkey: vaultAuthority, isSigner: false, isWritable: false },
-      { pubkey: opts.user, isSigner: true, isWritable: false },
-      { pubkey: SPL_TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
-    ],
-    data: encodeAmountData("withdraw", opts.amount) as unknown as Buffer,
   });
 }
 
