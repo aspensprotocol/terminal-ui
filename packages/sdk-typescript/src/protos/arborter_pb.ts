@@ -81,7 +81,7 @@ export const WithdrawRequestSchema: GenMessage<WithdrawRequest> = /*@__PURE__*/
  */
 export type WithdrawResponse = Message<"xyz.aspens.arborter.v1.WithdrawResponse"> & {
   /**
-   * The voucher fields the holder submits to MidribV2.withdraw(...).
+   * The voucher fields the holder submits to MidribV3.withdraw(...).
    *
    * @generated from field: string account = 1;
    */
@@ -904,10 +904,10 @@ export const ArborterService: GenService<{
     output: typeof OrderbookEntrySchema;
   },
   /**
-   * Request a TEE-signed withdrawal voucher (Track A §8). The chain can no
+   * Request a TEE-signed withdrawal voucher. The chain can no
    * longer self-judge a withdrawal under the optimistic shadow ledger, so the
    * arborter freezes the settled funds and returns an owner-signed voucher the
-   * holder submits to MidribV2.withdraw(voucher, signature).
+   * holder submits to MidribV3.withdraw(voucher, signature).
    *
    * @generated from rpc xyz.aspens.arborter.v1.ArborterService.Withdraw
    */
