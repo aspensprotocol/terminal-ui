@@ -9,11 +9,14 @@
  *     request, fetch a voucher over gRPC, submit
  *     MidribV3.withdraw(voucher, signature). Works identically for
  *     ERC-20 and native (the contract pays raw value for the sentinel).
- *   - Solana: Midrib program deposit_ix / withdraw_ix via
- *     @solana/web3.js Transaction + wallet-adapter sendTransaction.
- *     Native SOL (the WSOL mint) wraps in the same tx before a deposit
- *     (create ATA → transfer lamports → SyncNative) and unwraps after a
- *     withdraw (CloseAccount).
+ *   - Solana deposit: Midrib program deposit_ix via @solana/web3.js
+ *     Transaction + wallet-adapter sendTransaction. Native SOL (the WSOL
+ *     mint) wraps in the same tx (create ATA → transfer lamports →
+ *     SyncNative) before the deposit.
+ *   - Solana withdraw: UNSUPPORTED, and refused up front. The program's
+ *     permissionless `withdraw` was removed (it could drain collateral
+ *     backing a resting order), leaving the TEE-signed `withdraw_voucher`
+ *     as the only exit — a flow this client has no implementation for.
  *
  * Dispatches on the chain's `architecture` field; errors surface via
  * sonner.
@@ -36,10 +39,8 @@ import {
 } from "@solana/web3.js";
 import {
   depositIx as buildDepositIx,
-  withdrawIx as buildWithdrawIx,
   createIdempotentAtaIx,
   syncNativeIx,
-  closeAccountIx,
   deriveAssociatedTokenAccount,
   isNativeToken,
   isWsolMint,
@@ -135,11 +136,11 @@ interface BuildIxOpts {
 }
 
 /**
- * Shared Solana submit path: build the instruction list from `buildIxs`,
- * pack into a single Transaction, send via the wallet adapter's
- * sendTransaction, and wait for confirmation. Keeps the deposit /
- * withdraw call sites identical apart from the ix builders (a WSOL
- * deposit is a 4-ix wrap+deposit; everything else is a single ix).
+ * Solana submit path: build the instruction list from `buildIxs`, pack
+ * into a single Transaction, send via the wallet adapter's
+ * sendTransaction, and wait for confirmation. A WSOL deposit is a 4-ix
+ * wrap+deposit; every other deposit is a single ix. Deposit is currently
+ * the only caller — withdraw is refused before it reaches here.
  */
 async function submitSolanaIxs(opts: {
   chainRpcUrl: string;
@@ -356,33 +357,21 @@ export function useDepositWithdraw(): UseDepositWithdrawResult {
       setPending(true);
       try {
         if (chain.architecture.match(/^solana$/i)) {
-          const unwrapSol = isWsolMint(token.address);
-          await submitSolanaIxs({
-            chainRpcUrl: resolveSolanaRpcUrl(chain, rpcUrls),
-            programIdStr:
-              chain.factoryAddress || chain.tradeContract?.contractId || "",
-            instanceStr: midrib,
-            mintStr: token.address,
-            amount: params.amount,
-            buildIxs: ({ programId, instance, user, mint, amount }) => {
-              const ixs = [
-                buildWithdrawIx({ programId, instance, user, mint, amount }),
-              ];
-              if (unwrapSol) {
-                // Native SOL: unwrap by closing the WSOL ATA after the
-                // withdraw credits it — sends the account's ENTIRE
-                // wrapped balance + rent back to the user as SOL.
-                const ata = deriveAssociatedTokenAccount(user, mint);
-                ixs.push(closeAccountIx(ata, user, user));
-              }
-              return ixs;
-            },
-            pendingLabel: unwrapSol
-              ? "Withdrawing + unwrapping…"
-              : "Withdrawing…",
-            successLabel: `Withdraw confirmed on ${chain.network}`,
-          });
-          return;
+          // The midrib program's permissionless `withdraw` instruction was
+          // removed — it let a user drain the collateral backing a resting
+          // order, because reservations live off-chain in the optimistic
+          // shadow ledger and the program's `available()` check could not
+          // see them. The TEE-signed `withdraw_voucher` is now the only
+          // exit, and this UI does not implement it yet (it needs a voucher
+          // from the arborter plus an Ed25519 sibling instruction). Fail
+          // here rather than submit a transaction whose discriminator no
+          // longer resolves on-chain.
+          throw new Error(
+            `Solana withdrawals now use the TEE voucher flow, which this ` +
+              `terminal does not support yet. Use 'aspens-cli withdraw' to ` +
+              `move ${params.tokenTicker} off ${chain.network}. Your funds ` +
+              `are not affected.`,
+          );
         }
 
         // EVM: the TEE voucher flow (Track A §8). MidribV3 has no
