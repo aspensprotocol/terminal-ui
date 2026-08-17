@@ -3,10 +3,15 @@
  *
  * Under the optimistic shadow ledger, order entry never touches the chain: the
  * arborter authenticates the order via the outer envelope signature and consumes
- * only `order_id` + `amount_in`. This builder resolves the order's chains /
- * tokens / amounts, derives the canonical 32-byte order id, and packs the
- * `OrderAuthorization`. No Permit2 lookup, no EIP-712 lock signature — those
- * were removed with the on-chain order machinery.
+ * only `order_id`. This builder resolves the order's chains / tokens / amounts,
+ * derives the canonical 32-byte order id, and packs the `OrderAuthorization`.
+ * No Permit2 lookup, no EIP-712 lock signature — those were removed with the
+ * on-chain order machinery.
+ *
+ * `amountIn` / `amountOut` survive as INPUTS TO THE ORDER-ID HASH only. They no
+ * longer declare anything to the arborter: `OrderAuthorization.amount_in` was
+ * deleted, and the collateral the ledger reserves is now derived from the
+ * signed order (or, for a market bid, stated by its signed `quote_budget`).
  */
 
 import { create } from "@bufbuild/protobuf";
@@ -31,9 +36,15 @@ export interface BuildEvmGaslessOpts {
   config: Configuration;
   /** "buy" picks the quote chain as origin; "sell" picks the base chain. */
   side: "buy" | "sell";
-  /** Input amount (on-origin-chain token) in raw base units. */
+  /**
+   * Input amount (on-origin-chain token) in raw base units. Hashed into the
+   * order id; not reported to the arborter.
+   */
   amountIn: bigint;
-  /** Output amount (on-destination-chain token) in raw base units. */
+  /**
+   * Output amount (on-destination-chain token) in raw base units. Hashed into
+   * the order id; not reported to the arborter.
+   */
   amountOut: bigint;
   /** User's address on the origin chain (EVM hex). */
   userAddress: Address;
@@ -84,10 +95,7 @@ export async function buildEvmGaslessAuthorization(
   });
   const orderId = bytesToHexPrefixed(orderIdBytes);
 
-  const authorization = create(OrderAuthorizationSchema, {
-    orderId,
-    amountIn: opts.amountIn.toString(),
-  });
+  const authorization = create(OrderAuthorizationSchema, { orderId });
 
   return { authorization, orderId };
 }

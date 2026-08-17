@@ -4,6 +4,7 @@ import { useExchangeClient } from "@/lib/hooks/useExchangeClient";
 import {
   buildEvmGaslessAuthorization,
   buildSolanaGaslessAuthorization,
+  marketBidQuoteBudget,
   signOrder,
   type OrderAuthorization,
   type OrderSigningData,
@@ -155,7 +156,57 @@ export function useTradeFormSubmit({
         const effectivePostOnly =
           data.orderType === "limit" ? data.postOnly : false;
 
-        // Create order signing data
+        // Every order commits a budget denominated in the asset it gives, and
+        // three of the four cells derive theirs: an ask gives `quantity` of
+        // base; a limit bid gives at most `quantity * price` of quote. The
+        // arborter derives those itself and REJECTS a caller-supplied budget
+        // on them, so `quoteBudget` stays undefined outside the market bid.
+        //
+        // A MARKET BID is the exception: it gives quote with no price to
+        // convert its quantity with, so nothing derivable bounds it and the
+        // arborter refuses one that doesn't state a budget. Size it at the
+        // same reference price the balance check above used, and in the QUOTE
+        // token's own decimals — the wire field is in native base units, not
+        // pair decimals, and a figure at the wrong scale is mis-collateralised
+        // rather than rejected.
+        //
+        // This makes the budget exactly the estimated total already shown to
+        // the user, which is also its limitation: an upward move between
+        // signing and matching buys less than `size` rather than overspending.
+        // A real market-buy UI would take the spend amount as the input.
+        let quoteBudget: string | undefined;
+        if (data.side === "buy" && data.orderType === "market") {
+          const referencePrice = bestAsk || lastTradePrice || 0;
+          if (referencePrice <= 0) {
+            setError(
+              "No reference price yet for this market — a market buy needs one to size its budget. Use a limit order.",
+            );
+            return;
+          }
+          // Prefer the market's own view of the quote token's decimals; the
+          // per-chain figure and the token record must agree, and the market
+          // is the one the arborter converts with.
+          const quoteTokenDecimals =
+            selectedMarket.quoteChainTokenDecimals ?? quoteToken.decimals;
+          const budget = marketBidQuoteBudget({
+            sizeRaw,
+            referencePriceRaw: BigInt(
+              Math.round(referencePrice * Math.pow(10, pairDecimals)),
+            ).toString(),
+            pairDecimals,
+            quoteTokenDecimals,
+          });
+          if (budget <= 0n) {
+            setError(
+              `Order is too small to spend any ${quoteToken.ticker} at the current price`,
+            );
+            return;
+          }
+          quoteBudget = budget.toString();
+        }
+
+        // Create order signing data. `quoteBudget` rides INSIDE the Order, so
+        // the envelope signature below covers it.
         const orderData: OrderSigningData = {
           side: data.side,
           quantity: sizeRaw,
@@ -165,6 +216,7 @@ export function useTradeFormSubmit({
           quoteAccountAddress: signerAddress,
           postOnly: effectivePostOnly,
           hidden: data.hidden,
+          quoteBudget,
         };
 
         // Sign the order envelope using the matched wallet. This
@@ -175,8 +227,14 @@ export function useTradeFormSubmit({
 
         // Build the order authorization. Under the optimistic ledger the
         // arborter authenticates the order via the outer envelope signature
-        // and reads only order_id + amount_in from this payload (no on-chain
-        // lock signature).
+        // and reads only order_id from this payload (no on-chain lock
+        // signature): `OrderAuthorization.amount_in` was deleted, because it
+        // sat outside the signed Order and so declared a commitment nothing
+        // had signed. The collateral now comes from the order itself.
+        //
+        // The amounts below therefore no longer travel anywhere — they are
+        // inputs to the order-id hash, which is what keeps a wallet's ids
+        // distinct.
         const config = client.cache.getConfig();
         if (!config) {
           throw new Error(
@@ -238,6 +296,9 @@ export function useTradeFormSubmit({
           authorization: orderAuthorization,
           postOnly: effectivePostOnly,
           hidden: data.hidden,
+          // Must be the SAME value that went into `orderData` above, or the
+          // wire order won't match the bytes the wallet signed.
+          quoteBudget,
         });
 
         // A hidden order that rested exists in NO server stream — this

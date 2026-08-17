@@ -93,12 +93,20 @@ export interface PlaceOrderParams {
   baseAccountAddress: string;
   quoteAccountAddress: string;
   /**
-   * Order authorization carrying the SDK-derived order id + committed
-   * amount_in. Under the optimistic ledger the arborter authenticates the
-   * order via the outer envelope signature and reads only these two fields;
-   * build it via `buildEvmGaslessAuthorization` / `buildSolanaGaslessAuthorization`.
+   * Order authorization carrying the SDK-derived order id — now its only
+   * field. Under the optimistic ledger the arborter authenticates the order
+   * via the outer envelope signature and derives the collateral it reserves
+   * from the signed order itself; build this via
+   * `buildEvmGaslessAuthorization` / `buildSolanaGaslessAuthorization`.
    */
   authorization?: import("./protos/arborter_pb.js").OrderAuthorization;
+  /**
+   * A market BID's spending budget, in the QUOTE token's native base units —
+   * see `OrderSigningData.quoteBudget`, whose value this must equal, since the
+   * envelope signature covers it. Required for a market bid and rejected by
+   * the arborter on every other cell.
+   */
+  quoteBudget?: string;
   /**
    * Post-only: when true, arborter rejects the order with
    * FAILED_PRECONDITION (no on-chain lock, no gas spent) if it would
@@ -220,6 +228,7 @@ class RestClient {
       quoteAccountAddress: params.quoteAccountAddress,
       postOnly: params.postOnly ?? false,
       hidden: params.hidden ?? false,
+      quoteBudget: params.quoteBudget,
     });
 
     // Send the order via gRPC, carrying the optional OrderAuthorization
@@ -241,8 +250,14 @@ class RestClient {
    * against that reconstruction. So the signature the caller passed must have
    * been produced over a `hidden=false` order — a hidden order can't round-trip
    * this channel byte-identically, so reject it rather than fail silently
-   * downstream. `authorization` carries the id + committed amount the adapter
-   * needs and is mandatory here.
+   * downstream. `authorization` carries the order id the adapter needs and is
+   * mandatory here.
+   *
+   * A market BID is likewise unsupported on this channel: the direct-action
+   * payload has no `quoteBudget` field (the ext-proxy adapter's
+   * `types.PlaceOrderRequest` predates it), so the budget would be dropped in
+   * transit and the arborter would refuse the order as unbounded. Fail here
+   * with the reason instead.
    */
   private async placeOrderFce(
     params: PlaceOrderParams,
@@ -256,8 +271,11 @@ class RestClient {
       );
     }
     if (!params.authorization) {
+      throw new Error("FCE placeOrder requires params.authorization (orderId)");
+    }
+    if (params.quoteBudget !== undefined) {
       throw new Error(
-        "FCE placeOrder requires params.authorization (orderId + amountIn)",
+        "FCE transport does not support market bids (the direct-action payload carries no quote budget, so the arborter would refuse the order as unbounded)",
       );
     }
 
@@ -271,7 +289,6 @@ class RestClient {
       postOnly: params.postOnly ? true : undefined,
       signatureHash: bytesToHex(params.signature),
       orderId: params.authorization.orderId,
-      amountIn: params.authorization.amountIn,
     });
 
     if (out.status !== 1 || !out.data) {

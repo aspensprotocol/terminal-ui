@@ -92,3 +92,55 @@ export function formatDisplayNumber(
   const trimmed = fixed.replace(/\.?0+$/, "");
   return trimmed === "" || trimmed === "-" ? "0" : trimmed;
 }
+
+export interface MarketBidQuoteBudgetOpts {
+  /** Base quantity the user wants, as a pair-decimal-scaled integer string. */
+  sizeRaw: string;
+  /**
+   * Quote-per-base price to size the budget with, pair-decimal-scaled. A
+   * market order has no price of its own, so this is a *reference* price
+   * (best ask / last trade) — see the caller's slippage caveat.
+   */
+  referencePriceRaw: string;
+  /** The market's `pair_decimals` — the scale of `sizeRaw` / `referencePriceRaw`. */
+  pairDecimals: number;
+  /** The QUOTE token's own decimals on its chain (`Market.quoteChainTokenDecimals`). */
+  quoteTokenDecimals: number;
+}
+
+/**
+ * Size a market BID's `Order.quote_budget`, in the quote token's NATIVE base
+ * units.
+ *
+ * Two scales meet here and they are routinely different (e.g. pair_decimals=18
+ * against USDC's 6). The matching engine works in pair decimals; `quote_budget`
+ * is denominated in the quote token's own decimals — the denomination the
+ * ledger reserves in. A figure at the wrong scale is *accepted* by the arborter
+ * and mis-collateralises the order rather than being rejected, so the
+ * conversion happens once, here, in BigInt.
+ *
+ * The arithmetic deliberately mirrors the arborter's own limit-bid derivation
+ * (`handlers::common::required_collateral`): multiply, drop one factor of the
+ * pair scale, then re-scale pair → quote-token decimals. Both steps FLOOR, so
+ * the committed budget is never larger than the quote the order was sized to
+ * spend.
+ *
+ * Returns a `bigint` that may be `0n` — either because the inputs were zero or
+ * because the budget floored away below the quote token's precision. Callers
+ * must refuse a zero budget: the arborter rejects one (it can buy nothing), so
+ * sending it just turns a clear client-side error into a server round-trip.
+ */
+export function marketBidQuoteBudget(opts: MarketBidQuoteBudgetOpts): bigint {
+  const { sizeRaw, referencePriceRaw, pairDecimals, quoteTokenDecimals } = opts;
+  const size = BigInt(sizeRaw);
+  const price = BigInt(referencePriceRaw);
+  if (size <= 0n || price <= 0n) return 0n;
+
+  // size * price is scaled by pair_decimals TWICE; one factor comes back out
+  // to leave the quote amount in pair units.
+  const quoteInPairUnits = (size * price) / 10n ** BigInt(pairDecimals);
+
+  return quoteTokenDecimals >= pairDecimals
+    ? quoteInPairUnits * 10n ** BigInt(quoteTokenDecimals - pairDecimals)
+    : quoteInPairUnits / 10n ** BigInt(pairDecimals - quoteTokenDecimals);
+}
