@@ -84,6 +84,26 @@ export interface OrderSigningData {
    * byte-identical.
    */
   hidden?: boolean;
+  /**
+   * The maximum QUOTE this order may spend, in the quote token's NATIVE base
+   * units (not pair decimals) — decimal-string `u128`, same convention as
+   * `quantity` / `price`. Size it with
+   * {@link import("./decimals.js").marketBidQuoteBudget}.
+   *
+   * One rule governs every order: it commits a budget denominated in the asset
+   * it gives. An ASK gives base and is bounded by `quantity`; a LIMIT BID gives
+   * quote and is bounded by `quantity * price`. A MARKET BID gives quote with
+   * no price to convert with, so it must state its budget outright — this
+   * field is that order's size.
+   *
+   * REQUIRED for a market bid (side buy, no price): the arborter refuses one
+   * without it. REJECTED on every other cell, where the budget is derived from
+   * the order itself. It lives inside `Order` precisely so the envelope
+   * signature covers it — the retired `OrderAuthorization.amount_in` sat in a
+   * sibling message and was never signed. Omitted here it is wire-skipped, so
+   * digests for the three derivable cells are unchanged.
+   */
+  quoteBudget?: string;
 }
 
 /**
@@ -161,6 +181,10 @@ export function createOrderMessage(data: OrderSigningData): Order {
     matchingOrderIds: data.matchingOrderIds?.map((id) => BigInt(id)) || [],
     postOnly: data.postOnly ?? false,
     hidden: data.hidden ?? false,
+    // Optional proto field: left unset (and wire-skipped) unless the caller
+    // supplied one, so non-market-bid digests are byte-identical to before
+    // the field existed.
+    quoteBudget: data.quoteBudget,
   });
 }
 

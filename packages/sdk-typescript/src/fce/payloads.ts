@@ -38,8 +38,13 @@ export interface PlaceOrderRequest {
   signatureHash: Hex;
   /** SDK-derived canonical order id */
   orderId: string;
-  /** committed lock, u128 decimal */
-  amountIn: string;
+  /**
+   * NOTE: `amountIn` was dropped along with `OrderAuthorization.amount_in`.
+   * The adapter's `types.PlaceOrderRequest` still declares the JSON key, but
+   * it only ever forwarded it into that deleted proto field, so omitting it
+   * costs nothing. There is no `quoteBudget` counterpart here yet, which is
+   * why `client.ts` refuses a market bid on the FCE transport.
+   */
 }
 
 export interface PlaceOrderResponse {

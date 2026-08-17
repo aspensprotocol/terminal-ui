@@ -202,6 +202,8 @@ export {
   toDisplayValueCapped,
   formatDisplayNumber,
   DEFAULT_DISPLAY_DECIMALS,
+  marketBidQuoteBudget,
+  type MarketBidQuoteBudgetOpts,
 } from "./decimals.js";
 
 /**

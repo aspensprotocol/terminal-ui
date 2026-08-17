@@ -3,10 +3,13 @@
  *
  * Counterpart to `gasless-evm.ts`. Under the optimistic shadow ledger, order
  * entry never touches the chain: the arborter authenticates via the outer
- * envelope signature and consumes only `order_id` + `amount_in`. This builder
- * resolves chains / tokens / amounts, derives the canonical 32-byte order id,
- * and packs the `OrderAuthorization`. No borsh `open_for` payload, no Ed25519
- * lock signature — those were removed with the on-chain order machinery.
+ * envelope signature and consumes only `order_id`. This builder resolves
+ * chains / tokens / amounts, derives the canonical 32-byte order id, and packs
+ * the `OrderAuthorization`. No borsh `open_for` payload, no Ed25519 lock
+ * signature — those were removed with the on-chain order machinery.
+ *
+ * `amountIn` / `amountOut` survive as INPUTS TO THE ORDER-ID HASH only — see
+ * the note in `gasless-evm.ts`.
  */
 
 import { create } from "@bufbuild/protobuf";
@@ -24,9 +27,15 @@ export interface BuildSolanaGaslessOpts {
   market: Market;
   config: Configuration;
   side: "buy" | "sell";
-  /** Input-token amount in base units (matches the origin mint's decimals). */
+  /**
+   * Input-token amount in base units (matches the origin mint's decimals).
+   * Hashed into the order id; not reported to the arborter.
+   */
   amountIn: bigint;
-  /** Output-token amount in base units. */
+  /**
+   * Output-token amount in base units. Hashed into the order id; not reported
+   * to the arborter.
+   */
   amountOut: bigint;
   /** User's Solana address (base58). */
   userAddress: string;
@@ -93,10 +102,7 @@ export async function buildSolanaGaslessAuthorization(
   });
   const orderId = `0x${bytesToHex(orderIdBytes)}`;
 
-  const authorization = create(OrderAuthorizationSchema, {
-    orderId,
-    amountIn: opts.amountIn.toString(),
-  });
+  const authorization = create(OrderAuthorizationSchema, { orderId });
 
   return { authorization, orderId };
 }

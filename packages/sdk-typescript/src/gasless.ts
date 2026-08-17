@@ -3,7 +3,8 @@
  *
  * Mirrors the Rust SDK's `aspens::orders::derive_order_id`. Under the optimistic
  * shadow ledger, order entry never touches the chain: the arborter authenticates
- * via the outer envelope signature and consumes only `order_id` + `amount_in`.
+ * via the outer envelope signature and consumes only `order_id` (the sibling
+ * `amount_in` was deleted; collateral is derived from the signed order).
  * The legacy gasless on-chain-lock signing (EVM EIP-712 `GaslessCrossChainOrder`,
  * Solana `OpenForSignedPayload`) was removed with the on-chain order machinery.
  *
