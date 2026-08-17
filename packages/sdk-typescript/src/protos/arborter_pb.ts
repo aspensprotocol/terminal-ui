@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file arborter.proto.
  */
 export const file_arborter: GenFile = /*@__PURE__*/
-  fileDesc("Cg5hcmJvcnRlci5wcm90bxIWeHl6LmFzcGVucy5hcmJvcnRlci52MSIHCgVFbXB0eSJlCg9XaXRoZHJhd1JlcXVlc3QSDwoHbmV0d29yaxgBIAEoCRINCgV0b2tlbhgCIAEoCRIPCgdhY2NvdW50GAMgASgJEg4KBmFtb3VudBgEIAEoCRIRCglzaWduYXR1cmUYBSABKAwidAoQV2l0aGRyYXdSZXNwb25zZRIPCgdhY2NvdW50GAEgASgJEg0KBXRva2VuGAIgASgJEg4KBmFtb3VudBgDIAEoCRINCgVub25jZRgEIAEoBBIOCgZleHBpcnkYBSABKAQSEQoJc2lnbmF0dXJlGAYgASgMImIKEkNhbmNlbE9yZGVyUmVxdWVzdBI0CgVvcmRlchgBIAEoCzIlLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuT3JkZXJUb0NhbmNlbBIWCg5zaWduYXR1cmVfaGFzaBgCIAEoDCK1AQoTQ2FuY2VsT3JkZXJSZXNwb25zZRIWCg5vcmRlcl9jYW5jZWxlZBgBIAEoCBJDChJ0cmFuc2FjdGlvbl9oYXNoZXMYAiADKAsyJy54eXouYXNwZW5zLmFyYm9ydGVyLnYxLlRyYW5zYWN0aW9uSGFzaBJBChFjdXJyZW50X29yZGVyYm9vaxgDIAMoCzImLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuT3JkZXJib29rRW50cnkisgEKEE9yZGVyYm9va1JlcXVlc3QSFwoPY29udGludWVfc3RyZWFtGAEgASgIEhEKCW1hcmtldF9pZBgCIAEoCRIjChZoaXN0b3JpY2FsX29wZW5fb3JkZXJzGAMgASgISACIAQESHQoQZmlsdGVyX2J5X3RyYWRlchgEIAEoCUgBiAEBQhkKF19oaXN0b3JpY2FsX29wZW5fb3JkZXJzQhMKEV9maWx0ZXJfYnlfdHJhZGVyIrIBCgxUcmFkZVJlcXVlc3QSFwoPY29udGludWVfc3RyZWFtGAEgASgIEhEKCW1hcmtldF9pZBgCIAEoCRIlChhoaXN0b3JpY2FsX2Nsb3NlZF90cmFkZXMYAyABKAhIAIgBARIdChBmaWx0ZXJfYnlfdHJhZGVyGAQgASgJSAGIAQFCGwoZX2hpc3RvcmljYWxfY2xvc2VkX3RyYWRlc0ITChFfZmlsdGVyX2J5X3RyYWRlciKbAQoQU2VuZE9yZGVyUmVxdWVzdBIsCgVvcmRlchgBIAEoCzIdLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuT3JkZXISFgoOc2lnbmF0dXJlX2hhc2gYAiABKAwSQQoNYXV0aG9yaXphdGlvbhgDIAEoCzIqLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuT3JkZXJBdXRob3JpemF0aW9uIjkKEk9yZGVyQXV0aG9yaXphdGlvbhIQCghvcmRlcl9pZBgBIAEoCRIRCglhbW91bnRfaW4YAiABKAkisQIKBU9yZGVyEioKBHNpZGUYASABKA4yHC54eXouYXNwZW5zLmFyYm9ydGVyLnYxLlNpZGUSEAoIcXVhbnRpdHkYAiABKAkSEgoFcHJpY2UYAyABKAlIAIgBARIRCgltYXJrZXRfaWQYBCABKAkSHAoUYmFzZV9hY2NvdW50X2FkZHJlc3MYBSABKAkSHQoVcXVvdGVfYWNjb3VudF9hZGRyZXNzGAYgASgJEj0KDmV4ZWN1dGlvbl90eXBlGAcgASgOMiUueHl6LmFzcGVucy5hcmJvcnRlci52MS5FeGVjdXRpb25UeXBlEhoKEm1hdGNoaW5nX29yZGVyX2lkcxgIIAMoBBIRCglwb3N0X29ubHkYCSABKAgSDgoGaGlkZGVuGAogASgIQggKBl9wcmljZSLdAgoFVHJhZGUSEQoJdGltZXN0YW1wGAEgASgEEg0KBXByaWNlGAIgASgJEgsKA3F0eRgDIAEoCRIQCghtYWtlcl9pZBgEIAEoCRIQCgh0YWtlcl9pZBgFIAEoCRIaChJtYWtlcl9iYXNlX2FkZHJlc3MYBiABKAkSGwoTbWFrZXJfcXVvdGVfYWRkcmVzcxgHIAEoCRIaChJ0YWtlcl9iYXNlX2FkZHJlc3MYCCABKAkSGwoTdGFrZXJfcXVvdGVfYWRkcmVzcxgJIAEoCRIzCghidXllcl9pcxgKIAEoDjIhLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuVHJhZGVSb2xlEjQKCXNlbGxlcl9pcxgLIAEoDjIhLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuVHJhZGVSb2xlEhEKCW9yZGVyX2hpdBgMIAEoBBIRCgltYXJrZXRfaWQYDSABKAkiOAoPVHJhbnNhY3Rpb25IYXNoEhEKCWhhc2hfdHlwZRgBIAEoCRISCgpoYXNoX3ZhbHVlGAIgASgJIrACChFTZW5kT3JkZXJSZXNwb25zZRIVCg1vcmRlcl9pbl9ib29rGAEgASgIEjEKBW9yZGVyGAIgASgLMh0ueHl6LmFzcGVucy5hcmJvcnRlci52MS5PcmRlckgAiAEBEi0KBnRyYWRlcxgDIAMoCzIdLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuVHJhZGUSQwoSdHJhbnNhY3Rpb25faGFzaGVzGAQgAygLMicueHl6LmFzcGVucy5hcmJvcnRlci52MS5UcmFuc2FjdGlvbkhhc2gSQQoRY3VycmVudF9vcmRlcmJvb2sYBSADKAsyJi54eXouYXNwZW5zLmFyYm9ydGVyLnYxLk9yZGVyYm9va0VudHJ5EhAKCG9yZGVyX2lkGAYgASgEQggKBl9vcmRlciJ3Cg1PcmRlclRvQ2FuY2VsEhEKCW1hcmtldF9pZBgBIAEoCRIqCgRzaWRlGAIgASgOMhwueHl6LmFzcGVucy5hcmJvcnRlci52MS5TaWRlEhUKDXRva2VuX2FkZHJlc3MYAyABKAkSEAoIb3JkZXJfaWQYBCABKAQilAIKDk9yZGVyYm9va0VudHJ5EhEKCXRpbWVzdGFtcBgBIAEoBBIQCghvcmRlcl9pZBgCIAEoBBINCgVwcmljZRgDIAEoCRIQCghxdWFudGl0eRgEIAEoCRIqCgRzaWRlGAUgASgOMhwueHl6LmFzcGVucy5hcmJvcnRlci52MS5TaWRlEhoKEm1ha2VyX2Jhc2VfYWRkcmVzcxgGIAEoCRIbChNtYWtlcl9xdW90ZV9hZGRyZXNzGAcgASgJEhEKCW1hcmtldF9pZBgIIAEoCRIxCgVzdGF0ZRgJIAEoDjIiLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuT3JkZXJTdGF0ZRIRCglwb3N0X29ubHkYCiABKAgqOAoEU2lkZRIUChBTSURFX1VOU1BFQ0lGSUVEEAASDAoIU0lERV9CSUQQARIMCghTSURFX0FTSxACKlEKDUV4ZWN1dGlvblR5cGUSHgoaRVhFQ1VUSU9OX1RZUEVfVU5TUEVDSUZJRUQQABIgChxFWEVDVVRJT05fVFlQRV9ESVNDUkVUSU9OQVJZEAEqqQEKCk9yZGVyU3RhdGUSGwoXT1JERVJfU1RBVEVfVU5TUEVDSUZJRUQQABIXChNPUkRFUl9TVEFURV9QRU5ESU5HEAESGQoVT1JERVJfU1RBVEVfQ09ORklSTUVEEAISFwoTT1JERVJfU1RBVEVfTUFUQ0hFRBADEhgKFE9SREVSX1NUQVRFX0NBTkNFTEVEEAQSFwoTT1JERVJfU1RBVEVfU0VUVExFRBAFKj0KCVRyYWRlUm9sZRIaChZUUkFERV9ST0xFX1VOU1BFQ0lGSUVEEAASCQoFTUFLRVIQARIJCgVUQUtFUhACMvYDCg9BcmJvcnRlclNlcnZpY2USYgoJU2VuZE9yZGVyEigueHl6LmFzcGVucy5hcmJvcnRlci52MS5TZW5kT3JkZXJSZXF1ZXN0GikueHl6LmFzcGVucy5hcmJvcnRlci52MS5TZW5kT3JkZXJSZXNwb25zZSIAEmgKC0NhbmNlbE9yZGVyEioueHl6LmFzcGVucy5hcmJvcnRlci52MS5DYW5jZWxPcmRlclJlcXVlc3QaKy54eXouYXNwZW5zLmFyYm9ydGVyLnYxLkNhbmNlbE9yZGVyUmVzcG9uc2UiABJRCgZUcmFkZXMSJC54eXouYXNwZW5zLmFyYm9ydGVyLnYxLlRyYWRlUmVxdWVzdBodLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuVHJhZGUiADABEmEKCU9yZGVyYm9vaxIoLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuT3JkZXJib29rUmVxdWVzdBomLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuT3JkZXJib29rRW50cnkiADABEl8KCFdpdGhkcmF3EicueHl6LmFzcGVucy5hcmJvcnRlci52MS5XaXRoZHJhd1JlcXVlc3QaKC54eXouYXNwZW5zLmFyYm9ydGVyLnYxLldpdGhkcmF3UmVzcG9uc2UiAEICSAFiBnByb3RvMw");
+  fileDesc("Cg5hcmJvcnRlci5wcm90bxIWeHl6LmFzcGVucy5hcmJvcnRlci52MSIHCgVFbXB0eSJlCg9XaXRoZHJhd1JlcXVlc3QSDwoHbmV0d29yaxgBIAEoCRINCgV0b2tlbhgCIAEoCRIPCgdhY2NvdW50GAMgASgJEg4KBmFtb3VudBgEIAEoCRIRCglzaWduYXR1cmUYBSABKAwidAoQV2l0aGRyYXdSZXNwb25zZRIPCgdhY2NvdW50GAEgASgJEg0KBXRva2VuGAIgASgJEg4KBmFtb3VudBgDIAEoCRINCgVub25jZRgEIAEoBBIOCgZleHBpcnkYBSABKAQSEQoJc2lnbmF0dXJlGAYgASgMImIKEkNhbmNlbE9yZGVyUmVxdWVzdBI0CgVvcmRlchgBIAEoCzIlLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuT3JkZXJUb0NhbmNlbBIWCg5zaWduYXR1cmVfaGFzaBgCIAEoDCK1AQoTQ2FuY2VsT3JkZXJSZXNwb25zZRIWCg5vcmRlcl9jYW5jZWxlZBgBIAEoCBJDChJ0cmFuc2FjdGlvbl9oYXNoZXMYAiADKAsyJy54eXouYXNwZW5zLmFyYm9ydGVyLnYxLlRyYW5zYWN0aW9uSGFzaBJBChFjdXJyZW50X29yZGVyYm9vaxgDIAMoCzImLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuT3JkZXJib29rRW50cnkisgEKEE9yZGVyYm9va1JlcXVlc3QSFwoPY29udGludWVfc3RyZWFtGAEgASgIEhEKCW1hcmtldF9pZBgCIAEoCRIjChZoaXN0b3JpY2FsX29wZW5fb3JkZXJzGAMgASgISACIAQESHQoQZmlsdGVyX2J5X3RyYWRlchgEIAEoCUgBiAEBQhkKF19oaXN0b3JpY2FsX29wZW5fb3JkZXJzQhMKEV9maWx0ZXJfYnlfdHJhZGVyIrIBCgxUcmFkZVJlcXVlc3QSFwoPY29udGludWVfc3RyZWFtGAEgASgIEhEKCW1hcmtldF9pZBgCIAEoCRIlChhoaXN0b3JpY2FsX2Nsb3NlZF90cmFkZXMYAyABKAhIAIgBARIdChBmaWx0ZXJfYnlfdHJhZGVyGAQgASgJSAGIAQFCGwoZX2hpc3RvcmljYWxfY2xvc2VkX3RyYWRlc0ITChFfZmlsdGVyX2J5X3RyYWRlciKbAQoQU2VuZE9yZGVyUmVxdWVzdBIsCgVvcmRlchgBIAEoCzIdLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuT3JkZXISFgoOc2lnbmF0dXJlX2hhc2gYAiABKAwSQQoNYXV0aG9yaXphdGlvbhgDIAEoCzIqLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuT3JkZXJBdXRob3JpemF0aW9uIiYKEk9yZGVyQXV0aG9yaXphdGlvbhIQCghvcmRlcl9pZBgBIAEoCSLdAgoFT3JkZXISKgoEc2lkZRgBIAEoDjIcLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuU2lkZRIQCghxdWFudGl0eRgCIAEoCRISCgVwcmljZRgDIAEoCUgAiAEBEhEKCW1hcmtldF9pZBgEIAEoCRIcChRiYXNlX2FjY291bnRfYWRkcmVzcxgFIAEoCRIdChVxdW90ZV9hY2NvdW50X2FkZHJlc3MYBiABKAkSPQoOZXhlY3V0aW9uX3R5cGUYByABKA4yJS54eXouYXNwZW5zLmFyYm9ydGVyLnYxLkV4ZWN1dGlvblR5cGUSGgoSbWF0Y2hpbmdfb3JkZXJfaWRzGAggAygEEhEKCXBvc3Rfb25seRgJIAEoCBIOCgZoaWRkZW4YCiABKAgSGQoMcXVvdGVfYnVkZ2V0GAsgASgJSAGIAQFCCAoGX3ByaWNlQg8KDV9xdW90ZV9idWRnZXQi3QIKBVRyYWRlEhEKCXRpbWVzdGFtcBgBIAEoBBINCgVwcmljZRgCIAEoCRILCgNxdHkYAyABKAkSEAoIbWFrZXJfaWQYBCABKAkSEAoIdGFrZXJfaWQYBSABKAkSGgoSbWFrZXJfYmFzZV9hZGRyZXNzGAYgASgJEhsKE21ha2VyX3F1b3RlX2FkZHJlc3MYByABKAkSGgoSdGFrZXJfYmFzZV9hZGRyZXNzGAggASgJEhsKE3Rha2VyX3F1b3RlX2FkZHJlc3MYCSABKAkSMwoIYnV5ZXJfaXMYCiABKA4yIS54eXouYXNwZW5zLmFyYm9ydGVyLnYxLlRyYWRlUm9sZRI0CglzZWxsZXJfaXMYCyABKA4yIS54eXouYXNwZW5zLmFyYm9ydGVyLnYxLlRyYWRlUm9sZRIRCglvcmRlcl9oaXQYDCABKAQSEQoJbWFya2V0X2lkGA0gASgJIjgKD1RyYW5zYWN0aW9uSGFzaBIRCgloYXNoX3R5cGUYASABKAkSEgoKaGFzaF92YWx1ZRgCIAEoCSKwAgoRU2VuZE9yZGVyUmVzcG9uc2USFQoNb3JkZXJfaW5fYm9vaxgBIAEoCBIxCgVvcmRlchgCIAEoCzIdLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuT3JkZXJIAIgBARItCgZ0cmFkZXMYAyADKAsyHS54eXouYXNwZW5zLmFyYm9ydGVyLnYxLlRyYWRlEkMKEnRyYW5zYWN0aW9uX2hhc2hlcxgEIAMoCzInLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuVHJhbnNhY3Rpb25IYXNoEkEKEWN1cnJlbnRfb3JkZXJib29rGAUgAygLMiYueHl6LmFzcGVucy5hcmJvcnRlci52MS5PcmRlcmJvb2tFbnRyeRIQCghvcmRlcl9pZBgGIAEoBEIICgZfb3JkZXIidwoNT3JkZXJUb0NhbmNlbBIRCgltYXJrZXRfaWQYASABKAkSKgoEc2lkZRgCIAEoDjIcLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuU2lkZRIVCg10b2tlbl9hZGRyZXNzGAMgASgJEhAKCG9yZGVyX2lkGAQgASgEIpQCCg5PcmRlcmJvb2tFbnRyeRIRCgl0aW1lc3RhbXAYASABKAQSEAoIb3JkZXJfaWQYAiABKAQSDQoFcHJpY2UYAyABKAkSEAoIcXVhbnRpdHkYBCABKAkSKgoEc2lkZRgFIAEoDjIcLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuU2lkZRIaChJtYWtlcl9iYXNlX2FkZHJlc3MYBiABKAkSGwoTbWFrZXJfcXVvdGVfYWRkcmVzcxgHIAEoCRIRCgltYXJrZXRfaWQYCCABKAkSMQoFc3RhdGUYCSABKA4yIi54eXouYXNwZW5zLmFyYm9ydGVyLnYxLk9yZGVyU3RhdGUSEQoJcG9zdF9vbmx5GAogASgIKjgKBFNpZGUSFAoQU0lERV9VTlNQRUNJRklFRBAAEgwKCFNJREVfQklEEAESDAoIU0lERV9BU0sQAipRCg1FeGVjdXRpb25UeXBlEh4KGkVYRUNVVElPTl9UWVBFX1VOU1BFQ0lGSUVEEAASIAocRVhFQ1VUSU9OX1RZUEVfRElTQ1JFVElPTkFSWRABKqkBCgpPcmRlclN0YXRlEhsKF09SREVSX1NUQVRFX1VOU1BFQ0lGSUVEEAASFwoTT1JERVJfU1RBVEVfUEVORElORxABEhkKFU9SREVSX1NUQVRFX0NPTkZJUk1FRBACEhcKE09SREVSX1NUQVRFX01BVENIRUQQAxIYChRPUkRFUl9TVEFURV9DQU5DRUxFRBAEEhcKE09SREVSX1NUQVRFX1NFVFRMRUQQBSo9CglUcmFkZVJvbGUSGgoWVFJBREVfUk9MRV9VTlNQRUNJRklFRBAAEgkKBU1BS0VSEAESCQoFVEFLRVIQAjL2AwoPQXJib3J0ZXJTZXJ2aWNlEmIKCVNlbmRPcmRlchIoLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuU2VuZE9yZGVyUmVxdWVzdBopLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuU2VuZE9yZGVyUmVzcG9uc2UiABJoCgtDYW5jZWxPcmRlchIqLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuQ2FuY2VsT3JkZXJSZXF1ZXN0GisueHl6LmFzcGVucy5hcmJvcnRlci52MS5DYW5jZWxPcmRlclJlc3BvbnNlIgASUQoGVHJhZGVzEiQueHl6LmFzcGVucy5hcmJvcnRlci52MS5UcmFkZVJlcXVlc3QaHS54eXouYXNwZW5zLmFyYm9ydGVyLnYxLlRyYWRlIgAwARJhCglPcmRlcmJvb2sSKC54eXouYXNwZW5zLmFyYm9ydGVyLnYxLk9yZGVyYm9va1JlcXVlc3QaJi54eXouYXNwZW5zLmFyYm9ydGVyLnYxLk9yZGVyYm9va0VudHJ5IgAwARJfCghXaXRoZHJhdxInLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuV2l0aGRyYXdSZXF1ZXN0GigueHl6LmFzcGVucy5hcmJvcnRlci52MS5XaXRoZHJhd1Jlc3BvbnNlIgBCAkgBYgZwcm90bzM");
 
 /**
  * @generated from message xyz.aspens.arborter.v1.Empty
@@ -276,8 +276,8 @@ export type SendOrderRequest = Message<"xyz.aspens.arborter.v1.SendOrderRequest"
   signatureHash: Uint8Array;
 
   /**
-   * Order authorization carrying the SDK-derived canonical order id and the
-   * committed lock amount. Required. For message-typed fields proto3 tracks
+   * Order authorization carrying the SDK-derived canonical order id. Required.
+   * For message-typed fields proto3 tracks
    * presence by default, so the generated Rust API is
    * `Option<OrderAuthorization>`; the arborter handler enforces presence at
    * the request boundary.
@@ -298,7 +298,7 @@ export const SendOrderRequestSchema: GenMessage<SendOrderRequest> = /*@__PURE__*
  * SDK-derived order authorization. Under the optimistic shadow ledger, order
  * entry never touches the chain — the arborter authenticates the order via the
  * outer envelope signature (`SendOrderRequest.signature_hash`) and consumes
- * only the two fields below. The legacy gasless on-chain-lock fields
+ * only the single field below. The legacy gasless on-chain-lock fields
  * (user_signature / deadline / nonce / open_deadline / amount_out) were removed
  * with the on-chain order machinery; the message and its `SendOrderRequest`
  * field were renamed from `GaslessAuthorization` / `gasless` to match.
@@ -312,19 +312,16 @@ export type OrderAuthorization = Message<"xyz.aspens.arborter.v1.OrderAuthorizat
    * the order's id throughout match / settle, so it MUST match the SDK's
    * derivation exactly.
    *
+   * NOTE: `amount_in` (field 2) was removed. It declared the collateral the
+   * caller committed, but it lived HERE — in a sibling of `Order` — so
+   * `signature_hash` never covered it, and the arborter now derives the
+   * requirement from the signed order itself and reserves that. The one figure
+   * that genuinely cannot be derived, a market BID's budget, moved INTO `Order`
+   * as `quote_budget` so that it is signed. Field 2 is free for reuse.
+   *
    * @generated from field: string order_id = 1;
    */
   orderId: string;
-
-  /**
-   * The committed lock amount on the origin chain (input token), in that
-   * token's native base units (NOT pair decimals). Decimal-string encoding of
-   * `u128` (no `0x` prefix, no separators) so values up to 2^128-1 round-trip
-   * exactly across the gRPC boundary — protobuf has no native 128-bit integer.
-   *
-   * @generated from field: string amount_in = 2;
-   */
-  amountIn: string;
 };
 
 /**
@@ -346,7 +343,13 @@ export type Order = Message<"xyz.aspens.arborter.v1.Order"> & {
   side: Side;
 
   /**
-   * Order size
+   * Order size, in BASE units at pair decimals.
+   *
+   * For three of the four (side, type) combinations this is what bounds the
+   * order's obligation: an ASK gives base, so `quantity` IS its budget; a LIMIT
+   * BID gives quote, and `quantity * price` bounds it. The fourth — a MARKET
+   * BID — is bounded by `quote_budget` below instead, and its `quantity` is
+   * ignored.
    *
    * @generated from field: string quantity = 2;
    */
@@ -421,6 +424,31 @@ export type Order = Message<"xyz.aspens.arborter.v1.Order"> & {
    * @generated from field: bool hidden = 10;
    */
   hidden: boolean;
+
+  /**
+   * The maximum QUOTE this order may spend, in the quote token's native base
+   * units (NOT pair decimals) — the same denomination the ledger reserves in.
+   * Decimal-string encoding of `u128`, matching `quantity` / `price`.
+   *
+   * One rule governs every order: **it commits a budget, denominated in the
+   * asset it gives.** An ASK gives base and is bounded by `quantity`; a LIMIT
+   * BID gives quote and is bounded by `quantity * price`. A MARKET BID gives
+   * quote with no price to convert with, so nothing derivable bounds it — it
+   * must say outright how much it is prepared to spend. That is this field, and
+   * it is the order's SIZE, not a restatement of a size given elsewhere.
+   *
+   * REQUIRED for a market BID (no price, side BID); the arborter refuses one
+   * without it, because an unbounded obligation cannot be collateralised.
+   * REJECTED on every other order, where the budget is derived and a
+   * caller-supplied figure could only disagree with it.
+   *
+   * It lives in `Order` rather than beside it precisely so `signature_hash`
+   * covers it: this number authorises spending, and the retired
+   * `OrderAuthorization.amount_in` was unsigned.
+   *
+   * @generated from field: optional string quote_budget = 11;
+   */
+  quoteBudget?: string;
 };
 
 /**
