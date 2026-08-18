@@ -30,6 +30,7 @@ export {
   type GetConfigEnvelope,
   type GetConfigRequest,
 } from "./config.js";
+export { FCE_ORDER_NONCE } from "./payloads.js";
 export type {
   PlaceOrderRequest,
   PlaceOrderResponse,
