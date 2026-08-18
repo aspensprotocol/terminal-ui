@@ -18,7 +18,11 @@
 
 import { useMemo, useState } from "react";
 import { ArrowDownToLine, ArrowUpFromLine, Wallet } from "lucide-react";
-import { isWsolMint, type ChainBalanceSlice } from "@aspens/terminal-sdk";
+import {
+  decimalToRaw,
+  isWsolMint,
+  type ChainBalanceSlice,
+} from "@aspens/terminal-sdk";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -162,7 +166,19 @@ export function TransferDialog({
     if (!choice) return;
     const parsed = Number(amountInput);
     if (!Number.isFinite(parsed) || parsed <= 0) return;
-    const amount = BigInt(Math.round(parsed * Math.pow(10, choice.decimals)));
+    // String arithmetic, not `Math.round(x * 10**decimals)`. A double cannot
+    // represent 10^18, so the float path moves the amount: at 18 decimals a
+    // "1.1" deposit approves and transfers 1100000000000000128 wei — 128 more
+    // than the user typed — and on the withdraw side that same figure goes into
+    // a TEE-signed voucher request. The error is small and always present,
+    // which is what makes it easy to miss.
+    let amount: bigint;
+    try {
+      amount = BigInt(decimalToRaw(amountInput, choice.decimals));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "invalid amount");
+      return;
+    }
     const params = {
       chainNetwork: choice.chainNetwork,
       tokenTicker: choice.tokenTicker,
