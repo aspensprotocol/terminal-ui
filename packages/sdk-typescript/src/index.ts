@@ -199,6 +199,7 @@ export {
   toDisplayValue,
   toDisplayValueCapped,
   formatDisplayNumber,
+  decimalToRaw,
   DEFAULT_DISPLAY_DECIMALS,
   marketBidQuoteBudget,
   type MarketBidQuoteBudgetOpts,

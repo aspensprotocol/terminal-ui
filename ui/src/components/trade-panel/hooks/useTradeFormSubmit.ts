@@ -4,6 +4,7 @@ import { useExchangeClient } from "@/lib/hooks/useExchangeClient";
 import {
   buildOrderCommitment,
   clientNonce,
+  decimalToRaw,
   FCE_ORDER_NONCE,
   marketBidQuoteBudget,
   signOrder,
@@ -134,18 +135,30 @@ export function useTradeFormSubmit({
       setLoading(true);
 
       try {
-        const finalPrice =
-          data.orderType === "limit" ? parseFloat(data.price) : 0;
-        const finalSize = parseFloat(data.size);
         const pairDecimals = selectedMarket.pairDecimals ?? 8;
 
-        // Convert to raw integer strings for protobuf
-        const priceRaw = BigInt(
-          Math.round(finalPrice * Math.pow(10, pairDecimals)),
-        ).toString();
-        const sizeRaw = BigInt(
-          Math.round(finalSize * Math.pow(10, pairDecimals)),
-        ).toString();
+        // The order's amounts, converted from what the user typed to the raw
+        // pair-decimal integers the wire carries — ONCE, here, and then
+        // threaded unchanged into the message the wallet signs, the message
+        // the SDK transmits and the local id derivation. The arborter verifies
+        // the signature against its own re-encoding of the `Order` it
+        // receives, so a second conversion anywhere downstream is a second
+        // chance to produce a different number; the order is then refused for
+        // a bad signature, which says nothing about an amount having moved.
+        //
+        // `decimalToRaw` is string/BigInt arithmetic on purpose. The float
+        // route this replaced (`Math.round(x * 10 ** pairDecimals)`) cannot
+        // represent 10**18, so on an 18-decimal market a price of 1.1 became
+        // 1100000000000000128.
+        //
+        // A market order has no price: leave it undefined so the signed
+        // message and the wire message agree by carrying nothing, rather than
+        // by both happening to encode zero.
+        const priceRaw =
+          data.orderType === "limit"
+            ? decimalToRaw(data.price, pairDecimals)
+            : undefined;
+        const sizeRaw = decimalToRaw(data.size, pairDecimals);
 
         const signerAddress = signingWallet.address;
 
@@ -192,9 +205,14 @@ export function useTradeFormSubmit({
             selectedMarket.quoteChainTokenDecimals ?? quoteToken.decimals;
           const budget = marketBidQuoteBudget({
             sizeRaw,
-            referencePriceRaw: BigInt(
-              Math.round(referencePrice * Math.pow(10, pairDecimals)),
-            ).toString(),
+            // Same string-based conversion as the amounts above: this figure
+            // is not signature-critical on its own, but the budget it sizes
+            // IS signed, so it has no business being derived by arithmetic the
+            // rest of the path has abandoned.
+            referencePriceRaw: decimalToRaw(
+              referencePrice.toString(),
+              pairDecimals,
+            ),
             pairDecimals,
             quoteTokenDecimals,
           });
@@ -224,7 +242,7 @@ export function useTradeFormSubmit({
         const orderData: OrderSigningData = {
           side: data.side,
           quantity: sizeRaw,
-          price: data.orderType === "limit" ? priceRaw : undefined,
+          price: priceRaw,
           marketId: selectedMarket.id,
           baseAccountAddress: signerAddress,
           quoteAccountAddress: signerAddress,
@@ -264,7 +282,7 @@ export function useTradeFormSubmit({
             // uses one wallet for both.
             userAddress: signerAddress,
             quantityRaw: sizeRaw,
-            priceRaw: data.orderType === "limit" ? priceRaw : undefined,
+            priceRaw,
             quoteBudgetRaw: quoteBudget,
             // The same nonce the wallet signed above.
             nonce,
@@ -277,8 +295,13 @@ export function useTradeFormSubmit({
           marketId: selectedMarket.id,
           side: data.side,
           orderType: data.orderType,
-          priceDecimal: finalPrice.toString(),
-          sizeDecimal: finalSize.toString(),
+          // The raw values derived above — the very ones inside `orderData`,
+          // not a decimal string for the SDK to convert a second time. The SDK
+          // puts these on the wire untouched, so the bytes the arborter
+          // verifies are the bytes the wallet signed.
+          priceRaw,
+          sizeRaw,
+          pairDecimals,
           signature,
           baseAccountAddress: signerAddress,
           quoteAccountAddress: signerAddress,

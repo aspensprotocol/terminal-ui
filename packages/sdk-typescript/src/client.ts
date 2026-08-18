@@ -38,7 +38,7 @@ import {
 } from "./protos/arborter_pb.js";
 import { createOrderMessage } from "./signing.js";
 import { fetchOnChainBalances, type WalletBinding } from "./balances.js";
-import { formatDisplayNumber } from "./decimals.js";
+import { toDisplayValue, toDisplayValueCapped } from "./decimals.js";
 import { bytesToHex } from "viem";
 import {
   FceClient,
@@ -86,10 +86,33 @@ export interface PlaceOrderParams {
   marketId: string;
   side: Side;
   orderType: OrderType;
-  price?: string;
-  size?: string;
-  priceDecimal?: string;
-  sizeDecimal?: string;
+  /**
+   * Base quantity as a pair-decimal-scaled integer string — the SAME string
+   * that went into `OrderSigningData.quantity` when `signature` was produced.
+   *
+   * The SDK takes the raw value and never re-derives it, deliberately. The
+   * wire `Order` is what the arborter re-encodes to verify the envelope
+   * signature, so a second conversion here — from a decimal string, by
+   * whatever arithmetic — is a second chance to disagree with the bytes the
+   * wallet signed, and the failure it produces is a recovered address that
+   * isn't the sender's. Convert once at the edge with
+   * {@link import("./decimals.js").decimalToRaw} and pass that one value to
+   * both the signing data and this call.
+   */
+  sizeRaw: string;
+  /**
+   * Limit price, pair-decimal-scaled, matching `OrderSigningData.price`.
+   * `undefined` for a market order — the same absence the signed message
+   * carries, since proto3 wire-skips an unset optional.
+   */
+  priceRaw?: string;
+  /**
+   * The scale `sizeRaw` / `priceRaw` are expressed in — the market's
+   * `pair_decimals`. Stated by the caller rather than looked up here so the
+   * scale the amounts were built at is the scale they are read back at; a
+   * cache miss would otherwise render the order at the 8-decimal default.
+   */
+  pairDecimals: number;
   signature: Uint8Array;
   baseAccountAddress: string;
   quoteAccountAddress: string;
@@ -205,24 +228,35 @@ class CacheManager {
 }
 
 class RestClient {
+  // No cache dependency: the only thing this client used to read from it was
+  // the market's pair decimals, to convert a decimal amount into the raw one
+  // the wire carries. That conversion is gone — the caller supplies the raw
+  // values it signed — and with it the chance of a cache miss silently
+  // rescaling an order to the 8-decimal default.
   constructor(
     private config: ExchangeClientConfig,
-    private cache: CacheManager,
     private fce?: FceClient,
   ) {}
 
-  async placeOrderDecimal(params: PlaceOrderParams): Promise<EnhancedOrder> {
-    const pairDecimals = this.cache.getPairDecimals(params.marketId);
-
-    // Convert decimal price/size to raw integer strings
-    const priceDecimal = params.priceDecimal ?? params.price ?? "0";
-    const sizeDecimal = params.sizeDecimal ?? params.size ?? "0";
-
-    const priceRaw = this.decimalToRaw(priceDecimal, pairDecimals);
-    const sizeRaw = this.decimalToRaw(sizeDecimal, pairDecimals);
+  /**
+   * Send an already-signed order. The raw amounts arrive from the caller and
+   * go on the wire untouched — see `PlaceOrderParams.sizeRaw` for why this
+   * method derives nothing.
+   */
+  async placeOrder(params: PlaceOrderParams): Promise<EnhancedOrder> {
+    // A market order has no price, and the signed message says so by leaving
+    // the optional field unset. A price supplied alongside `orderType:
+    // "market"` means the caller built the two messages from different ideas
+    // of the order; that reaches the arborter as a signature failure, so stop
+    // it here where the reason can be stated.
+    if (params.orderType === "market" && params.priceRaw !== undefined) {
+      throw new Error(
+        "placeOrder: a market order must not carry priceRaw (the signed Order leaves the price unset)",
+      );
+    }
 
     if (this.fce) {
-      return this.placeOrderFce(params, priceRaw, sizeRaw, pairDecimals);
+      return this.placeOrderFce(params);
     }
 
     // Build the wire Order with the SAME builder the signing path uses
@@ -232,8 +266,8 @@ class RestClient {
     // that class of bug unrepresentable.
     const order: Order = createOrderMessage({
       side: params.side,
-      quantity: sizeRaw,
-      price: params.orderType === "limit" ? priceRaw : undefined,
+      quantity: params.sizeRaw,
+      price: params.priceRaw,
       marketId: params.marketId,
       baseAccountAddress: params.baseAccountAddress,
       quoteAccountAddress: params.quoteAccountAddress,
@@ -246,11 +280,11 @@ class RestClient {
     const response = await arborterService.sendOrder(order, params.signature);
 
     // Convert response to EnhancedOrder
-    return this.responseToEnhancedOrder(response, params, pairDecimals);
+    return this.responseToEnhancedOrder(response, params);
   }
 
   /**
-   * FCE variant of `placeOrderDecimal`. The ext-proxy adapter *reconstructs*
+   * FCE variant of `placeOrder`. The ext-proxy adapter *reconstructs*
    * the arborter Order from these scalar fields with `hidden=false` and empty
    * `matching_order_ids` (proto3 defaults), then verifies `params.signature`
    * against that reconstruction. So the signature the caller passed must have
@@ -275,9 +309,6 @@ class RestClient {
    */
   private async placeOrderFce(
     params: PlaceOrderParams,
-    priceRaw: string,
-    sizeRaw: string,
-    pairDecimals: number,
   ): Promise<EnhancedOrder> {
     if (params.hidden) {
       throw new Error(
@@ -300,8 +331,8 @@ class RestClient {
 
     const out = await this.fce!.placeOrder({
       side: params.side === "buy" ? "BID" : "ASK",
-      quantity: sizeRaw,
-      price: params.orderType === "limit" ? priceRaw : undefined,
+      quantity: params.sizeRaw,
+      price: params.priceRaw,
       marketId: params.marketId,
       baseAccountAddress: params.baseAccountAddress,
       quoteAccountAddress: params.quoteAccountAddress,
@@ -320,7 +351,7 @@ class RestClient {
       orderId: BigInt(out.data.orderId),
       orderInBook: out.data.orderInBook,
     } as SendOrderResponse;
-    return this.responseToEnhancedOrder(shim, params, pairDecimals);
+    return this.responseToEnhancedOrder(shim, params);
   }
 
   async cancelOrder(params: CancelOrderParams): Promise<{ order_id: string }> {
@@ -358,24 +389,33 @@ class RestClient {
     };
   }
 
-  private decimalToRaw(decimal: string, decimals: number): string {
-    const num = parseFloat(decimal);
-    const raw = BigInt(Math.round(num * Math.pow(10, decimals)));
-    return raw.toString();
-  }
-
+  /**
+   * Render the placed order for the UI. Everything human-readable here is
+   * derived FROM the raw values that went on the wire, so the record shown to
+   * the user is the order that was actually sent — a decimal string carried
+   * alongside the raw one would be a second version of the same number, free
+   * to disagree with it.
+   */
   private responseToEnhancedOrder(
     response: SendOrderResponse,
     params: PlaceOrderParams,
-    _pairDecimals: number,
   ): EnhancedOrder {
-    const priceDecimal = params.priceDecimal ?? params.price ?? "0";
-    const sizeDecimal = params.sizeDecimal ?? params.size ?? "0";
+    const priceDecimal = toDisplayValue(
+      params.priceRaw ?? "0",
+      params.pairDecimals,
+    );
+    const sizeDecimal = toDisplayValue(params.sizeRaw, params.pairDecimals);
     const priceValue = parseFloat(priceDecimal);
     const sizeValue = parseFloat(sizeDecimal);
 
-    const priceDisplay = formatDisplayNumber(priceValue);
-    const sizeDisplay = formatDisplayNumber(sizeValue);
+    const priceDisplay = toDisplayValueCapped(
+      params.priceRaw ?? "0",
+      params.pairDecimals,
+    );
+    const sizeDisplay = toDisplayValueCapped(
+      params.sizeRaw,
+      params.pairDecimals,
+    );
 
     return {
       id: response.orderId.toString(),
@@ -421,7 +461,7 @@ export class ExchangeClient {
     }
     this.cache = new CacheManager();
     this.fce = buildFceClient(this.config);
-    this.rest = new RestClient(this.config, this.cache, this.fce);
+    this.rest = new RestClient(this.config, this.fce);
 
     // Set the gRPC base URL. Config discovery routes over FCE when an ext-proxy
     // is configured (see `fetchConfiguration`); reads/polling still use gRPC, so
@@ -866,7 +906,7 @@ export class ExchangeClient {
   // ============================================================================
 
   async placeOrder(params: PlaceOrderParams): Promise<EnhancedOrder> {
-    return this.rest.placeOrderDecimal(params);
+    return this.rest.placeOrder(params);
   }
 
   async cancelOrder(params: CancelOrderParams): Promise<{ order_id: string }> {
