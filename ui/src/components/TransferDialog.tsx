@@ -123,6 +123,12 @@ export function TransferDialog({
   const [choiceKey, setChoiceKey] = useState<string>("");
   const [amountInput, setAmountInput] = useState<string>("");
   const [mode, setMode] = useState<Mode>("deposit");
+  // WSOL withdrawals only. Defaults ON to match the deposit side, which
+  // wraps SOL without asking, and the Rust SDK's `WithdrawOpts::default`.
+  // A user who picked "SOL" in the token list expects SOL back; leaving
+  // them holding a wrapped-SOL token account would be the surprise. The
+  // toggle exists because the unwrap is not partial — see its helper text.
+  const [unwrapNative, setUnwrapNative] = useState(true);
   // Captured alongside the hook's toast so the user sees a persistent
   // reason next to the button rather than relying on catching an
   // ephemeral toast. Cleared on every input change + retry.
@@ -187,7 +193,10 @@ export function TransferDialog({
     setError(null);
     try {
       if (mode === "deposit") await deposit(params);
-      else await withdraw(params);
+      // The hook re-checks `isWsolMint` itself, so a stale toggle from a
+      // previously selected token can never attach an unwrap to a
+      // non-wrapped withdrawal.
+      else await withdraw({ ...params, unwrapNative });
       setAmountInput("");
     } catch (err) {
       // Hook already surfaced a toast; also keep the reason visible in
@@ -285,6 +294,8 @@ export function TransferDialog({
                 clearError={() => setError(null)}
                 pending={pending}
                 mode="withdraw"
+                unwrapNative={unwrapNative}
+                setUnwrapNative={setUnwrapNative}
                 onSubmit={handleSubmit}
               />
             </TabsContent>
@@ -307,6 +318,9 @@ interface TransferFormProps {
   clearError: () => void;
   pending: boolean;
   mode: Mode;
+  /** Withdraw tab only; meaningful only for a wrapped-native mint. */
+  unwrapNative?: boolean;
+  setUnwrapNative?: (v: boolean) => void;
   onSubmit: () => void;
 }
 
@@ -322,9 +336,16 @@ function TransferForm({
   clearError,
   pending,
   mode,
+  unwrapNative,
+  setUnwrapNative,
   onSubmit,
 }: TransferFormProps) {
   const actionLabel = mode === "deposit" ? "Deposit" : "Withdraw";
+  // Only a wrapped mint can be unwrapped, so for anything else the control
+  // is absent rather than present-and-disabled — a disabled toggle would
+  // imply the choice exists here and is merely unavailable.
+  const showUnwrapToggle =
+    mode === "withdraw" && !!choice && isWsolMint(choice.tokenAddress);
 
   // Pick the "source" side for the Max button. Deposits pull from the
   // user's wallet; withdraws pull from the deposited-minus-locked
@@ -407,6 +428,34 @@ function TransferForm({
           onChange={(e) => setAmount(e.target.value)}
         />
       </div>
+
+      {showUnwrapToggle && (
+        <div className="rounded-md border border-border/40 bg-background/40 px-3 py-2 space-y-1">
+          <div className="flex items-center gap-2">
+            <input
+              id="transfer-unwrap"
+              type="checkbox"
+              className="h-4 w-4 accent-primary"
+              checked={unwrapNative ?? true}
+              onChange={(e) => setUnwrapNative?.(e.target.checked)}
+            />
+            <Label
+              htmlFor="transfer-unwrap"
+              className="text-sm font-medium cursor-pointer"
+            >
+              Unwrap to native SOL
+            </Label>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {(unwrapNative ?? true)
+              ? "Closes your wrapped-SOL account, which returns its ENTIRE " +
+                "balance as SOL — this withdrawal plus any wrapped SOL you " +
+                "already held, plus the account's rent. There is no " +
+                "partial unwrap."
+              : "Leaves the funds in your wrapped-SOL token account."}
+          </p>
+        </div>
+      )}
 
       {error && (
         <div className="rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2 text-xs text-red-500 flex items-start justify-between gap-2">

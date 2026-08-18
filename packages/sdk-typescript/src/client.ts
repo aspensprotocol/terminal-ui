@@ -578,6 +578,52 @@ export class ExchangeClient {
   }
 
   /**
+   * The instance signer's public key for `network` — on Solana, the Ed25519
+   * key that signs withdrawal vouchers and which the midrib program's
+   * `verify_tee_signature` requires to appear in the paired Ed25519
+   * precompile instruction.
+   *
+   * Prefers the `GetSignerPublicKey` RPC, which derives the key the arborter
+   * actually signs with. Falls back to the chain config's stored
+   * `instanceSignerAddress` — necessary over FCE, whose direct-action wire
+   * has no equivalent command, and a last resort over gRPC. Mirrors
+   * `VoucherSource::instance_signer_pubkey` in the Rust SDK.
+   *
+   * Throws rather than returning a placeholder: building the precompile
+   * instruction around the wrong key produces a transaction that reverts
+   * with `Unauthorized` AFTER the voucher's off-chain hold is placed.
+   */
+  async getInstanceSignerPubkey(network: string): Promise<string> {
+    if (!this.fce) {
+      try {
+        const resp = await configService.getSignerPublicKey(network);
+        const key = resp.chainKeys[network]?.publicKey?.trim();
+        if (key) return key;
+        console.warn(
+          `[SDK] GetSignerPublicKey returned no key for '${network}'; ` +
+            `falling back to the chain config's instance_signer_address`,
+        );
+      } catch (error) {
+        console.warn(
+          `[SDK] GetSignerPublicKey failed for '${network}'; falling back to ` +
+            `the chain config's instance_signer_address:`,
+          error,
+        );
+      }
+    }
+    const chain = this.cache
+      .getConfig()
+      ?.chains.find((c) => c.network === network);
+    const configured = chain?.instanceSignerAddress?.trim();
+    if (configured) return configured;
+    throw new Error(
+      `no instance signer public key for chain '${network}' — GetSignerPublicKey ` +
+        `returned nothing and the chain config has no instance_signer_address. ` +
+        `A withdrawal voucher cannot be submitted without it.`,
+    );
+  }
+
+  /**
    * Request a TEE-signed withdrawal voucher (Track A §8) for
    * `MidribV3.withdraw(voucher, signature)`. The caller signs the canonical
    * request bytes `"network|token|account|amount"` with the withdrawer's

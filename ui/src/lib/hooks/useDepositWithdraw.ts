@@ -13,10 +13,12 @@
  *     Transaction + wallet-adapter sendTransaction. Native SOL (the WSOL
  *     mint) wraps in the same tx (create ATA → transfer lamports →
  *     SyncNative) before the deposit.
- *   - Solana withdraw: UNSUPPORTED, and refused up front. The program's
- *     permissionless `withdraw` was removed (it could drain collateral
- *     backing a resting order), leaving the TEE-signed `withdraw_voucher`
- *     as the only exit — a flow this client has no implementation for.
+ *   - Solana withdraw: the same TEE voucher flow, on the Solana wire.
+ *     Sign the canonical request with the Solana wallet (Ed25519), fetch
+ *     the voucher, then submit [create-ATA, Ed25519 precompile,
+ *     `withdraw_voucher`] in one transaction — the program introspects
+ *     the instruction immediately before it. Native SOL (the WSOL mint)
+ *     can optionally append a `CloseAccount` to unwrap.
  *
  * Dispatches on the chain's `architecture` field; errors surface via
  * sonner.
@@ -39,6 +41,7 @@ import {
 } from "@solana/web3.js";
 import {
   depositIx as buildDepositIx,
+  buildWithdrawVoucherIxs,
   createIdempotentAtaIx,
   syncNativeIx,
   deriveAssociatedTokenAccount,
@@ -121,11 +124,45 @@ export interface DepositParams {
   amount: bigint;
 }
 
+export interface WithdrawParams extends DepositParams {
+  /**
+   * WSOL (native SOL) withdrawals only: also unwrap back to native SOL.
+   *
+   * This closes the WSOL associated token account, which returns its
+   * ENTIRE balance — the amount just withdrawn plus any WSOL that was
+   * already sitting there, plus the account's rent. There is no
+   * partial-unwrap instruction in the SPL Token program. Ignored for every
+   * other mint and on EVM.
+   */
+  unwrapNative?: boolean;
+}
+
 export interface UseDepositWithdrawResult {
   deposit: (params: DepositParams) => Promise<void>;
-  withdraw: (params: DepositParams) => Promise<void>;
+  withdraw: (params: WithdrawParams) => Promise<void>;
   pending: boolean;
 }
+
+/**
+ * Largest value representable in a Solana `u64`. SPL amounts, voucher
+ * nonces and slot deadlines are all u64; the arborter's gRPC surface
+ * carries the amount as a u128 decimal string, so the narrowing happens
+ * here (DEC-1 in the Rust SDK does the same `try_into`).
+ */
+const U64_MAX = (1n << 64n) - 1n;
+
+/**
+ * Minimum lamports the fee payer needs before we request a voucher. ~0.003
+ * SOL: enough for the worst case where the destination ATA does not exist
+ * and the idempotent create must pay rent (~0.00204 SOL), plus a couple of
+ * transaction fees of headroom. Mirrors `MIN_SOL_LAMPORTS` in the Rust SDK.
+ *
+ * Checked BEFORE the voucher request on purpose: a voucher places an
+ * off-chain hold on the funds, so requesting one we cannot pay to submit
+ * would strand that hold until it expires (~5 minutes) instead of leaving
+ * the balance immediately withdrawable.
+ */
+const MIN_SOL_LAMPORTS = 3_000_000n;
 
 interface BuildIxOpts {
   programId: PublicKey;
@@ -133,14 +170,22 @@ interface BuildIxOpts {
   user: PublicKey;
   mint: PublicKey;
   amount: bigint;
+  connection: Connection;
 }
 
 /**
  * Solana submit path: build the instruction list from `buildIxs`, pack
  * into a single Transaction, send via the wallet adapter's
  * sendTransaction, and wait for confirmation. A WSOL deposit is a 4-ix
- * wrap+deposit; every other deposit is a single ix. Deposit is currently
- * the only caller — withdraw is refused before it reaches here.
+ * wrap+deposit; every other deposit is a single ix; a withdrawal is the
+ * 3-or-4-ix voucher bundle.
+ *
+ * `buildIxs` may be async — the withdrawal path signs a request, fetches a
+ * voucher and resolves the TEE signer key before it can build anything,
+ * and all of that needs the same `connection` and wallet as the submit.
+ * The ORDER of the returned list is load-bearing (the midrib program reads
+ * the instruction immediately before its own), so builders must return a
+ * complete, correctly ordered list rather than parts to be assembled here.
  */
 async function submitSolanaIxs(opts: {
   chainRpcUrl: string;
@@ -148,7 +193,7 @@ async function submitSolanaIxs(opts: {
   instanceStr: string;
   mintStr: string;
   amount: bigint;
-  buildIxs: (opts: BuildIxOpts) => TransactionInstruction[];
+  buildIxs: (opts: BuildIxOpts) => Promise<TransactionInstruction[]>;
   pendingLabel: string;
   successLabel: string;
 }): Promise<void> {
@@ -173,12 +218,13 @@ async function submitSolanaIxs(opts: {
   const mint = new PublicKey(opts.mintStr);
   const user = wallet.publicKey;
 
-  const ixs = opts.buildIxs({
+  const ixs = await opts.buildIxs({
     programId,
     instance,
     user,
     mint,
     amount: opts.amount,
+    connection,
   });
   const tx = new Transaction().add(...ixs);
   tx.feePayer = user;
@@ -239,7 +285,7 @@ export function useDepositWithdraw(): UseDepositWithdrawResult {
             instanceStr: midrib,
             mintStr: token.address,
             amount: params.amount,
-            buildIxs: ({ programId, instance, user, mint, amount }) => {
+            buildIxs: async ({ programId, instance, user, mint, amount }) => {
               const depositInstruction = buildDepositIx({
                 programId,
                 instance,
@@ -348,7 +394,7 @@ export function useDepositWithdraw(): UseDepositWithdrawResult {
   );
 
   const withdraw = useCallback(
-    async (params: DepositParams) => {
+    async (params: WithdrawParams) => {
       const { chain, token, midrib } = resolveChainAndToken(
         params.chainNetwork,
         params.tokenTicker,
@@ -357,21 +403,121 @@ export function useDepositWithdraw(): UseDepositWithdrawResult {
       setPending(true);
       try {
         if (chain.architecture.match(/^solana$/i)) {
-          // The midrib program's permissionless `withdraw` instruction was
-          // removed — it let a user drain the collateral backing a resting
-          // order, because reservations live off-chain in the optimistic
-          // shadow ledger and the program's `available()` check could not
-          // see them. The TEE-signed `withdraw_voucher` is now the only
-          // exit, and this UI does not implement it yet (it needs a voucher
-          // from the arborter plus an Ed25519 sibling instruction). Fail
-          // here rather than submit a transaction whose discriminator no
-          // longer resolves on-chain.
-          throw new Error(
-            `Solana withdrawals now use the TEE voucher flow, which this ` +
-              `terminal does not support yet. Use 'aspens-cli withdraw' to ` +
-              `move ${params.tokenTicker} off ${chain.network}. Your funds ` +
-              `are not affected.`,
-          );
+          // The midrib program has no permissionless `withdraw` — it let a
+          // user drain the collateral backing a resting order, because
+          // reservations live off-chain in the optimistic shadow ledger and
+          // the program's `available()` check could not see them. The
+          // TEE-signed `withdraw_voucher` is the only exit: the arborter
+          // freezes the settled funds and Ed25519-signs a voucher, which
+          // this wallet submits alongside an Ed25519 precompile instruction
+          // the program introspects.
+          const unwrap =
+            Boolean(params.unwrapNative) && isWsolMint(token.address);
+          await submitSolanaIxs({
+            chainRpcUrl: resolveSolanaRpcUrl(chain, rpcUrls),
+            programIdStr:
+              chain.factoryAddress || chain.tradeContract?.contractId || "",
+            instanceStr: midrib,
+            mintStr: token.address,
+            amount: params.amount,
+            buildIxs: async ({
+              programId,
+              instance,
+              user,
+              mint,
+              amount,
+              connection,
+            }) => {
+              // SPL amounts are u64 on-chain while the arborter's wire
+              // carries a u128 decimal string. Narrow here, loudly — and
+              // before the voucher request, so an impossible amount never
+              // places a hold.
+              if (amount <= 0n || amount > U64_MAX) {
+                throw new Error(
+                  `amount ${amount.toString()} is not a valid Solana u64 token amount`,
+                );
+              }
+              const walletCtx = getSolanaWalletContext();
+              if (!walletCtx?.signMessage) {
+                throw new Error(
+                  "This Solana wallet cannot sign messages, which the " +
+                    "withdrawal request must be authenticated with",
+                );
+              }
+
+              // 0. Pre-flight the fee balance BEFORE asking for a voucher.
+              //    A voucher freezes the funds off-chain; one we cannot
+              //    afford to submit would strand that hold until expiry.
+              const lamports = BigInt(await connection.getBalance(user));
+              if (lamports < MIN_SOL_LAMPORTS) {
+                throw new Error(
+                  `Insufficient SOL for fees: ${lamports.toString()} lamports, ` +
+                    `need at least ${MIN_SOL_LAMPORTS.toString()}. Fund ${user.toBase58()} ` +
+                    `before withdrawing — no voucher was requested, so your ` +
+                    `balance is untouched.`,
+                );
+              }
+
+              // 1. Authenticate the request: Ed25519 over the exact
+              //    canonical bytes the arborter rebuilds.
+              const account = user.toBase58();
+              const canonical = `${chain.network}|${token.address}|${account}|${amount.toString()}`;
+              toast.info("Sign the withdrawal request in your wallet…");
+              const requestSig = await walletCtx.signMessage(
+                new TextEncoder().encode(canonical),
+              );
+
+              // 2. Fetch the TEE-signed voucher (this places the hold).
+              toast.info("Requesting withdrawal voucher…");
+              const voucher = await client.requestWithdrawVoucher({
+                network: chain.network,
+                token: token.address,
+                account,
+                amount: amount.toString(),
+                signature: requestSig,
+              });
+
+              // 3. The voucher's OWN numbers are what the TEE signed, so
+              //    they — not ours — go into the payload. But the amount is
+              //    supposed to be an echo, so a divergence means the number
+              //    on-chain would not be the number the user typed. Refuse
+              //    rather than move a different figure silently; the hold
+              //    self-heals at expiry.
+              const voucherAmount = BigInt(voucher.amount);
+              if (voucherAmount !== amount) {
+                throw new Error(
+                  `The arborter issued a voucher for ${voucherAmount.toString()} ` +
+                    `base units, not the ${amount.toString()} requested. Nothing ` +
+                    `was submitted; the hold expires on its own.`,
+                );
+              }
+
+              // 4. Resolve the key the program will require the paired
+              //    Ed25519 instruction to carry.
+              const signerPubkey = new PublicKey(
+                await client.getInstanceSignerPubkey(chain.network),
+              );
+
+              // 5. Build the bundle. `expiry` is a SLOT on Solana, not a
+              //    unix timestamp.
+              return buildWithdrawVoucherIxs({
+                programId,
+                instance,
+                account: user,
+                mint,
+                payer: user,
+                signerPubkey,
+                amount: voucherAmount,
+                nonce: voucher.nonce,
+                deadline: voucher.expiry,
+                signature: voucher.signature,
+                unwrapNative: unwrap,
+              });
+            },
+            pendingLabel: unwrap ? "Withdrawing + unwrapping…" : "Withdrawing…",
+            successLabel: `Withdraw confirmed on ${chain.network}`,
+          });
+          return;
         }
 
         // EVM: the TEE voucher flow (Track A §8). MidribV3 has no
