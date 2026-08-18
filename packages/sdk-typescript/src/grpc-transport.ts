@@ -31,6 +31,8 @@ import {
   type GetConfigRequest,
   GetConfigRequestSchema,
   type GetConfigResponse,
+  GetSignerPublicKeyRequestSchema,
+  type GetSignerPublicKeyResponse,
 } from "./protos/arborter_config_pb.js";
 
 import {
@@ -169,6 +171,31 @@ export const configService = {
       return response;
     } catch (error: unknown) {
       console.error("[gRPC] Failed to get attestation:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Fetch the arborter's per-chain signer public keys.
+   *
+   * Unauthenticated by design. A Solana voucher withdrawal needs the
+   * instance signer's Ed25519 pubkey to build the Ed25519 precompile
+   * instruction the midrib program introspects — and it must be the key
+   * the arborter ACTUALLY signs with, which this RPC derives, rather than
+   * the `Chain.instance_signer_address` config field (a stored value that
+   * can go stale after a signer rotation).
+   */
+  async getSignerPublicKey(
+    chainNetwork?: string,
+  ): Promise<GetSignerPublicKeyResponse> {
+    try {
+      const request = create(
+        GetSignerPublicKeyRequestSchema,
+        chainNetwork ? { chainNetwork } : {},
+      );
+      return await getConfigClient().getSignerPublicKey(request);
+    } catch (error: unknown) {
+      console.error("[gRPC] Failed to get signer public key:", error);
       throw error;
     }
   },

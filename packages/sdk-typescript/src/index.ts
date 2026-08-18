@@ -164,21 +164,32 @@ export {
   type RpcResolvableChain,
 } from "./rpc-urls.js";
 
-// Solana Midrib instruction builders (deposit only — the program's
-// permissionless `withdraw` was removed; see solana-ix.ts).
+// Solana Midrib instruction builders. Deposit is user-signed; the exit is
+// the TEE-signed `withdraw_voucher` paired with an Ed25519 precompile ix
+// (the program has no permissionless `withdraw`) — see solana-ix.ts.
 export {
   depositIx,
   deriveAssociatedTokenAccount,
   deriveUserBalancePda,
   deriveInstanceVaultPda,
   deriveVaultAuthorityPda,
+  deriveWithdrawNoncePda,
+  deriveWithdrawEpochPda,
   anchorIxDiscriminator,
   SPL_TOKEN_PROGRAM_ID,
   ATA_PROGRAM_ID,
+  ED25519_PROGRAM_ID,
   type DepositIxOpts,
   createIdempotentAtaIx,
   syncNativeIx,
   closeAccountIx,
+  withdrawVoucherIx,
+  buildWithdrawVoucherIxs,
+  withdrawalVoucherSigningMessage,
+  ed25519VerifyIx,
+  type WithdrawVoucherIxOpts,
+  type BuildWithdrawVoucherIxsOpts,
+  type WithdrawalVoucherFields,
 } from "./solana-ix.js";
 
 // Native-asset identities (EVM sentinel + WSOL mint) shared by the
