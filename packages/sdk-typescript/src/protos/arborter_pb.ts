@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file arborter.proto.
  */
 export const file_arborter: GenFile = /*@__PURE__*/
-  fileDesc("Cg5hcmJvcnRlci5wcm90bxIWeHl6LmFzcGVucy5hcmJvcnRlci52MSIHCgVFbXB0eSJlCg9XaXRoZHJhd1JlcXVlc3QSDwoHbmV0d29yaxgBIAEoCRINCgV0b2tlbhgCIAEoCRIPCgdhY2NvdW50GAMgASgJEg4KBmFtb3VudBgEIAEoCRIRCglzaWduYXR1cmUYBSABKAwidAoQV2l0aGRyYXdSZXNwb25zZRIPCgdhY2NvdW50GAEgASgJEg0KBXRva2VuGAIgASgJEg4KBmFtb3VudBgDIAEoCRINCgVub25jZRgEIAEoBBIOCgZleHBpcnkYBSABKAQSEQoJc2lnbmF0dXJlGAYgASgMImIKEkNhbmNlbE9yZGVyUmVxdWVzdBI0CgVvcmRlchgBIAEoCzIlLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuT3JkZXJUb0NhbmNlbBIWCg5zaWduYXR1cmVfaGFzaBgCIAEoDCK1AQoTQ2FuY2VsT3JkZXJSZXNwb25zZRIWCg5vcmRlcl9jYW5jZWxlZBgBIAEoCBJDChJ0cmFuc2FjdGlvbl9oYXNoZXMYAiADKAsyJy54eXouYXNwZW5zLmFyYm9ydGVyLnYxLlRyYW5zYWN0aW9uSGFzaBJBChFjdXJyZW50X29yZGVyYm9vaxgDIAMoCzImLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuT3JkZXJib29rRW50cnkisgEKEE9yZGVyYm9va1JlcXVlc3QSFwoPY29udGludWVfc3RyZWFtGAEgASgIEhEKCW1hcmtldF9pZBgCIAEoCRIjChZoaXN0b3JpY2FsX29wZW5fb3JkZXJzGAMgASgISACIAQESHQoQZmlsdGVyX2J5X3RyYWRlchgEIAEoCUgBiAEBQhkKF19oaXN0b3JpY2FsX29wZW5fb3JkZXJzQhMKEV9maWx0ZXJfYnlfdHJhZGVyIrIBCgxUcmFkZVJlcXVlc3QSFwoPY29udGludWVfc3RyZWFtGAEgASgIEhEKCW1hcmtldF9pZBgCIAEoCRIlChhoaXN0b3JpY2FsX2Nsb3NlZF90cmFkZXMYAyABKAhIAIgBARIdChBmaWx0ZXJfYnlfdHJhZGVyGAQgASgJSAGIAQFCGwoZX2hpc3RvcmljYWxfY2xvc2VkX3RyYWRlc0ITChFfZmlsdGVyX2J5X3RyYWRlciKbAQoQU2VuZE9yZGVyUmVxdWVzdBIsCgVvcmRlchgBIAEoCzIdLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuT3JkZXISFgoOc2lnbmF0dXJlX2hhc2gYAiABKAwSQQoNYXV0aG9yaXphdGlvbhgDIAEoCzIqLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuT3JkZXJBdXRob3JpemF0aW9uIiYKEk9yZGVyQXV0aG9yaXphdGlvbhIQCghvcmRlcl9pZBgBIAEoCSLdAgoFT3JkZXISKgoEc2lkZRgBIAEoDjIcLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuU2lkZRIQCghxdWFudGl0eRgCIAEoCRISCgVwcmljZRgDIAEoCUgAiAEBEhEKCW1hcmtldF9pZBgEIAEoCRIcChRiYXNlX2FjY291bnRfYWRkcmVzcxgFIAEoCRIdChVxdW90ZV9hY2NvdW50X2FkZHJlc3MYBiABKAkSPQoOZXhlY3V0aW9uX3R5cGUYByABKA4yJS54eXouYXNwZW5zLmFyYm9ydGVyLnYxLkV4ZWN1dGlvblR5cGUSGgoSbWF0Y2hpbmdfb3JkZXJfaWRzGAggAygEEhEKCXBvc3Rfb25seRgJIAEoCBIOCgZoaWRkZW4YCiABKAgSGQoMcXVvdGVfYnVkZ2V0GAsgASgJSAGIAQFCCAoGX3ByaWNlQg8KDV9xdW90ZV9idWRnZXQi3QIKBVRyYWRlEhEKCXRpbWVzdGFtcBgBIAEoBBINCgVwcmljZRgCIAEoCRILCgNxdHkYAyABKAkSEAoIbWFrZXJfaWQYBCABKAkSEAoIdGFrZXJfaWQYBSABKAkSGgoSbWFrZXJfYmFzZV9hZGRyZXNzGAYgASgJEhsKE21ha2VyX3F1b3RlX2FkZHJlc3MYByABKAkSGgoSdGFrZXJfYmFzZV9hZGRyZXNzGAggASgJEhsKE3Rha2VyX3F1b3RlX2FkZHJlc3MYCSABKAkSMwoIYnV5ZXJfaXMYCiABKA4yIS54eXouYXNwZW5zLmFyYm9ydGVyLnYxLlRyYWRlUm9sZRI0CglzZWxsZXJfaXMYCyABKA4yIS54eXouYXNwZW5zLmFyYm9ydGVyLnYxLlRyYWRlUm9sZRIRCglvcmRlcl9oaXQYDCABKAQSEQoJbWFya2V0X2lkGA0gASgJIjgKD1RyYW5zYWN0aW9uSGFzaBIRCgloYXNoX3R5cGUYASABKAkSEgoKaGFzaF92YWx1ZRgCIAEoCSKwAgoRU2VuZE9yZGVyUmVzcG9uc2USFQoNb3JkZXJfaW5fYm9vaxgBIAEoCBIxCgVvcmRlchgCIAEoCzIdLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuT3JkZXJIAIgBARItCgZ0cmFkZXMYAyADKAsyHS54eXouYXNwZW5zLmFyYm9ydGVyLnYxLlRyYWRlEkMKEnRyYW5zYWN0aW9uX2hhc2hlcxgEIAMoCzInLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuVHJhbnNhY3Rpb25IYXNoEkEKEWN1cnJlbnRfb3JkZXJib29rGAUgAygLMiYueHl6LmFzcGVucy5hcmJvcnRlci52MS5PcmRlcmJvb2tFbnRyeRIQCghvcmRlcl9pZBgGIAEoBEIICgZfb3JkZXIidwoNT3JkZXJUb0NhbmNlbBIRCgltYXJrZXRfaWQYASABKAkSKgoEc2lkZRgCIAEoDjIcLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuU2lkZRIVCg10b2tlbl9hZGRyZXNzGAMgASgJEhAKCG9yZGVyX2lkGAQgASgEIpQCCg5PcmRlcmJvb2tFbnRyeRIRCgl0aW1lc3RhbXAYASABKAQSEAoIb3JkZXJfaWQYAiABKAQSDQoFcHJpY2UYAyABKAkSEAoIcXVhbnRpdHkYBCABKAkSKgoEc2lkZRgFIAEoDjIcLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuU2lkZRIaChJtYWtlcl9iYXNlX2FkZHJlc3MYBiABKAkSGwoTbWFrZXJfcXVvdGVfYWRkcmVzcxgHIAEoCRIRCgltYXJrZXRfaWQYCCABKAkSMQoFc3RhdGUYCSABKA4yIi54eXouYXNwZW5zLmFyYm9ydGVyLnYxLk9yZGVyU3RhdGUSEQoJcG9zdF9vbmx5GAogASgIKjgKBFNpZGUSFAoQU0lERV9VTlNQRUNJRklFRBAAEgwKCFNJREVfQklEEAESDAoIU0lERV9BU0sQAipRCg1FeGVjdXRpb25UeXBlEh4KGkVYRUNVVElPTl9UWVBFX1VOU1BFQ0lGSUVEEAASIAocRVhFQ1VUSU9OX1RZUEVfRElTQ1JFVElPTkFSWRABKqkBCgpPcmRlclN0YXRlEhsKF09SREVSX1NUQVRFX1VOU1BFQ0lGSUVEEAASFwoTT1JERVJfU1RBVEVfUEVORElORxABEhkKFU9SREVSX1NUQVRFX0NPTkZJUk1FRBACEhcKE09SREVSX1NUQVRFX01BVENIRUQQAxIYChRPUkRFUl9TVEFURV9DQU5DRUxFRBAEEhcKE09SREVSX1NUQVRFX1NFVFRMRUQQBSo9CglUcmFkZVJvbGUSGgoWVFJBREVfUk9MRV9VTlNQRUNJRklFRBAAEgkKBU1BS0VSEAESCQoFVEFLRVIQAjL2AwoPQXJib3J0ZXJTZXJ2aWNlEmIKCVNlbmRPcmRlchIoLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuU2VuZE9yZGVyUmVxdWVzdBopLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuU2VuZE9yZGVyUmVzcG9uc2UiABJoCgtDYW5jZWxPcmRlchIqLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuQ2FuY2VsT3JkZXJSZXF1ZXN0GisueHl6LmFzcGVucy5hcmJvcnRlci52MS5DYW5jZWxPcmRlclJlc3BvbnNlIgASUQoGVHJhZGVzEiQueHl6LmFzcGVucy5hcmJvcnRlci52MS5UcmFkZVJlcXVlc3QaHS54eXouYXNwZW5zLmFyYm9ydGVyLnYxLlRyYWRlIgAwARJhCglPcmRlcmJvb2sSKC54eXouYXNwZW5zLmFyYm9ydGVyLnYxLk9yZGVyYm9va1JlcXVlc3QaJi54eXouYXNwZW5zLmFyYm9ydGVyLnYxLk9yZGVyYm9va0VudHJ5IgAwARJfCghXaXRoZHJhdxInLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuV2l0aGRyYXdSZXF1ZXN0GigueHl6LmFzcGVucy5hcmJvcnRlci52MS5XaXRoZHJhd1Jlc3BvbnNlIgBCAkgBYgZwcm90bzM");
+  fileDesc("Cg5hcmJvcnRlci5wcm90bxIWeHl6LmFzcGVucy5hcmJvcnRlci52MSIHCgVFbXB0eSJlCg9XaXRoZHJhd1JlcXVlc3QSDwoHbmV0d29yaxgBIAEoCRINCgV0b2tlbhgCIAEoCRIPCgdhY2NvdW50GAMgASgJEg4KBmFtb3VudBgEIAEoCRIRCglzaWduYXR1cmUYBSABKAwidAoQV2l0aGRyYXdSZXNwb25zZRIPCgdhY2NvdW50GAEgASgJEg0KBXRva2VuGAIgASgJEg4KBmFtb3VudBgDIAEoCRINCgVub25jZRgEIAEoBBIOCgZleHBpcnkYBSABKAQSEQoJc2lnbmF0dXJlGAYgASgMImIKEkNhbmNlbE9yZGVyUmVxdWVzdBI0CgVvcmRlchgBIAEoCzIlLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuT3JkZXJUb0NhbmNlbBIWCg5zaWduYXR1cmVfaGFzaBgCIAEoDCK1AQoTQ2FuY2VsT3JkZXJSZXNwb25zZRIWCg5vcmRlcl9jYW5jZWxlZBgBIAEoCBJDChJ0cmFuc2FjdGlvbl9oYXNoZXMYAiADKAsyJy54eXouYXNwZW5zLmFyYm9ydGVyLnYxLlRyYW5zYWN0aW9uSGFzaBJBChFjdXJyZW50X29yZGVyYm9vaxgDIAMoCzImLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuT3JkZXJib29rRW50cnkisgEKEE9yZGVyYm9va1JlcXVlc3QSFwoPY29udGludWVfc3RyZWFtGAEgASgIEhEKCW1hcmtldF9pZBgCIAEoCRIjChZoaXN0b3JpY2FsX29wZW5fb3JkZXJzGAMgASgISACIAQESHQoQZmlsdGVyX2J5X3RyYWRlchgEIAEoCUgBiAEBQhkKF19oaXN0b3JpY2FsX29wZW5fb3JkZXJzQhMKEV9maWx0ZXJfYnlfdHJhZGVyIrIBCgxUcmFkZVJlcXVlc3QSFwoPY29udGludWVfc3RyZWFtGAEgASgIEhEKCW1hcmtldF9pZBgCIAEoCRIlChhoaXN0b3JpY2FsX2Nsb3NlZF90cmFkZXMYAyABKAhIAIgBARIdChBmaWx0ZXJfYnlfdHJhZGVyGAQgASgJSAGIAQFCGwoZX2hpc3RvcmljYWxfY2xvc2VkX3RyYWRlc0ITChFfZmlsdGVyX2J5X3RyYWRlciJYChBTZW5kT3JkZXJSZXF1ZXN0EiwKBW9yZGVyGAEgASgLMh0ueHl6LmFzcGVucy5hcmJvcnRlci52MS5PcmRlchIWCg5zaWduYXR1cmVfaGFzaBgCIAEoDCLsAgoFT3JkZXISKgoEc2lkZRgBIAEoDjIcLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuU2lkZRIQCghxdWFudGl0eRgCIAEoCRISCgVwcmljZRgDIAEoCUgAiAEBEhEKCW1hcmtldF9pZBgEIAEoCRIcChRiYXNlX2FjY291bnRfYWRkcmVzcxgFIAEoCRIdChVxdW90ZV9hY2NvdW50X2FkZHJlc3MYBiABKAkSPQoOZXhlY3V0aW9uX3R5cGUYByABKA4yJS54eXouYXNwZW5zLmFyYm9ydGVyLnYxLkV4ZWN1dGlvblR5cGUSGgoSbWF0Y2hpbmdfb3JkZXJfaWRzGAggAygEEhEKCXBvc3Rfb25seRgJIAEoCBIOCgZoaWRkZW4YCiABKAgSGQoMcXVvdGVfYnVkZ2V0GAsgASgJSAGIAQESDQoFbm9uY2UYDCABKARCCAoGX3ByaWNlQg8KDV9xdW90ZV9idWRnZXQi3QIKBVRyYWRlEhEKCXRpbWVzdGFtcBgBIAEoBBINCgVwcmljZRgCIAEoCRILCgNxdHkYAyABKAkSEAoIbWFrZXJfaWQYBCABKAkSEAoIdGFrZXJfaWQYBSABKAkSGgoSbWFrZXJfYmFzZV9hZGRyZXNzGAYgASgJEhsKE21ha2VyX3F1b3RlX2FkZHJlc3MYByABKAkSGgoSdGFrZXJfYmFzZV9hZGRyZXNzGAggASgJEhsKE3Rha2VyX3F1b3RlX2FkZHJlc3MYCSABKAkSMwoIYnV5ZXJfaXMYCiABKA4yIS54eXouYXNwZW5zLmFyYm9ydGVyLnYxLlRyYWRlUm9sZRI0CglzZWxsZXJfaXMYCyABKA4yIS54eXouYXNwZW5zLmFyYm9ydGVyLnYxLlRyYWRlUm9sZRIRCglvcmRlcl9oaXQYDCABKAQSEQoJbWFya2V0X2lkGA0gASgJIjgKD1RyYW5zYWN0aW9uSGFzaBIRCgloYXNoX3R5cGUYASABKAkSEgoKaGFzaF92YWx1ZRgCIAEoCSKwAgoRU2VuZE9yZGVyUmVzcG9uc2USFQoNb3JkZXJfaW5fYm9vaxgBIAEoCBIxCgVvcmRlchgCIAEoCzIdLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuT3JkZXJIAIgBARItCgZ0cmFkZXMYAyADKAsyHS54eXouYXNwZW5zLmFyYm9ydGVyLnYxLlRyYWRlEkMKEnRyYW5zYWN0aW9uX2hhc2hlcxgEIAMoCzInLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuVHJhbnNhY3Rpb25IYXNoEkEKEWN1cnJlbnRfb3JkZXJib29rGAUgAygLMiYueHl6LmFzcGVucy5hcmJvcnRlci52MS5PcmRlcmJvb2tFbnRyeRIQCghvcmRlcl9pZBgGIAEoBEIICgZfb3JkZXIidwoNT3JkZXJUb0NhbmNlbBIRCgltYXJrZXRfaWQYASABKAkSKgoEc2lkZRgCIAEoDjIcLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuU2lkZRIVCg10b2tlbl9hZGRyZXNzGAMgASgJEhAKCG9yZGVyX2lkGAQgASgEIpQCCg5PcmRlcmJvb2tFbnRyeRIRCgl0aW1lc3RhbXAYASABKAQSEAoIb3JkZXJfaWQYAiABKAQSDQoFcHJpY2UYAyABKAkSEAoIcXVhbnRpdHkYBCABKAkSKgoEc2lkZRgFIAEoDjIcLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuU2lkZRIaChJtYWtlcl9iYXNlX2FkZHJlc3MYBiABKAkSGwoTbWFrZXJfcXVvdGVfYWRkcmVzcxgHIAEoCRIRCgltYXJrZXRfaWQYCCABKAkSMQoFc3RhdGUYCSABKA4yIi54eXouYXNwZW5zLmFyYm9ydGVyLnYxLk9yZGVyU3RhdGUSEQoJcG9zdF9vbmx5GAogASgIKjgKBFNpZGUSFAoQU0lERV9VTlNQRUNJRklFRBAAEgwKCFNJREVfQklEEAESDAoIU0lERV9BU0sQAipRCg1FeGVjdXRpb25UeXBlEh4KGkVYRUNVVElPTl9UWVBFX1VOU1BFQ0lGSUVEEAASIAocRVhFQ1VUSU9OX1RZUEVfRElTQ1JFVElPTkFSWRABKqkBCgpPcmRlclN0YXRlEhsKF09SREVSX1NUQVRFX1VOU1BFQ0lGSUVEEAASFwoTT1JERVJfU1RBVEVfUEVORElORxABEhkKFU9SREVSX1NUQVRFX0NPTkZJUk1FRBACEhcKE09SREVSX1NUQVRFX01BVENIRUQQAxIYChRPUkRFUl9TVEFURV9DQU5DRUxFRBAEEhcKE09SREVSX1NUQVRFX1NFVFRMRUQQBSo9CglUcmFkZVJvbGUSGgoWVFJBREVfUk9MRV9VTlNQRUNJRklFRBAAEgkKBU1BS0VSEAESCQoFVEFLRVIQAjL2AwoPQXJib3J0ZXJTZXJ2aWNlEmIKCVNlbmRPcmRlchIoLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuU2VuZE9yZGVyUmVxdWVzdBopLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuU2VuZE9yZGVyUmVzcG9uc2UiABJoCgtDYW5jZWxPcmRlchIqLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuQ2FuY2VsT3JkZXJSZXF1ZXN0GisueHl6LmFzcGVucy5hcmJvcnRlci52MS5DYW5jZWxPcmRlclJlc3BvbnNlIgASUQoGVHJhZGVzEiQueHl6LmFzcGVucy5hcmJvcnRlci52MS5UcmFkZVJlcXVlc3QaHS54eXouYXNwZW5zLmFyYm9ydGVyLnYxLlRyYWRlIgAwARJhCglPcmRlcmJvb2sSKC54eXouYXNwZW5zLmFyYm9ydGVyLnYxLk9yZGVyYm9va1JlcXVlc3QaJi54eXouYXNwZW5zLmFyYm9ydGVyLnYxLk9yZGVyYm9va0VudHJ5IgAwARJfCghXaXRoZHJhdxInLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuV2l0aGRyYXdSZXF1ZXN0GigueHl6LmFzcGVucy5hcmJvcnRlci52MS5XaXRoZHJhd1Jlc3BvbnNlIgBCAkgBYgZwcm90bzM");
 
 /**
  * @generated from message xyz.aspens.arborter.v1.Empty
@@ -269,22 +269,25 @@ export type SendOrderRequest = Message<"xyz.aspens.arborter.v1.SendOrderRequest"
   order?: Order;
 
   /**
-   * Valid EIP-712 signature hash of this order
+   * Valid signature over the encoded `Order` (EIP-191 on EVM, Ed25519 on
+   * Solana). This is the ONLY thing that authenticates order entry, and it now
+   * covers every input the arborter needs — which is what let the sibling
+   * `OrderAuthorization` message go away entirely.
+   *
+   * NOTE: `authorization` (field 3) and its `OrderAuthorization` message were
+   * removed. It ended up holding exactly two things, and both were wrong to
+   * accept from a caller: `amount_in`, which set an encumbrance while sitting
+   * OUTSIDE the signature, and `order_id`, which the arborter used verbatim.
+   *
+   * Both are now derived server-side from the signed `Order` — the budget from
+   * `(side, quantity, price, quote_budget)`, the id from those plus the signer's
+   * own address and `nonce`. A caller can still compute its own id with the same
+   * recipe (every input is in the message it signed), and learns the short form
+   * from `SendOrderResponse.order_id`; it simply cannot choose one any more.
    *
    * @generated from field: bytes signature_hash = 2;
    */
   signatureHash: Uint8Array;
-
-  /**
-   * Order authorization carrying the SDK-derived canonical order id. Required.
-   * For message-typed fields proto3 tracks
-   * presence by default, so the generated Rust API is
-   * `Option<OrderAuthorization>`; the arborter handler enforces presence at
-   * the request boundary.
-   *
-   * @generated from field: xyz.aspens.arborter.v1.OrderAuthorization authorization = 3;
-   */
-  authorization?: OrderAuthorization;
 };
 
 /**
@@ -293,43 +296,6 @@ export type SendOrderRequest = Message<"xyz.aspens.arborter.v1.SendOrderRequest"
  */
 export const SendOrderRequestSchema: GenMessage<SendOrderRequest> = /*@__PURE__*/
   messageDesc(file_arborter, 7);
-
-/**
- * SDK-derived order authorization. Under the optimistic shadow ledger, order
- * entry never touches the chain — the arborter authenticates the order via the
- * outer envelope signature (`SendOrderRequest.signature_hash`) and consumes
- * only the single field below. The legacy gasless on-chain-lock fields
- * (user_signature / deadline / nonce / open_deadline / amount_out) were removed
- * with the on-chain order machinery; the message and its `SendOrderRequest`
- * field were renamed from `GaslessAuthorization` / `gasless` to match.
- *
- * @generated from message xyz.aspens.arborter.v1.OrderAuthorization
- */
-export type OrderAuthorization = Message<"xyz.aspens.arborter.v1.OrderAuthorization"> & {
-  /**
-   * The canonical on-chain order id (32-byte hex, 0x-prefixed), derived by the
-   * SDK (`aspens::orders::derive_order_id`). The arborter uses it verbatim as
-   * the order's id throughout match / settle, so it MUST match the SDK's
-   * derivation exactly.
-   *
-   * NOTE: `amount_in` (field 2) was removed. It declared the collateral the
-   * caller committed, but it lived HERE — in a sibling of `Order` — so
-   * `signature_hash` never covered it, and the arborter now derives the
-   * requirement from the signed order itself and reserves that. The one figure
-   * that genuinely cannot be derived, a market BID's budget, moved INTO `Order`
-   * as `quote_budget` so that it is signed. Field 2 is free for reuse.
-   *
-   * @generated from field: string order_id = 1;
-   */
-  orderId: string;
-};
-
-/**
- * Describes the message xyz.aspens.arborter.v1.OrderAuthorization.
- * Use `create(OrderAuthorizationSchema)` to create a new message.
- */
-export const OrderAuthorizationSchema: GenMessage<OrderAuthorization> = /*@__PURE__*/
-  messageDesc(file_arborter, 8);
 
 /**
  * @generated from message xyz.aspens.arborter.v1.Order
@@ -449,6 +415,27 @@ export type Order = Message<"xyz.aspens.arborter.v1.Order"> & {
    * @generated from field: optional string quote_budget = 11;
    */
   quoteBudget?: string;
+
+  /**
+   * Caller-chosen nonce, folded into the order id so one wallet's otherwise
+   * identical orders get distinct ids. Millis-since-epoch is the SDK's choice;
+   * any value works, and the caller may reuse one deliberately — a repeat
+   * derives the same id and is refused as a replay.
+   *
+   * It lives HERE, inside the signed `Order`, and that is the whole point. The
+   * arborter derives the canonical order id itself from this message and stops
+   * trusting a caller-supplied one, which is only possible if every input to
+   * the derivation is signed. While the nonce sat outside, the id depended on a
+   * value the server never saw and the signature never covered.
+   *
+   * What that buys, beyond tidiness: the derivation hashes the caller's own
+   * address, so an order signed by an attacker cannot derive to a victim's id.
+   * Pre-claiming someone else's id — refusing their order by reserving its id
+   * first — stops being expressible rather than being defended against.
+   *
+   * @generated from field: uint64 nonce = 12;
+   */
+  nonce: bigint;
 };
 
 /**
@@ -456,7 +443,7 @@ export type Order = Message<"xyz.aspens.arborter.v1.Order"> & {
  * Use `create(OrderSchema)` to create a new message.
  */
 export const OrderSchema: GenMessage<Order> = /*@__PURE__*/
-  messageDesc(file_arborter, 9);
+  messageDesc(file_arborter, 8);
 
 /**
  * @generated from message xyz.aspens.arborter.v1.Trade
@@ -571,7 +558,7 @@ export type Trade = Message<"xyz.aspens.arborter.v1.Trade"> & {
  * Use `create(TradeSchema)` to create a new message.
  */
 export const TradeSchema: GenMessage<Trade> = /*@__PURE__*/
-  messageDesc(file_arborter, 10);
+  messageDesc(file_arborter, 9);
 
 /**
  * Transaction hash information 
@@ -599,7 +586,7 @@ export type TransactionHash = Message<"xyz.aspens.arborter.v1.TransactionHash"> 
  * Use `create(TransactionHashSchema)` to create a new message.
  */
 export const TransactionHashSchema: GenMessage<TransactionHash> = /*@__PURE__*/
-  messageDesc(file_arborter, 11);
+  messageDesc(file_arborter, 10);
 
 /**
  * rpc: SendOrder 
@@ -655,7 +642,7 @@ export type SendOrderResponse = Message<"xyz.aspens.arborter.v1.SendOrderRespons
  * Use `create(SendOrderResponseSchema)` to create a new message.
  */
 export const SendOrderResponseSchema: GenMessage<SendOrderResponse> = /*@__PURE__*/
-  messageDesc(file_arborter, 12);
+  messageDesc(file_arborter, 11);
 
 /**
  * rpc: CancelOrder 
@@ -697,7 +684,7 @@ export type OrderToCancel = Message<"xyz.aspens.arborter.v1.OrderToCancel"> & {
  * Use `create(OrderToCancelSchema)` to create a new message.
  */
 export const OrderToCancelSchema: GenMessage<OrderToCancel> = /*@__PURE__*/
-  messageDesc(file_arborter, 13);
+  messageDesc(file_arborter, 12);
 
 /**
  * rpc: Orderbook 
@@ -782,7 +769,7 @@ export type OrderbookEntry = Message<"xyz.aspens.arborter.v1.OrderbookEntry"> & 
  * Use `create(OrderbookEntrySchema)` to create a new message.
  */
 export const OrderbookEntrySchema: GenMessage<OrderbookEntry> = /*@__PURE__*/
-  messageDesc(file_arborter, 14);
+  messageDesc(file_arborter, 13);
 
 /**
  * @generated from enum xyz.aspens.arborter.v1.Side
