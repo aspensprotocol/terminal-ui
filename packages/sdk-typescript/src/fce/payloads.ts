@@ -22,6 +22,25 @@ import type { Hex } from "viem";
 
 // ---- PLACE_ORDER ----
 
+/**
+ * The only `Order.nonce` this transport can sign: zero.
+ *
+ * The direct-action JSON below has no nonce field, and the adapter rebuilds the
+ * arborter `Order` from the JSON it does have — its `Order` does not carry the
+ * field yet. Zero is the proto3 default for a non-optional `uint64` and is
+ * skipped on encode, so signing it produces byte-identical bytes to the ones
+ * the adapter rebuilds. Any other value would be signed here and absent there;
+ * the arborter would recover a different address and reject the order for a bad
+ * signature, saying nothing about a nonce.
+ *
+ * What it costs: the id is derived from the order's content, the signer's
+ * address and this nonce, so over FCE two identical orders from one wallet —
+ * same market, side, quantity and price — derive the same id and the second is
+ * refused as a replay. Vary the quantity, or send it over gRPC, until the
+ * adapter carries a nonce.
+ */
+export const FCE_ORDER_NONCE = 0n;
+
 export interface PlaceOrderRequest {
   side: "BID" | "ASK";
   quantity: string;

@@ -42,6 +42,7 @@ import { formatDisplayNumber } from "./decimals.js";
 import { bytesToHex } from "viem";
 import {
   FceClient,
+  FCE_ORDER_NONCE,
   hexBytesToBytes,
   type FceClientOptions,
   decodeConfigEnvelope,
@@ -93,13 +94,23 @@ export interface PlaceOrderParams {
   baseAccountAddress: string;
   quoteAccountAddress: string;
   /**
-   * Order authorization carrying the SDK-derived order id — now its only
-   * field. Under the optimistic ledger the arborter authenticates the order
-   * via the outer envelope signature and derives the collateral it reserves
-   * from the signed order itself; build this via
-   * `buildEvmGaslessAuthorization` / `buildSolanaGaslessAuthorization`.
+   * `Order.nonce` — and it must be the SAME value passed to
+   * `OrderSigningData.nonce` when `signature` was produced. The wire order is
+   * rebuilt here from these params, so a nonce that differs from the signed
+   * one changes the bytes the arborter verifies against and the order is
+   * refused for a bad signature.
+   *
+   * On the FCE transport it must be `FCE_ORDER_NONCE` (zero) — see
+   * `placeOrderFce`.
    */
-  authorization?: import("./protos/arborter_pb.js").OrderAuthorization;
+  nonce: bigint;
+  /**
+   * The caller's own copy of the canonical order id, from
+   * `buildOrderCommitment`. Required on the FCE transport, whose adapter JSON
+   * still declares the key; ignored on gRPC, where the arborter derives the id
+   * itself and `OrderAuthorization` no longer exists to carry one.
+   */
+  orderId?: string;
   /**
    * A market BID's spending budget, in the QUOTE token's native base units —
    * see `OrderSigningData.quoteBudget`, whose value this must equal, since the
@@ -229,15 +240,10 @@ class RestClient {
       postOnly: params.postOnly ?? false,
       hidden: params.hidden ?? false,
       quoteBudget: params.quoteBudget,
+      nonce: params.nonce,
     });
 
-    // Send the order via gRPC, carrying the optional OrderAuthorization
-    // payload if present.
-    const response = await arborterService.sendOrder(
-      order,
-      params.signature,
-      params.authorization,
-    );
+    const response = await arborterService.sendOrder(order, params.signature);
 
     // Convert response to EnhancedOrder
     return this.responseToEnhancedOrder(response, params, pairDecimals);
@@ -250,8 +256,16 @@ class RestClient {
    * against that reconstruction. So the signature the caller passed must have
    * been produced over a `hidden=false` order — a hidden order can't round-trip
    * this channel byte-identically, so reject it rather than fail silently
-   * downstream. `authorization` carries the order id the adapter needs and is
+   * downstream. `orderId` is the id the adapter's JSON still declares and is
    * mandatory here.
+   *
+   * `nonce` is the same shape of problem: the direct-action JSON has no field
+   * for it and the adapter rebuilds the `Order` without one, so only
+   * `FCE_ORDER_NONCE` (zero, wire-skipped) round-trips byte-identically. A
+   * non-zero nonce would be signed here and absent there, the arborter would
+   * recover a different address, and the order would be refused for a bad
+   * signature with nothing said about a nonce — so refuse it here, with the
+   * reason.
    *
    * A market BID is likewise unsupported on this channel: the direct-action
    * payload has no `quoteBudget` field (the ext-proxy adapter's
@@ -270,8 +284,13 @@ class RestClient {
         "FCE transport does not support hidden orders (the adapter reconstructs hidden=false, breaking signature parity)",
       );
     }
-    if (!params.authorization) {
-      throw new Error("FCE placeOrder requires params.authorization (orderId)");
+    if (!params.orderId) {
+      throw new Error("FCE placeOrder requires params.orderId");
+    }
+    if (params.nonce !== FCE_ORDER_NONCE) {
+      throw new Error(
+        `FCE transport can only carry Order.nonce = ${FCE_ORDER_NONCE} (got ${params.nonce}): the direct-action payload has no nonce field, so the adapter rebuilds the order without one and signature verification fails`,
+      );
     }
     if (params.quoteBudget !== undefined) {
       throw new Error(
@@ -288,7 +307,7 @@ class RestClient {
       quoteAccountAddress: params.quoteAccountAddress,
       postOnly: params.postOnly ? true : undefined,
       signatureHash: bytesToHex(params.signature),
-      orderId: params.authorization.orderId,
+      orderId: params.orderId,
     });
 
     if (out.status !== 1 || !out.data) {

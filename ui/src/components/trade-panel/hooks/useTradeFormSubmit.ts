@@ -2,14 +2,15 @@ import { useState, useCallback } from "react";
 import { useExchangeStore } from "@/lib/store";
 import { useExchangeClient } from "@/lib/hooks/useExchangeClient";
 import {
-  buildEvmGaslessAuthorization,
-  buildSolanaGaslessAuthorization,
+  buildOrderCommitment,
+  clientNonce,
+  FCE_ORDER_NONCE,
   marketBidQuoteBudget,
   signOrder,
-  type OrderAuthorization,
   type OrderSigningData,
 } from "@aspens/terminal-sdk";
 import { createActiveSigningAdapter } from "@/lib/signing-adapter";
+import { useFceEnabled } from "@/lib/providers/fce-context";
 import { marketEcosystem } from "@/lib/wallet";
 import type { Market, Token } from "@/lib/types/exchange";
 import type { TradeFormData } from "../types";
@@ -36,6 +37,7 @@ export function useTradeFormSubmit({
   onSuccess,
 }: UseTradeFormSubmitParams) {
   const client = useExchangeClient();
+  const fceEnabled = useFceEnabled();
   const isAuthenticated = useExchangeStore((state) => state.isAuthenticated);
   const userAddress = useExchangeStore((state) => state.userAddress);
   const setActiveWallet = useExchangeStore((state) => state.setActiveWallet);
@@ -205,6 +207,18 @@ export function useTradeFormSubmit({
           quoteBudget = budget.toString();
         }
 
+        // The order's nonce, minted ONCE here and threaded through every place
+        // that must agree on it: the message the wallet signs, the message the
+        // wire carries, and the local id derivation. The arborter derives the
+        // canonical order id from the signed `Order`, so a nonce that differs
+        // between any two of those three yields either a bad signature or an id
+        // nobody else derives — and neither says so.
+        //
+        // The FCE transport can only express zero: its direct-action JSON has
+        // no nonce field, so the adapter rebuilds the order without one. Zero
+        // is wire-skipped, which is exactly what that rebuild produces.
+        const nonce = fceEnabled ? FCE_ORDER_NONCE : clientNonce();
+
         // Create order signing data. `quoteBudget` rides INSIDE the Order, so
         // the envelope signature below covers it.
         const orderData: OrderSigningData = {
@@ -217,6 +231,7 @@ export function useTradeFormSubmit({
           postOnly: effectivePostOnly,
           hidden: data.hidden,
           quoteBudget,
+          nonce,
         };
 
         // Sign the order envelope using the matched wallet. This
@@ -225,61 +240,35 @@ export function useTradeFormSubmit({
         const signingAdapter = createActiveSigningAdapter();
         const signature = await signOrder(orderData, signingAdapter);
 
-        // Build the order authorization. Under the optimistic ledger the
-        // arborter authenticates the order via the outer envelope signature
-        // and reads only order_id from this payload (no on-chain lock
-        // signature): `OrderAuthorization.amount_in` was deleted, because it
-        // sat outside the signed Order and so declared a commitment nothing
-        // had signed. The collateral now comes from the order itself.
-        //
-        // The amounts below therefore no longer travel anywhere — they are
-        // inputs to the order-id hash, which is what keeps a wallet's ids
-        // distinct.
-        const config = client.cache.getConfig();
-        if (!config) {
-          throw new Error(
-            "Arborter configuration not loaded yet — retry in a moment",
-          );
-        }
-        const amountIn = BigInt(
-          data.side === "buy"
-            ? Math.round(
-                finalSize *
-                  (data.orderType === "limit" ? finalPrice : 0) *
-                  Math.pow(10, pairDecimals),
-              )
-            : Math.round(finalSize * Math.pow(10, pairDecimals)),
-        );
-        const amountOut = BigInt(
-          data.side === "buy"
-            ? Math.round(finalSize * Math.pow(10, pairDecimals))
-            : Math.round(
-                finalSize *
-                  (data.orderType === "limit" ? finalPrice : 0) *
-                  Math.pow(10, pairDecimals),
-              ),
-        );
-        let orderAuthorization: OrderAuthorization | undefined;
-        if (requiredEcosystem === "evm") {
-          const { authorization } = await buildEvmGaslessAuthorization({
+        // The caller's own copy of the canonical order id. It is NOT sent over
+        // gRPC — `OrderAuthorization` is gone and the arborter derives the id
+        // from the signed order — so it is only computed on the FCE transport,
+        // whose direct-action JSON still declares an `orderId` key. Deriving it
+        // needs the arborter config (chain ids) and would throw without one;
+        // there is no reason to make a gRPC order fail on a lookup its result
+        // never reaches.
+        let orderId: string | undefined;
+        if (fceEnabled) {
+          const config = client.cache.getConfig();
+          if (!config) {
+            throw new Error(
+              "Arborter configuration not loaded yet — retry in a moment",
+            );
+          }
+          orderId = buildOrderCommitment({
             market: selectedMarket,
             config,
             side: data.side,
-            amountIn,
-            amountOut,
-            userAddress: signerAddress as `0x${string}`,
-          });
-          orderAuthorization = authorization;
-        } else if (requiredEcosystem === "solana") {
-          const { authorization } = await buildSolanaGaslessAuthorization({
-            market: selectedMarket,
-            config,
-            side: data.side,
-            amountIn,
-            amountOut,
+            // The address the signature verified against — a bid signs with
+            // the quote account, an ask with the base account, and this UI
+            // uses one wallet for both.
             userAddress: signerAddress,
-          });
-          orderAuthorization = authorization;
+            quantityRaw: sizeRaw,
+            priceRaw: data.orderType === "limit" ? priceRaw : undefined,
+            quoteBudgetRaw: quoteBudget,
+            // The same nonce the wallet signed above.
+            nonce,
+          }).orderId;
         }
 
         // Place the order via SDK
@@ -293,12 +282,13 @@ export function useTradeFormSubmit({
           signature,
           baseAccountAddress: signerAddress,
           quoteAccountAddress: signerAddress,
-          authorization: orderAuthorization,
+          orderId,
           postOnly: effectivePostOnly,
           hidden: data.hidden,
-          // Must be the SAME value that went into `orderData` above, or the
+          // Must be the SAME values that went into `orderData` above, or the
           // wire order won't match the bytes the wallet signed.
           quoteBudget,
+          nonce,
         });
 
         // A hidden order that rested exists in NO server stream — this
@@ -367,6 +357,7 @@ export function useTradeFormSubmit({
       userAddress,
       setActiveWallet,
       client,
+      fceEnabled,
       onSuccess,
     ],
   );

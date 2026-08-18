@@ -104,6 +104,26 @@ export interface OrderSigningData {
    * digests for the three derivable cells are unchanged.
    */
   quoteBudget?: string;
+  /**
+   * Caller-chosen nonce, folded into the canonical order id so one wallet's
+   * otherwise identical orders get distinct ids. `uint64`.
+   *
+   * It rides INSIDE the signed `Order`, and that is the whole point: the
+   * arborter derives the order id itself from this message and no longer
+   * accepts one from a caller, which is only possible while every input to the
+   * derivation is signed. While the nonce sat outside the message the id
+   * depended on a value the server never saw.
+   *
+   * Required, with no default, so that every call site has to state it. The
+   * same value MUST also reach {@link import("./order-commitment.js").buildOrderCommitment}
+   * and `PlaceOrderParams.nonce`: a nonce that differs between the message the
+   * wallet signed and the message that goes on the wire fails signature
+   * verification, and one that differs from the id derivation just yields an id
+   * the arborter never produces. Mint it once with
+   * {@link import("./order-commitment.js").clientNonce}, or use
+   * {@link import("./fce/payloads.js").FCE_ORDER_NONCE} on the FCE transport.
+   */
+  nonce: bigint;
 }
 
 /**
@@ -185,6 +205,10 @@ export function createOrderMessage(data: OrderSigningData): Order {
     // supplied one, so non-market-bid digests are byte-identical to before
     // the field existed.
     quoteBudget: data.quoteBudget,
+    // Field 12, `uint64`. This builder is the ONLY place the signed `Order` is
+    // constructed, which is what keeps the nonce the wallet signs, the nonce
+    // the wire carries and the nonce the id is derived over the same number.
+    nonce: data.nonce,
   });
 }
 

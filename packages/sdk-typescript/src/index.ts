@@ -55,6 +55,7 @@ export {
   toBytes32,
   toBytes32Hex,
   buildDirectInstruction,
+  FCE_ORDER_NONCE,
   type DirectInstruction,
   type PlaceOrderRequest,
   type PlaceOrderResponse,
@@ -121,19 +122,16 @@ export {
   MIDRIB_EIP712_VERSION,
 } from "./gasless.js";
 
-// Chain-specific order-authorization builders: derive the order id + pack the
-// OrderAuthorization proto from a market + order params.
+// The caller's own copy of the canonical order id and the budget it commits.
+// Nothing here goes on the wire: the arborter derives both from the signed
+// `Order`, and `OrderAuthorization` — the message that used to carry an id —
+// was deleted.
 export {
-  buildEvmGaslessAuthorization,
-  type BuildEvmGaslessOpts,
-} from "./gasless-evm.js";
-export {
-  buildSolanaGaslessAuthorization,
-  type BuildSolanaGaslessOpts,
-} from "./gasless-solana.js";
-
-// Proto types consumers populate on PlaceOrderParams / SendOrderRequest.
-export type { OrderAuthorization } from "./protos/arborter_pb.js";
+  buildOrderCommitment,
+  clientNonce,
+  type BuildOrderCommitmentOpts,
+  type OrderCommitment,
+} from "./order-commitment.js";
 
 // On-chain balance queries (shared by the balances panel + deposit UI).
 export {

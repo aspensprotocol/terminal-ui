@@ -179,13 +179,16 @@ export const arborterService = {
   async sendOrder(
     order: Order,
     signatureHash: Uint8Array,
-    authorization?: import("./protos/arborter_pb.js").OrderAuthorization,
   ): Promise<SendOrderResponse> {
     try {
+      // Two fields, and that is the whole request: `SendOrderRequest.
+      // authorization` was deleted along with `OrderAuthorization`. The
+      // arborter derives the order id and the collateral it reserves from the
+      // signed `Order` itself, so there is nothing left for a caller to declare
+      // outside the signature.
       const request: SendOrderRequest = create(SendOrderRequestSchema, {
         order,
         signatureHash,
-        authorization,
       });
 
       // Add timeout wrapper

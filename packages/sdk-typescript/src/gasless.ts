@@ -3,10 +3,14 @@
  *
  * Mirrors the Rust SDK's `aspens::orders::derive_order_id`. Under the optimistic
  * shadow ledger, order entry never touches the chain: the arborter authenticates
- * via the outer envelope signature and consumes only `order_id` (the sibling
- * `amount_in` was deleted; collateral is derived from the signed order).
- * The legacy gasless on-chain-lock signing (EVM EIP-712 `GaslessCrossChainOrder`,
- * Solana `OpenForSignedPayload`) was removed with the on-chain order machinery.
+ * via the outer envelope signature and derives BOTH the order id and the
+ * collateral it reserves from the signed `Order` — `OrderAuthorization`, which
+ * used to carry a caller-chosen id, is deleted. The legacy gasless on-chain-lock
+ * signing (EVM EIP-712 `GaslessCrossChainOrder`, Solana `OpenForSignedPayload`)
+ * was removed with the on-chain order machinery.
+ *
+ * This is the raw hash. `./order-commitment.ts` is what feeds it — it resolves
+ * the chains, token strings and native-unit amounts an order hashes over.
  *
  * Parity is pinned against the Rust SDK's snapshot vector in
  * `aspens/tests/client_parity.rs` — see `gasless.test.ts`. Any drift in the
@@ -19,9 +23,11 @@ import { hexToBytes } from "viem";
 // -- Chain-agnostic order id ---------------------------------------------
 
 /**
- * Derive the canonical 32-byte order id. Both client and arborter
- * MUST produce the same hash for a given intent; mismatches fail
- * `SendOrderRequest` validation.
+ * Derive the canonical 32-byte order id. Both client and arborter run this
+ * recipe independently and must agree byte-for-byte — and a mismatch is SILENT.
+ * The arborter no longer validates a supplied id (there is no field to supply
+ * one in); it simply derives its own, so a client that drifts tracks an order
+ * under an id the server never used.
  *
  * Layout (little-endian for integers):
  *   sha256(
