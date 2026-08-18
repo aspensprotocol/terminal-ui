@@ -93,6 +93,87 @@ export function formatDisplayNumber(
   return trimmed === "" || trimmed === "-" ? "0" : trimmed;
 }
 
+/**
+ * Optional sign, digits with an optional decimal point, optional exponent.
+ * Anchored, so anything else — a stray comma, "1.2.3", "abc", "" — fails to
+ * match and is rejected rather than silently becoming a number.
+ */
+const DECIMAL_PATTERN = /^([+-])?(\d*)(?:\.(\d*))?(?:[eE]([+-]?\d+))?$/;
+
+/**
+ * Convert a human-typed decimal string to the raw scaled integer the wire
+ * carries, using string and BigInt arithmetic only.
+ *
+ * This is the ONLY sanctioned direction of travel for an amount that will be
+ * signed. The obvious alternative — `Math.round(parseFloat(s) * 10 ** d)` —
+ * cannot be trusted at the scales this exchange uses: `10 ** 18` is not
+ * exactly representable as a double, so the product lands on whatever multiple
+ * of the local float spacing happens to be nearest. At 18 pair decimals a
+ * price of `1.1` comes out as 1100000000000000128 instead of
+ * 1100000000000000000. That is not a rounding curiosity: the arborter verifies
+ * the envelope signature against the prost re-encoding of the `Order` it
+ * receives, so a value computed one way in the bytes the wallet signs and
+ * another way in the bytes that go on the wire recovers a DIFFERENT address
+ * and the order is refused for a bad signature, saying nothing about the
+ * number that moved. Derive the raw value once, here, and thread that one
+ * value everywhere.
+ *
+ * Digits finer than `decimals` are TRUNCATED toward zero, never rounded up:
+ * the scale cannot represent them, and truncation can only ever ask for less
+ * than the user typed. `decimals` is the market's `pair_decimals` for a
+ * price/size; a token's own decimals for a native-unit amount.
+ *
+ * Throws on anything that isn't a decimal number — a malformed amount must
+ * stop the submission, not become a silent zero (`parseFloat("abc")` is `NaN`,
+ * and `Math.round(NaN)` used to reach `BigInt()` as a thrown RangeError with
+ * no useful text).
+ */
+export function decimalToRaw(decimal: string, decimals: number): string {
+  if (!Number.isInteger(decimals) || decimals < 0) {
+    throw new Error(`decimalToRaw: invalid scale ${decimals}`);
+  }
+
+  const match = DECIMAL_PATTERN.exec(decimal.trim());
+  // `m[2]` and `m[3]` are both optional in the pattern, so "" and "." match it
+  // while carrying no digits at all; require at least one digit somewhere.
+  if (!match || (!match[2] && !match[3])) {
+    throw new Error(
+      `decimalToRaw: not a decimal number: ${JSON.stringify(decimal)}`,
+    );
+  }
+
+  const negative = match[1] === "-";
+  const intDigits = match[2] ?? "";
+  const fracDigits = match[3] ?? "";
+  const exponent = match[4] ? Number(match[4]) : 0;
+  // An exponent only shifts where the point sits; a wild one would ask for a
+  // string of zeros no amount could need. Reject it rather than allocate it.
+  if (!Number.isFinite(exponent) || Math.abs(exponent) > 1000) {
+    throw new Error(
+      `decimalToRaw: exponent out of range in ${JSON.stringify(decimal)}`,
+    );
+  }
+
+  const digits = intDigits + fracDigits;
+  // Where the decimal point sits within `digits` once the exponent is applied,
+  // then shifted right by `decimals` — which is exactly what scaling by
+  // 10**decimals does. Everything left of `cut` is the raw integer; everything
+  // right of it is below the scale's precision and is dropped.
+  const cut = intDigits.length + exponent + decimals;
+
+  let raw: bigint;
+  if (cut <= 0) {
+    raw = 0n;
+  } else if (cut >= digits.length) {
+    raw = BigInt(digits.padEnd(cut, "0") || "0");
+  } else {
+    raw = BigInt(digits.slice(0, cut) || "0");
+  }
+
+  // -0 is 0; don't emit a signed zero.
+  return negative && raw !== 0n ? (-raw).toString() : raw.toString();
+}
+
 export interface MarketBidQuoteBudgetOpts {
   /** Base quantity the user wants, as a pair-decimal-scaled integer string. */
   sizeRaw: string;
