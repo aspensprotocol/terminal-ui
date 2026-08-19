@@ -6,6 +6,7 @@ import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { useExchangeStore } from "../store";
 import { useExchangeClient } from "./useExchangeClient";
+import { sameAddress } from "../utils";
 
 /**
  * Hook that fetches initial user trades via REST and subscribes to WebSocket updates
@@ -58,7 +59,9 @@ export function useUserTrades() {
 
       // Show toast notification for new fills
       if (!isInitialLoadRef.current) {
-        const side = trade.buyer_address === userAddress ? "buy" : "sell";
+        const side = sameAddress(trade.buyer_address, userAddress)
+          ? "buy"
+          : "sell";
         toast.success(
           `Fill: ${side.toUpperCase()} ${trade.sizeDisplay} ${trade.market_id.split("/")[0]} @ ${trade.priceDisplay}`,
           {

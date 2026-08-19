@@ -22,6 +22,7 @@ import { useExchangeStore, type CancelledOrderEntry } from "@/lib/store";
 import { useUserTrades } from "@/lib/hooks";
 import type { Trade } from "@/lib/types/exchange";
 import { DataTable } from "@/components/ui/data-table";
+import { sameAddress } from "@/lib/utils";
 
 type HistoryRow = {
   id: string;
@@ -61,7 +62,7 @@ export function OrderHistory() {
         marketId: t.market_id,
         side:
           (t as Trade & { side?: "buy" | "sell" }).side ??
-          (t.buyer_address === userAddress ? "buy" : "sell"),
+          (sameAddress(t.buyer_address, userAddress) ? "buy" : "sell"),
         priceDisplay: t.priceDisplay,
         sizeDisplay: t.sizeDisplay,
         status: "filled",
@@ -73,7 +74,7 @@ export function OrderHistory() {
       // Show only the active user's cancellations — the log may carry
       // entries from a prior connected address, and localStorage is
       // per-browser-not-per-wallet.
-      .filter((e) => !userAddress || e.userAddress === userAddress)
+      .filter((e) => !userAddress || sameAddress(e.userAddress, userAddress))
       .map(
         (e: CancelledOrderEntry): HistoryRow => ({
           id: `cancel-${e.orderId}`,

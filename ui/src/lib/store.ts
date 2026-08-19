@@ -18,6 +18,7 @@ import type {
 import type { ConnectedWallet } from "./wallet/types";
 import type { Configuration } from "@aspens/terminal-sdk";
 import { toDisplayValue, toDisplayValueCapped } from "@aspens/terminal-sdk";
+import { sameAddress } from "./utils";
 
 /** Shape of a locally-tracked cancelled order — see `cancelledOrders`. */
 export interface CancelledOrderEntry {
@@ -525,16 +526,16 @@ export const useExchangeStore = create<ExchangeState>()(
           // Hidden orders are response-only-tracked: no stream ever
           // returns them, so every poll rebuild would drop them. Re-inject
           // the active user's locally tracked entries. Compare
-          // case-insensitively — EVM wallets report inconsistent
-          // checksum/lowercase casing across sessions, and a case miss
-          // would make the order's ONLY record invisible. Guard on a
-          // truthy `state.userAddress` first so two absent addresses
-          // (both undefined after `?.toLowerCase()`) never compare equal.
+          // case-insensitively via `sameAddress` — EVM wallets report
+          // inconsistent checksum/lowercase casing across sessions, and a
+          // case miss would make the order's ONLY record invisible.
+          // `sameAddress` never matches on undefined, so two absent
+          // addresses never compare equal; the `state.userAddress` guard
+          // is kept to short-circuit before touching `hiddenOrders` at all.
           for (const hidden of state.hiddenOrders) {
             if (
               state.userAddress &&
-              hidden.user_address?.toLowerCase() ===
-                state.userAddress.toLowerCase() &&
+              sameAddress(hidden.user_address, state.userAddress) &&
               !state.userOrders[hidden.id]
             ) {
               state.userOrders[hidden.id] = hidden;
