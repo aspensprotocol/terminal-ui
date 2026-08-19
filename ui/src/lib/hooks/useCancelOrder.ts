@@ -8,10 +8,128 @@
  */
 
 import { useCallback, useState } from "react";
-import { signCancelOrder } from "@aspens/terminal-sdk";
-import { useExchangeStore } from "@/lib/store";
+import {
+  signCancelOrder,
+  type CancelSigningData,
+  type SigningAdapter,
+} from "@aspens/terminal-sdk";
+import { useExchangeStore, type CancelledOrderEntry } from "@/lib/store";
 import { createActiveSigningAdapter } from "@/lib/signing-adapter";
 import { useExchangeClient } from "./useExchangeClient";
+import type { Order } from "@/lib/types/exchange";
+
+/**
+ * External effects the sign+submit step needs, injected so the NOT_FOUND
+ * decision below is testable without rendering the hook — this repo has
+ * no hook-testing convention (no `renderHook` usage anywhere in
+ * `ui/src`), so the testable surface is a plain async function taking an
+ * already-resolved `order` rather than the hook itself.
+ */
+export interface CancelSubmissionDeps {
+  createSigningAdapter: () => SigningAdapter;
+  signCancel: (
+    data: CancelSigningData,
+    adapter: SigningAdapter,
+  ) => Promise<Uint8Array>;
+  submitCancel: (params: {
+    userAddress: string;
+    orderId: string;
+    marketId: string;
+    side: Order["side"];
+    tokenAddress: string;
+    signature: Uint8Array;
+  }) => Promise<unknown>;
+  recordCancelledOrder: (entry: CancelledOrderEntry) => void;
+  removeHiddenOrder: (orderId: string) => void;
+}
+
+/**
+ * Sign and submit a cancel for an already-resolved order, then reconcile
+ * local state with the result.
+ */
+export async function submitCancelOrder(
+  order: Order,
+  lockedTokenAddress: string,
+  userAddress: string,
+  orderId: string,
+  deps: CancelSubmissionDeps,
+): Promise<void> {
+  try {
+    const signingAdapter = deps.createSigningAdapter();
+    const signature = await deps.signCancel(
+      {
+        marketId: order.market_id,
+        side: order.side,
+        tokenAddress: lockedTokenAddress,
+        orderId,
+      },
+      signingAdapter,
+    );
+
+    await deps.submitCancel({
+      userAddress,
+      orderId,
+      marketId: order.market_id,
+      side: order.side,
+      tokenAddress: lockedTokenAddress,
+      signature,
+    });
+
+    // The arborter drops cancelled orders from its orderbook, so
+    // they'll be invisible on the next getOrders poll. Persist an
+    // entry keyed by orderId so Order History can still show the
+    // cancellation across refreshes.
+    deps.recordCancelledOrder({
+      orderId,
+      marketId: order.market_id,
+      side: order.side,
+      priceDisplay: order.priceDisplay ?? order.price ?? "",
+      sizeDisplay: order.sizeDisplay ?? order.size ?? "",
+      cancelledAt: Date.now(),
+      userAddress,
+    });
+
+    // A cancelled hidden order must also leave the local tracking
+    // slice, or setOrders would re-inject it forever.
+    if (order.hidden) {
+      deps.removeHiddenOrder(orderId);
+    }
+  } catch (err) {
+    // The arborter answers NOT_FOUND for a cancel of any order that is no
+    // longer live in its book — a replayed cancel, or one racing a fill
+    // that just completed. Since matching moved inside the arborter's
+    // single-writer actor (2026-08), that is the deliberate wire answer,
+    // not a hidden-order special case. From the user's perspective the row
+    // should just disappear: it is the same outcome a successful cancel
+    // would have produced locally. Any other error still propagates.
+    const message = err instanceof Error ? err.message : String(err);
+    const isNotFound = /not[ _-]?found/i.test(message);
+    if (isNotFound) {
+      console.warn(
+        `[useCancelOrder] Order ${orderId} already gone at arborter (not found) — removing local row`,
+        err,
+      );
+      deps.recordCancelledOrder({
+        orderId,
+        marketId: order.market_id,
+        side: order.side,
+        priceDisplay: order.priceDisplay ?? order.price ?? "",
+        sizeDisplay: order.sizeDisplay ?? order.size ?? "",
+        cancelledAt: Date.now(),
+        userAddress,
+      });
+      // Only hidden orders live in the hidden-orders slice, so this stays
+      // hidden-gated — it's the local-tracking cleanup, not the NOT_FOUND
+      // decision above (which now applies to every order).
+      if (order.hidden) {
+        deps.removeHiddenOrder(orderId);
+      }
+      return;
+    }
+    console.error(`[useCancelOrder] Failed to cancel ${orderId}:`, err);
+    throw err;
+  }
+}
 
 export function useCancelOrder() {
   const client = useExchangeClient();
@@ -52,74 +170,21 @@ export function useCancelOrder() {
 
       setCancellingOrders((prev) => new Set(prev).add(orderId));
       try {
-        const signingAdapter = createActiveSigningAdapter();
-        const signature = await signCancelOrder(
+        await submitCancelOrder(
+          order,
+          lockedTokenAddress,
+          userAddress,
+          orderId,
           {
-            marketId: order.market_id,
-            side: order.side,
-            tokenAddress: lockedTokenAddress,
-            orderId,
+            createSigningAdapter: createActiveSigningAdapter,
+            signCancel: signCancelOrder,
+            submitCancel: (params) => client.cancelOrder(params),
+            recordCancelledOrder: (entry) =>
+              useExchangeStore.getState().recordCancelledOrder(entry),
+            removeHiddenOrder: (id) =>
+              useExchangeStore.getState().removeHiddenOrder(id),
           },
-          signingAdapter,
         );
-
-        await client.cancelOrder({
-          userAddress,
-          orderId,
-          marketId: order.market_id,
-          side: order.side,
-          tokenAddress: lockedToken.address,
-          signature,
-        });
-
-        // The arborter drops cancelled orders from its orderbook, so
-        // they'll be invisible on the next getOrders poll. Persist an
-        // entry keyed by orderId so Order History can still show the
-        // cancellation across refreshes.
-        useExchangeStore.getState().recordCancelledOrder({
-          orderId,
-          marketId: order.market_id,
-          side: order.side,
-          priceDisplay: order.priceDisplay ?? order.price ?? "",
-          sizeDisplay: order.sizeDisplay ?? order.size ?? "",
-          cancelledAt: Date.now(),
-          userAddress,
-        });
-
-        // A cancelled hidden order must also leave the local tracking
-        // slice, or setOrders would re-inject it forever.
-        if (order.hidden) {
-          useExchangeStore.getState().removeHiddenOrder(orderId);
-        }
-      } catch (err) {
-        // A hidden order the arborter no longer knows about (already
-        // filled, so it's gone from the engine) fails cancel with a
-        // not-found-style error. From the user's perspective the row
-        // should just disappear — it's the same outcome a successful
-        // cancel would have produced locally, and there's no live order
-        // left for a wallet signature to act on. Any other error still
-        // propagates so the caller can surface it.
-        const message = err instanceof Error ? err.message : String(err);
-        const isNotFound = /not[ _-]?found/i.test(message);
-        if (order.hidden && isNotFound) {
-          console.warn(
-            `[useCancelOrder] Hidden order ${orderId} already gone at arborter (stale fill) — removing local row`,
-            err,
-          );
-          useExchangeStore.getState().recordCancelledOrder({
-            orderId,
-            marketId: order.market_id,
-            side: order.side,
-            priceDisplay: order.priceDisplay ?? order.price ?? "",
-            sizeDisplay: order.sizeDisplay ?? order.size ?? "",
-            cancelledAt: Date.now(),
-            userAddress,
-          });
-          useExchangeStore.getState().removeHiddenOrder(orderId);
-          return;
-        }
-        console.error(`[useCancelOrder] Failed to cancel ${orderId}:`, err);
-        throw err;
       } finally {
         setCancellingOrders((prev) => {
           const next = new Set(prev);
