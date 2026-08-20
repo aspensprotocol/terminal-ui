@@ -275,7 +275,7 @@ export const arborterService = {
   },
 
   /**
-   * Request a TEE-signed withdrawal voucher (Track A §8). Under the
+   * Request a TEE-signed withdrawal voucher. Under the
    * optimistic shadow ledger the chain can no longer self-judge a
    * withdrawal — the arborter places an off-chain hold and returns a
    * voucher the holder submits to `MidribV3.withdraw(voucher, signature)`.

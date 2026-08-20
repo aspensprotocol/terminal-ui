@@ -5,15 +5,21 @@
  *
  * Single entry point for moving tokens between the user's wallet and
  * the arborter's trade contract. The underlying hook dispatches on
- * chain architecture (EVM: wagmi + MidribV2 calls, Solana: web3.js +
+ * chain architecture (EVM: wagmi + MidribV3 calls, Solana: web3.js +
  * Midrib program instructions), so the dialog itself is
  * ecosystem-agnostic — the (chain, token) picker simply enumerates
  * every chain the arborter exposes.
  *
  * Shows live balances for the selected (chain, token) — wallet balance
- * (source for deposit) and deposited / locked (source for withdraw) —
+ * (source for deposit) and the deposited balance (source for withdraw) —
  * so the user has the context they need to pick an amount, plus a Max
  * button that autofills from whichever side is the source.
+ *
+ * The deposited figure is the whole contract balance, which can exceed what
+ * is withdrawable: collateral behind a resting order is reserved off-chain in
+ * the TEE and is invisible from here. The arborter is authoritative and
+ * refuses the excess, so the withdraw side says so rather than implying the
+ * full balance is free.
  */
 
 import { useMemo, useState } from "react";
@@ -347,13 +353,14 @@ function TransferForm({
   const showUnwrapToggle =
     mode === "withdraw" && !!choice && isWsolMint(choice.tokenAddress);
 
-  // Pick the "source" side for the Max button. Deposits pull from the
-  // user's wallet; withdraws pull from the deposited-minus-locked
-  // (available) slice of the trade contract.
+  // Pick the "source" side for the Max button. Deposits pull from the user's
+  // wallet; withdraws pull from the trade-contract balance. Max is an upper
+  // bound, not a promise: it cannot net off collateral reserved behind resting
+  // orders, which is off-chain and not readable here.
   const sourceRaw: bigint | undefined = slice
     ? mode === "deposit"
       ? slice.wallet
-      : slice.deposited - slice.locked
+      : slice.deposited
     : undefined;
 
   const sourceDisplay = slice
@@ -492,22 +499,22 @@ function BalanceSummary({
 }) {
   const wallet = formatRaw(slice.wallet, slice.tokenDecimals);
   const deposited = formatRaw(slice.deposited, slice.tokenDecimals);
-  const locked = formatRaw(slice.locked, slice.tokenDecimals);
-  const available = formatRaw(
-    slice.deposited - slice.locked,
-    slice.tokenDecimals,
-  );
   return (
-    <div className="rounded-md border border-border/40 bg-background/40 text-xs divide-y divide-border/40">
-      <Row label="Wallet" value={wallet} emphasis={mode === "deposit"} />
-      <Row
-        label="Deposited (available)"
-        value={available}
-        emphasis={mode === "withdraw"}
-      />
-      <Row label="Locked in open orders" value={locked} muted />
-      {deposited !== available && (
-        <Row label="Deposited (total)" value={deposited} muted />
+    <div>
+      <div className="rounded-md border border-border/40 bg-background/40 text-xs divide-y divide-border/40">
+        <Row label="Wallet" value={wallet} emphasis={mode === "deposit"} />
+        <Row
+          label="Deposited"
+          value={deposited}
+          emphasis={mode === "withdraw"}
+        />
+      </div>
+      {mode === "withdraw" && (
+        <p className="mt-1.5 text-[11px] leading-snug text-muted-foreground/80">
+          Collateral committed to open orders is held off-chain and is not shown
+          here, so the deposited figure may exceed what you can withdraw right
+          now. Cancel an order to free its collateral.
+        </p>
       )}
     </div>
   );

@@ -6,14 +6,23 @@
  * wallet on. For each (chain, token, wallet) tuple we fetch:
  *
  *   - deposited — balance held inside the trade contract (EVM:
- *     `MidribV2.tradeBalance`; Solana: the `deposited` field on the
- *     `UserBalance` PDA).
- *   - locked — portion of `deposited` tied up in open orders (EVM:
- *     `MidribV2.lockedTradeBalance`; Solana: the `locked` field on the
+ *     `MidribV3.tradeBalance`; Solana: the `deposited` field on the
  *     `UserBalance` PDA).
  *   - wallet — the user's raw chain-level balance (ERC-20 `balanceOf`
  *     or SPL token account). Used by the deposit UI, not the balances
  *     panel.
+ *
+ * There is deliberately no `locked` figure. Under the optimistic shadow
+ * ledger an order's collateral is reserved OFF-chain, inside the TEE, at the
+ * moment the order enters the book — the chain never sees it. MidribV3 has no
+ * `lockedTradeBalance` getter, and no Solana instruction ever raises
+ * `UserBalance.locked` (it survives only as a floor assertion), so any
+ * on-chain read of it is a constant zero. Reporting that zero as if it were a
+ * measurement is worse than not reporting it.
+ *
+ * The consequence, which the withdraw UI has to own: `deposited` can exceed
+ * what is actually withdrawable, because collateral behind a resting order is
+ * invisible here. The arborter is authoritative and will refuse the excess.
  *
  * Results are aggregated per token ticker (summed across chains the
  * token appears on) to match the shape `EnhancedBalance[]` the UI
@@ -49,7 +58,6 @@ const ERC20_ABI = parseAbi([
 ]);
 const MIDRIB_BALANCE_ABI = parseAbi([
   "function tradeBalance(address holder, address token) view returns (uint256)",
-  "function lockedTradeBalance(address holder, address token) view returns (uint256)",
 ]);
 
 /** A user wallet binding produced by the UI's multi-wallet manager. */
@@ -67,7 +75,6 @@ export interface ChainBalanceSlice {
   tokenAddress: string;
   tokenDecimals: number;
   deposited: bigint;
-  locked: bigint;
   /** User's wallet balance on-chain (outside the trade contract). */
   wallet: bigint;
 }
@@ -225,7 +232,7 @@ async function fetchEvmChainSlices(
     // Wallet + trade-contract queries in parallel; any individual failure
     // (e.g. an RPC hiccup or a token that doesn't implement balanceOf)
     // degrades to zero for that slice rather than failing the whole panel.
-    const [walletRaw, depositedRaw, lockedRaw] = await Promise.all([
+    const [walletRaw, depositedRaw] = await Promise.all([
       readEvmWalletBalance(client, token.address, user),
       midrib
         ? client
@@ -233,16 +240,6 @@ async function fetchEvmChainSlices(
               address: midrib,
               abi: MIDRIB_BALANCE_ABI,
               functionName: "tradeBalance",
-              args: [user, tokenAddr],
-            })
-            .catch(() => 0n)
-        : Promise.resolve(0n),
-      midrib
-        ? client
-            .readContract({
-              address: midrib,
-              abi: MIDRIB_BALANCE_ABI,
-              functionName: "lockedTradeBalance",
               args: [user, tokenAddr],
             })
             .catch(() => 0n)
@@ -255,7 +252,6 @@ async function fetchEvmChainSlices(
       tokenAddress: tokenAddr,
       tokenDecimals: token.decimals,
       deposited: depositedRaw,
-      locked: lockedRaw,
       wallet: walletRaw,
     });
   }
@@ -317,8 +313,8 @@ async function fetchSolanaChainSlices(
     const ata = deriveAssociatedTokenAccount(owner, mint);
 
     // Wallet balance via the ATA, plus lamports for the native (WSOL) leg.
-    // Deposited / locked via the UserBalance PDA if the program + instance
-    // are configured; otherwise zero.
+    // Deposited via the UserBalance PDA if the program + instance are
+    // configured; otherwise zero.
     const walletPromise: Promise<bigint> = solanaNativeWallet(
       conn,
       token.address,
@@ -327,7 +323,6 @@ async function fetchSolanaChainSlices(
     );
 
     let depositedPromise = Promise.resolve(0n);
-    let lockedPromise = Promise.resolve(0n);
     if (programId && instance) {
       const [userBalancePda] = PublicKey.findProgramAddressSync(
         [
@@ -344,15 +339,11 @@ async function fetchSolanaChainSlices(
       depositedPromise = pdaPromise.then((info) =>
         info ? readU64Le(info.data, 8 + 32 * 3) : 0n,
       );
-      lockedPromise = pdaPromise.then((info) =>
-        info ? readU64Le(info.data, 8 + 32 * 3 + 8) : 0n,
-      );
     }
 
-    const [wallet, deposited, locked] = await Promise.all([
+    const [wallet, deposited] = await Promise.all([
       walletPromise,
       depositedPromise,
-      lockedPromise,
     ]);
 
     results.push({
@@ -361,7 +352,6 @@ async function fetchSolanaChainSlices(
       tokenAddress: token.address,
       tokenDecimals: token.decimals,
       deposited,
-      locked,
       wallet,
     });
   }
@@ -386,7 +376,6 @@ function aggregateSlicesToEnhancedBalances(
     string,
     {
       deposited: bigint;
-      locked: bigint;
       decimals: number;
     }
   >();
@@ -394,11 +383,9 @@ function aggregateSlicesToEnhancedBalances(
     const prior = byTicker.get(s.tokenTicker);
     if (prior) {
       prior.deposited += s.deposited;
-      prior.locked += s.locked;
     } else {
       byTicker.set(s.tokenTicker, {
         deposited: s.deposited,
-        locked: s.locked,
         decimals: s.tokenDecimals,
       });
     }
@@ -408,27 +395,16 @@ function aggregateSlicesToEnhancedBalances(
   for (const [ticker, agg] of byTicker) {
     const scale = 10n ** BigInt(agg.decimals);
     const amountValue = bigIntToFloat(agg.deposited, scale);
-    const lockedValue = bigIntToFloat(agg.locked, scale);
-    const available = amountValue - lockedValue;
-
     const amountStr = agg.deposited.toString();
-    const lockedStr = agg.locked.toString();
-    const availableStr = (agg.deposited - agg.locked).toString();
 
     out.push({
       user_address: representativeAddress,
       token_ticker: ticker,
       amount: amountStr,
-      open_interest: "0",
-      locked: lockedStr,
       updated_at: new Date().toISOString(),
       amountValue,
-      lockedValue,
       displayAmount: amountValue.toString(),
-      displayOpenInterest: "0",
       amountDisplay: amountValue.toString(),
-      available: availableStr,
-      displayAvailable: available.toString(),
     });
   }
   return out;

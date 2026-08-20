@@ -32,13 +32,12 @@ export function useMarketData() {
     (b) => b.token_ticker === quoteToken?.ticker,
   );
 
-  // Calculate available balances
-  const availableBase = baseBalance
-    ? baseBalance.amountValue - baseBalance.lockedValue
-    : 0;
-  const availableQuote = quoteBalance
-    ? quoteBalance.amountValue - quoteBalance.lockedValue
-    : 0;
+  // Deposited balances, as an upper bound on what a new order can commit.
+  // Collateral behind resting orders is reserved off-chain and is not visible
+  // to a client, so this cannot net it off — the arborter rejects an order it
+  // cannot collateralise.
+  const availableBase = baseBalance ? baseBalance.amountValue : 0;
+  const availableQuote = quoteBalance ? quoteBalance.amountValue : 0;
 
   // Get price helpers
   const lastTradePrice =

@@ -1,6 +1,6 @@
 /**
  * FCE wire-format conformance tests — the TS mirror of the Rust
- * `aspens::fce` conformance suite and `sdk/docs/fce-transport-design.md` §7.
+ * `aspens::fce` conformance suite and `sdk/docs/fce-transport-design.md`.
  *
  * These pin the envelope byte-for-byte against Flare's `tee-node` so the Go
  * adapter, the Rust SDK, and this TS SDK all speak an identical `/direct` wire

@@ -118,22 +118,24 @@ export interface EnhancedOrder extends ApiOrder {
   trades?: ApiTrade[];
 }
 
+/**
+ * A user's balance in one token, aggregated across every chain it lives on.
+ *
+ * `amount` is what the trade contract holds — the whole of it. There is no
+ * locked/available split: order collateral is reserved off-chain in the TEE
+ * and is not observable from the chain, so a split derived from on-chain reads
+ * could only ever be `amount` and a constant zero.
+ */
 export interface EnhancedBalance {
   user_address: string;
   token_ticker: string;
+  /** Raw scaled integer, at the token's decimals. */
   amount: string;
-  open_interest: string;
-  locked: string;
   updated_at: string;
-  // Numeric values for calculations
+  /** Float companion to `amount`, for sorting and display math. */
   amountValue: number;
-  lockedValue: number;
-  // Display strings
   displayAmount: string;
-  displayOpenInterest: string;
   amountDisplay: string;
-  available: string;
-  displayAvailable: string;
 }
 
 export interface EnhancedOrderbookLevel {
@@ -266,8 +268,7 @@ export type ServerMessage =
       type: "user_balance";
       user_address: string;
       token_ticker: string;
-      available: string;
-      locked: string;
+      amount: string;
       updated_at: number;
     }
   | {

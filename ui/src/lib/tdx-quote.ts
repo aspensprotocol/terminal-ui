@@ -2,7 +2,7 @@
  * Minimal client-side parser for an Intel TDX **TD Quote** (DCAP, v4/v5).
  *
  * The arborter signer returns only the authoritative `raw_quote` bytes and
- * leaves the proto's string measurement fields empty on purpose (design §4.6):
+ * leaves the proto's string measurement fields empty on purpose:
  * a verifier is meant to read MRTD/RTMR/etc. from the *verified* quote body,
  * not trust loose server-set strings. This parser decodes those fields from the
  * quote at their fixed offsets so the attestation viewer can display them.

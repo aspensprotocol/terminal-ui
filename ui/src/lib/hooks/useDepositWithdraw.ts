@@ -5,7 +5,7 @@
  *     MidribV3.deposit via wagmi writeContract; native tokens (the
  *     NATIVE_TOKEN_SENTINEL address) skip approve and send value through
  *     the payable MidribV3.depositNative.
- *   - EVM withdraw: TEE voucher flow (Track A §8) — sign the canonical
+ *   - EVM withdraw: TEE voucher flow — sign the canonical
  *     request, fetch a voucher over gRPC, submit
  *     MidribV3.withdraw(voucher, signature). Works identically for
  *     ERC-20 and native (the contract pays raw value for the sentinel).
@@ -520,7 +520,7 @@ export function useDepositWithdraw(): UseDepositWithdrawResult {
           return;
         }
 
-        // EVM: the TEE voucher flow (Track A §8). MidribV3 has no
+        // EVM: the TEE voucher flow. MidribV3 has no
         // permissionless withdraw — the arborter (which knows the
         // withdrawable balance net of off-chain reservations) signs a
         // voucher this wallet then submits on-chain.
