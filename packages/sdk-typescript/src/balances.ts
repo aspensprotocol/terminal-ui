@@ -6,11 +6,13 @@
  * wallet on. For each (chain, token, wallet) tuple we fetch:
  *
  *   - deposited — balance held inside the trade contract (EVM:
- *     `MidribV2.tradeBalance`; Solana: the `deposited` field on the
+ *     `MidribV3.tradeBalance`; Solana: the `deposited` field on the
  *     `UserBalance` PDA).
- *   - locked — portion of `deposited` tied up in open orders (EVM:
- *     `MidribV2.lockedTradeBalance`; Solana: the `locked` field on the
- *     `UserBalance` PDA).
+ *   - locked — portion of `deposited` tied up in open orders. NOTE: under
+ *     the optimistic shadow ledger, order collateral is reserved OFF-chain,
+ *     so MidribV3 has no `lockedTradeBalance` getter; that read fails and
+ *     degrades to `0n`, meaning EVM `locked` currently always reports zero.
+ *     Solana still reads the `locked` field on the `UserBalance` PDA.
  *   - wallet — the user's raw chain-level balance (ERC-20 `balanceOf`
  *     or SPL token account). Used by the deposit UI, not the balances
  *     panel.

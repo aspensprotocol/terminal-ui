@@ -7,7 +7,7 @@
  * fields (mr_td, rt_mr*, report_data, etc.) for inspection / copy.
  *
  * The signer returns only the authoritative `raw_quote` and leaves the proto's
- * string measurement fields empty on purpose (design §4.6) — measurements are
+ * string measurement fields empty on purpose — measurements are
  * meant to be read from the *verified* quote body, not trusted as loose server
  * strings. So we decode them client-side from `raw_quote` (display-only; not a
  * verification) and fall back to any string field the server did populate.

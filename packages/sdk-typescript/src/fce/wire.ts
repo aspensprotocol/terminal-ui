@@ -17,7 +17,7 @@ export const OP_TYPE_ASPENS = "ASPENS";
 
 /**
  * Direct-action OPCommands (off-chain). `DEPOSIT` is the on-chain instruction
- * channel, not a direct action — see the design doc §6.
+ * channel, not a direct action — see `sdk/docs/fce-transport-design.md`.
  */
 export const OP_COMMAND = {
   WITHDRAW: "WITHDRAW",

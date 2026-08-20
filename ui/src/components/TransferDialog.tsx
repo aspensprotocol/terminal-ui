@@ -5,7 +5,7 @@
  *
  * Single entry point for moving tokens between the user's wallet and
  * the arborter's trade contract. The underlying hook dispatches on
- * chain architecture (EVM: wagmi + MidribV2 calls, Solana: web3.js +
+ * chain architecture (EVM: wagmi + MidribV3 calls, Solana: web3.js +
  * Midrib program instructions), so the dialog itself is
  * ecosystem-agnostic — the (chain, token) picker simply enumerates
  * every chain the arborter exposes.

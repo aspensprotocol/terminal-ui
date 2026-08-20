@@ -624,7 +624,7 @@ export class ExchangeClient {
   }
 
   /**
-   * Request a TEE-signed withdrawal voucher (Track A §8) for
+   * Request a TEE-signed withdrawal voucher for
    * `MidribV3.withdraw(voucher, signature)`. The caller signs the canonical
    * request bytes `"network|token|account|amount"` with the withdrawer's
    * wallet (EIP-191 personal-sign on EVM, Ed25519 on Solana) and passes the
@@ -682,7 +682,7 @@ export class ExchangeClient {
 
   /**
    * Fetch the user's balances by doing per-chain on-chain queries
-   * (ERC-20 / MidribV2 on EVM, SPL token + UserBalance PDA on Solana)
+   * (ERC-20 / MidribV3 on EVM, SPL token + UserBalance PDA on Solana)
    * for every chain in the cached arborter config whose architecture
    * matches a connected wallet.
    *
