@@ -1,8 +1,8 @@
 /**
  * Hook for managing user balances with on-chain refresh.
  *
- * Fetches per-chain balance slices (wallet + deposited + locked for
- * every token on every chain the user has a wallet on), stores them
+ * Fetches per-chain balance slices (wallet + deposited for every token on
+ * every chain the user has a wallet on), stores them
  * in the exchange store so other UI (the Transfer dialog, future
  * per-chain breakdowns) can consume the raw shape, and also derives
  * the ticker-aggregated `EnhancedBalance[]` the Balances panel reads.
@@ -129,19 +129,14 @@ export function useUserBalances() {
 function aggregateSlicesByTicker(
   slices: ChainBalanceSlice[],
 ): EnhancedBalance[] {
-  const byTicker = new Map<
-    string,
-    { deposited: bigint; locked: bigint; decimals: number }
-  >();
+  const byTicker = new Map<string, { deposited: bigint; decimals: number }>();
   for (const s of slices) {
     const prior = byTicker.get(s.tokenTicker);
     if (prior) {
       prior.deposited += s.deposited;
-      prior.locked += s.locked;
     } else {
       byTicker.set(s.tokenTicker, {
         deposited: s.deposited,
-        locked: s.locked,
         decimals: s.tokenDecimals,
       });
     }
@@ -151,22 +146,14 @@ function aggregateSlicesByTicker(
   for (const [ticker, agg] of byTicker) {
     const scale = 10 ** agg.decimals;
     const amountValue = Number(agg.deposited) / scale;
-    const lockedValue = Number(agg.locked) / scale;
-    const available = amountValue - lockedValue;
     out.push({
       user_address: "",
       token_ticker: ticker,
       amount: agg.deposited.toString(),
-      open_interest: "0",
-      locked: agg.locked.toString(),
       updated_at: new Date().toISOString(),
       amountValue,
-      lockedValue,
       displayAmount: amountValue.toString(),
-      displayOpenInterest: "0",
       amountDisplay: amountValue.toString(),
-      available: (agg.deposited - agg.locked).toString(),
-      displayAvailable: available.toString(),
     });
   }
   return out;

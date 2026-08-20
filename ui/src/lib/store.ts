@@ -197,11 +197,6 @@ interface ExchangeState {
   recordHiddenOrder: (order: Order) => void;
   /** Drop a hidden order from local tracking (e.g. on cancel). */
   removeHiddenOrder: (orderId: string) => void;
-  updateBalance: (
-    tokenTicker: string,
-    available: string,
-    locked: string,
-  ) => void;
   setOrders: (orders: Order[]) => void;
   updateOrder: (
     orderId: string,
@@ -463,54 +458,6 @@ export const useExchangeStore = create<ExchangeState>()(
           );
           saveHiddenOrders(state.hiddenOrders);
           delete state.userOrders[orderId];
-        }),
-
-      updateBalance: (tokenTicker, available, locked) =>
-        set((state) => {
-          const existing = state.userBalances[tokenTicker];
-          const totalAmount = (BigInt(available) + BigInt(locked)).toString();
-          const token = state.tokens[tokenTicker];
-          if (!token) return;
-
-          // Convert raw scaled integers via the exact string path — going
-          // through Number(BigInt(...)) silently truncates values above 2^53.
-          const amountDisplay = toDisplayValueCapped(
-            totalAmount,
-            token.decimals,
-          );
-          const lockedDisplay = toDisplayValueCapped(locked, token.decimals);
-          const availableRaw = BigInt(available).toString();
-          const availableDisplay = toDisplayValueCapped(
-            availableRaw,
-            token.decimals,
-          );
-
-          // The numeric companion fields are still needed for sorting / math
-          // elsewhere in the UI; parseFloat after the exact divide is the
-          // best-precision float representation we can produce.
-          const amountValue = parseFloat(
-            toDisplayValue(totalAmount, token.decimals),
-          );
-          const lockedValue = parseFloat(
-            toDisplayValue(locked, token.decimals),
-          );
-
-          // O(1) insert or update - handles both new and existing balances
-          state.userBalances[tokenTicker] = {
-            token_ticker: tokenTicker,
-            user_address: existing?.user_address || state.userAddress || "",
-            amount: totalAmount,
-            open_interest: locked,
-            locked: locked,
-            updated_at: new Date().toISOString(),
-            amountDisplay,
-            displayAmount: amountDisplay,
-            displayOpenInterest: lockedDisplay,
-            available: availableDisplay,
-            displayAvailable: availableDisplay,
-            amountValue,
-            lockedValue,
-          };
         }),
 
       setOrders: (orders) =>

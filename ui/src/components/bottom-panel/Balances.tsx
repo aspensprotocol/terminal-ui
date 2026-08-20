@@ -27,8 +27,6 @@ interface BalanceRow {
   tokenTicker: string;
   walletValue: number;
   depositedValue: number;
-  lockedValue: number;
-  availableValue: number;
   decimals: number;
 }
 
@@ -75,24 +73,14 @@ export function Balances() {
         size: 130,
       },
       {
-        accessorKey: "availableValue",
-        header: () => <div className="text-right">Available</div>,
+        accessorKey: "depositedValue",
+        header: () => <div className="text-right">Deposited</div>,
         cell: ({ row }) => (
           <div className="text-right font-medium text-foreground/90">
-            {formatAmount(row.original.availableValue, row.original.decimals)}
+            {formatAmount(row.original.depositedValue, row.original.decimals)}
           </div>
         ),
         size: 130,
-      },
-      {
-        accessorKey: "lockedValue",
-        header: () => <div className="text-right">Locked</div>,
-        cell: ({ row }) => (
-          <div className="text-right text-muted-foreground/80">
-            {formatAmount(row.original.lockedValue, row.original.decimals)}
-          </div>
-        ),
-        size: 110,
       },
       {
         id: "usdValue",
@@ -164,8 +152,6 @@ function sliceToRow(s: ChainBalanceSlice): BalanceRow {
     tokenTicker: s.tokenTicker,
     walletValue: bigIntToHuman(s.wallet, s.tokenDecimals),
     depositedValue: bigIntToHuman(s.deposited, s.tokenDecimals),
-    lockedValue: bigIntToHuman(s.locked, s.tokenDecimals),
-    availableValue: bigIntToHuman(s.deposited - s.locked, s.tokenDecimals),
     decimals: s.tokenDecimals,
   };
 }

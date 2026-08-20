@@ -2,9 +2,11 @@
  * Hook for cancelling a user's open order.
  *
  * Looks up the order by id from the exchange store, derives the side /
- * market / locked token from it, signs a `OrderToCancel` via the active
+ * market / collateral token from it, signs a `OrderToCancel` via the active
  * wallet, and submits via the SDK. The arborter verifies the envelope
- * signature and releases the corresponding locked balance on-chain.
+ * signature and closes the order's collateral lot, returning the reservation
+ * to the account's available balance. That is an off-chain ledger move — no
+ * transaction, no gas, nothing on the contract changes.
  */
 
 import { useCallback, useState } from "react";
@@ -49,7 +51,7 @@ export interface CancelSubmissionDeps {
  */
 export async function submitCancelOrder(
   order: Order,
-  lockedTokenAddress: string,
+  collateralTokenAddress: string,
   userAddress: string,
   orderId: string,
   deps: CancelSubmissionDeps,
@@ -60,7 +62,7 @@ export async function submitCancelOrder(
       {
         marketId: order.market_id,
         side: order.side,
-        tokenAddress: lockedTokenAddress,
+        tokenAddress: collateralTokenAddress,
         orderId,
       },
       signingAdapter,
@@ -71,7 +73,7 @@ export async function submitCancelOrder(
       orderId,
       marketId: order.market_id,
       side: order.side,
-      tokenAddress: lockedTokenAddress,
+      tokenAddress: collateralTokenAddress,
       signature,
     });
 
@@ -151,28 +153,30 @@ export function useCancelOrder() {
       const market = markets[order.market_id];
       if (!market) {
         throw new Error(
-          `Market ${order.market_id} not found — cannot resolve locked token`,
+          `Market ${order.market_id} not found — cannot resolve collateral token`,
         );
       }
 
-      // The locked token is whichever side's balance funded the order.
-      // Buy locks quote, sell locks base. The arborter uses this address
-      // to zero out the corresponding `UserBalance.locked` entry.
-      const lockedTicker =
+      // The collateral token is whichever side's balance funded the order —
+      // an order commits a budget denominated in the asset it gives, so a buy
+      // commits quote and a sell commits base. The arborter needs the address
+      // to identify the ledger lot to close.
+      const collateralTicker =
         order.side === "buy" ? market.quote_ticker : market.base_ticker;
-      const lockedToken = useExchangeStore.getState().tokens[lockedTicker];
-      if (!lockedToken || !lockedToken.address) {
+      const collateralToken =
+        useExchangeStore.getState().tokens[collateralTicker];
+      if (!collateralToken || !collateralToken.address) {
         throw new Error(
-          `Token ${lockedTicker} not configured (missing address) — cannot build cancel signature`,
+          `Token ${collateralTicker} not configured (missing address) — cannot build cancel signature`,
         );
       }
-      const lockedTokenAddress = lockedToken.address;
+      const collateralTokenAddress = collateralToken.address;
 
       setCancellingOrders((prev) => new Set(prev).add(orderId));
       try {
         await submitCancelOrder(
           order,
-          lockedTokenAddress,
+          collateralTokenAddress,
           userAddress,
           orderId,
           {
