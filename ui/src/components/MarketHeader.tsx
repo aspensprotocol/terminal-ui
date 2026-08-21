@@ -111,21 +111,8 @@ export function MarketHeader() {
 
             {selectedMarket && baseToken && quoteToken && (
               <>
-                {/* Cross-chain pair label — base and quote tokens often live on
-                    different networks, so each side carries its chain's mark.
-                    The network name is on the mark's title/alt. */}
-                <div className="flex items-center gap-1.5 font-mono whitespace-nowrap">
-                  <span className="text-foreground/90 font-semibold">
-                    {selectedMarket.base_ticker}
-                  </span>
-                  <ChainLogo network={selectedMarket.baseChainNetwork} />
-                  <span className="text-muted-foreground/50">/</span>
-                  <span className="text-foreground/90 font-semibold">
-                    {selectedMarket.quote_ticker}
-                  </span>
-                  <ChainLogo network={selectedMarket.quoteChainNetwork} />
-                </div>
-                <div className="h-3.5 w-px bg-primary/40"></div>
+                {/* The pair + chain marks live in the dropdown trigger now, so
+                    no separate pair label here — go straight to the stats. */}
                 <div className="flex items-center gap-1.5">
                   <span className="text-primary/60 uppercase tracking-wider font-semibold">
                     Price
