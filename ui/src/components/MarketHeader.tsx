@@ -7,8 +7,6 @@ import { WalletManager } from "@/components/WalletManager";
 import { TransferDialog } from "@/components/TransferDialog";
 import { AttestationDialog } from "@/components/AttestationDialog";
 import { ChainLogo } from "@/components/ChainLogo";
-import { toDisplayValue } from "@aspens/terminal-sdk";
-import { formatWithoutTrailingZeros } from "@/lib/format";
 import {
   Select,
   SelectContent,
@@ -17,6 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import Image from "next/image";
+import Link from "next/link";
 
 export function MarketHeader() {
   const [attestationOpen, setAttestationOpen] = useState(false);
@@ -24,33 +23,21 @@ export function MarketHeader() {
   const selectedMarketId = useExchangeStore((state) => state.selectedMarketId);
   const selectMarket = useExchangeStore((state) => state.selectMarket);
   const selectedMarket = useExchangeStore(selectSelectedMarket);
-  const tokens = useExchangeStore((state) => state.tokens);
   const recentTrades = useExchangeStore((state) => state.recentTrades);
   // Use the adapter-formatted string (capped + zero-trimmed) rather than
   // re-formatting `priceValue` here — keeps every surface of the UI consistent.
   const currentPriceDisplay =
     recentTrades.length > 0 ? (recentTrades[0]?.priceDisplay ?? null) : null;
 
-  // Look up tokens for the selected market using O(1) Record access
-  const baseToken = selectedMarket ? tokens[selectedMarket.base_ticker] : null;
-  const quoteToken = selectedMarket
-    ? tokens[selectedMarket.quote_ticker]
-    : null;
-
   return (
     <>
       {/* Header */}
       <div className="mb-4 md:mb-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          {/* Logo */}
-          <div
+          {/* Logo — links to the site home ('/'), not the source repo. */}
+          <Link
+            href="/"
             className="flex items-center gap-3 group select-none cursor-pointer"
-            onClick={() =>
-              window.open(
-                "https://github.com/aspensprotocol/terminal-ui",
-                "_blank",
-              )
-            }
           >
             <Image
               src="/logo3.png"
@@ -60,7 +47,7 @@ export function MarketHeader() {
               className="h-12 w-12 transition-all duration-200 group-hover:brightness-120"
               priority
             />
-          </div>
+          </Link>
 
           {/* Actions */}
           <div className="flex items-center gap-2">
@@ -84,82 +71,47 @@ export function MarketHeader() {
                 value={selectedMarketId || ""}
                 onValueChange={selectMarket}
               >
-                <SelectTrigger className="w-[130px] bg-primary/10 border-primary/40 hover:bg-primary/20 hover:border-primary/50 h-7 text-xs transition-colors">
+                <SelectTrigger className="w-[210px] bg-primary/10 border-primary/40 hover:bg-primary/20 hover:border-primary/50 h-7 text-xs transition-colors">
                   <SelectValue placeholder="Select market" />
                 </SelectTrigger>
                 <SelectContent className="bg-card backdrop-blur-sm">
                   {markets.map((market) => (
                     <SelectItem key={market.id} value={market.id}>
-                      {market.base_ticker}/{market.quote_ticker}
+                      {/* Carry each leg's chain mark so cross-chain markets
+                          are distinguishable in the list, not just by ticker. */}
+                      <span className="inline-flex items-center gap-1 font-mono whitespace-nowrap">
+                        <span className="font-semibold">
+                          {market.base_ticker}
+                        </span>
+                        <ChainLogo network={market.baseChainNetwork} />
+                        <span className="text-muted-foreground/50">/</span>
+                        <span className="font-semibold">
+                          {market.quote_ticker}
+                        </span>
+                        <ChainLogo network={market.quoteChainNetwork} />
+                      </span>
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             )}
 
-            {selectedMarket && baseToken && quoteToken && (
-              <>
-                {/* Cross-chain pair label — base and quote tokens often live on
-                    different networks, so each side carries its chain's mark.
-                    The network name is on the mark's title/alt. */}
-                <div className="flex items-center gap-1.5 font-mono whitespace-nowrap">
-                  <span className="text-foreground/90 font-semibold">
-                    {selectedMarket.base_ticker}
-                  </span>
-                  <ChainLogo network={selectedMarket.baseChainNetwork} />
-                  <span className="text-muted-foreground/50">/</span>
-                  <span className="text-foreground/90 font-semibold">
-                    {selectedMarket.quote_ticker}
-                  </span>
-                  <ChainLogo network={selectedMarket.quoteChainNetwork} />
-                </div>
-                <div className="h-3.5 w-px bg-primary/40"></div>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-primary/60 uppercase tracking-wider font-semibold">
-                    Price
-                  </span>
-                  <span className="text-primary font-mono font-bold">
-                    {currentPriceDisplay ?? "—"}
-                  </span>
-                  <span className="text-muted-foreground/60">
-                    {selectedMarket.quote_ticker}
-                  </span>
-                </div>
-                <div className="h-3.5 w-px bg-primary/40"></div>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-muted-foreground/60 uppercase tracking-wider">
-                    Tick
-                  </span>
-                  <span className="text-foreground font-mono font-medium">
-                    {formatWithoutTrailingZeros(
-                      parseFloat(
-                        toDisplayValue(
-                          selectedMarket.tick_size,
-                          quoteToken.decimals,
-                        ),
-                      ),
-                      Math.min(quoteToken.decimals, 8),
-                    )}
-                  </span>
-                </div>
-                <div className="h-3.5 w-px bg-primary/40"></div>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-muted-foreground/60 uppercase tracking-wider">
-                    Lot
-                  </span>
-                  <span className="text-foreground font-mono font-medium">
-                    {formatWithoutTrailingZeros(
-                      parseFloat(
-                        toDisplayValue(
-                          selectedMarket.lot_size,
-                          baseToken.decimals,
-                        ),
-                      ),
-                      Math.min(baseToken.decimals, 8),
-                    )}
-                  </span>
-                </div>
-              </>
+            {selectedMarket && (
+              <div className="flex items-center gap-1.5">
+                <span className="text-primary/60 uppercase tracking-wider font-semibold">
+                  Price
+                </span>
+                <span className="text-primary font-mono font-bold">
+                  {currentPriceDisplay ?? "—"}
+                </span>
+                <span className="text-muted-foreground/60">
+                  {selectedMarket.quote_ticker}
+                </span>
+                {/* Tick / Lot were removed: the config protocol (GetConfig
+                    `Market`) carries no tick_size/lot_size/orderbook_decimals,
+                    so they only ever rendered "0". Restore once the venue
+                    surfaces them — see tech-debt CONFIG-MARKET-NO-TICKLOT-1. */}
+              </div>
             )}
 
             {/* Right-aligned attestation link; sits on the same row as the

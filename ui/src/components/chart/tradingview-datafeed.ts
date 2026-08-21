@@ -103,11 +103,18 @@ export class ExchangeDatafeed implements IBasicDataFeed {
     onResolve: ResolveCallback,
     onError: ErrorCallback,
   ): void {
+    // TradingView requires resolveSymbol's result to be delivered
+    // ASYNCHRONOUSLY (it warns "`resolveSymbol` should return result
+    // asynchronously. Use `setTimeout` with 0 interval..."). Both the resolve
+    // and the error paths are deferred a tick so the library never re-enters
+    // synchronously.
+    const defer = (fn: () => void) => setTimeout(fn, 0);
+
     // Use SDK cache directly
     const market = this.client.cache.getMarket(symbolName);
 
     if (!market) {
-      onError("Symbol not found");
+      defer(() => onError("Symbol not found"));
       return;
     }
 
@@ -116,7 +123,7 @@ export class ExchangeDatafeed implements IBasicDataFeed {
     const baseToken = this.client.cache.getToken(market.base_ticker);
 
     if (!quoteToken || !baseToken) {
-      onError("Token not found");
+      defer(() => onError("Token not found"));
       return;
     }
 
@@ -145,7 +152,7 @@ export class ExchangeDatafeed implements IBasicDataFeed {
       format: "price",
     };
 
-    onResolve(symbolInfo);
+    defer(() => onResolve(symbolInfo));
   }
 
   /**
