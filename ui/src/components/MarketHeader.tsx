@@ -84,7 +84,7 @@ export function MarketHeader() {
                 value={selectedMarketId || ""}
                 onValueChange={selectMarket}
               >
-                <SelectTrigger className="w-[130px] bg-primary/10 border-primary/40 hover:bg-primary/20 hover:border-primary/50 h-7 text-xs transition-colors">
+                <SelectTrigger className="w-[210px] bg-primary/10 border-primary/40 hover:bg-primary/20 hover:border-primary/50 h-7 text-xs transition-colors">
                   <SelectValue placeholder="Select market" />
                 </SelectTrigger>
                 <SelectContent className="bg-card backdrop-blur-sm">
@@ -92,7 +92,7 @@ export function MarketHeader() {
                     <SelectItem key={market.id} value={market.id}>
                       {/* Carry each leg's chain mark so cross-chain markets
                           are distinguishable in the list, not just by ticker. */}
-                      <span className="inline-flex items-center gap-1 font-mono">
+                      <span className="inline-flex items-center gap-1 font-mono whitespace-nowrap">
                         <span className="font-semibold">
                           {market.base_ticker}
                         </span>
