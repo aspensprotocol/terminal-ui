@@ -90,7 +90,19 @@ export function MarketHeader() {
                 <SelectContent className="bg-card backdrop-blur-sm">
                   {markets.map((market) => (
                     <SelectItem key={market.id} value={market.id}>
-                      {market.base_ticker}/{market.quote_ticker}
+                      {/* Carry each leg's chain mark so cross-chain markets
+                          are distinguishable in the list, not just by ticker. */}
+                      <span className="inline-flex items-center gap-1 font-mono">
+                        <span className="font-semibold">
+                          {market.base_ticker}
+                        </span>
+                        <ChainLogo network={market.baseChainNetwork} />
+                        <span className="text-muted-foreground/50">/</span>
+                        <span className="font-semibold">
+                          {market.quote_ticker}
+                        </span>
+                        <ChainLogo network={market.quoteChainNetwork} />
+                      </span>
                     </SelectItem>
                   ))}
                 </SelectContent>
