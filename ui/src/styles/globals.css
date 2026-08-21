@@ -136,15 +136,6 @@
     cursor: not-allowed;
   }
 
-  /* Ensure all borders use the purple color */
-  *[class*="border"] {
-    border-color: hsl(var(--border)) !important;
-  }
-
-  .border-border {
-    border-color: hsl(var(--border)) !important;
-  }
-
   /* Dither overlay effect */
   body::before {
     content: "";
