@@ -153,7 +153,7 @@ export function WalletManager() {
               className="fixed inset-0 z-40"
               onClick={() => setShowWalletList(false)}
             />
-            <div className="absolute right-0 top-full mt-1 z-50 min-w-[280px] bg-[hsl(var(--card))] border border-border rounded-md shadow-lg p-2 space-y-1">
+            <div className="absolute right-0 top-full mt-1 z-50 min-w-[280px] bg-card border border-border rounded-md shadow-lg p-2 space-y-1">
               {/* Connected wallets */}
               {walletList.map((wallet) => (
                 <div
