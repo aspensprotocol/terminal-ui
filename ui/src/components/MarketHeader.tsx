@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import Image from "next/image";
+import Link from "next/link";
 
 export function MarketHeader() {
   const [attestationOpen, setAttestationOpen] = useState(false);
@@ -33,15 +34,10 @@ export function MarketHeader() {
       {/* Header */}
       <div className="mb-4 md:mb-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          {/* Logo */}
-          <div
+          {/* Logo — links to the site home ('/'), not the source repo. */}
+          <Link
+            href="/"
             className="flex items-center gap-3 group select-none cursor-pointer"
-            onClick={() =>
-              window.open(
-                "https://github.com/aspensprotocol/terminal-ui",
-                "_blank",
-              )
-            }
           >
             <Image
               src="/logo3.png"
@@ -51,7 +47,7 @@ export function MarketHeader() {
               className="h-12 w-12 transition-all duration-200 group-hover:brightness-120"
               priority
             />
-          </div>
+          </Link>
 
           {/* Actions */}
           <div className="flex items-center gap-2">
