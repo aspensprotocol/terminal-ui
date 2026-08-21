@@ -7,8 +7,6 @@ import { WalletManager } from "@/components/WalletManager";
 import { TransferDialog } from "@/components/TransferDialog";
 import { AttestationDialog } from "@/components/AttestationDialog";
 import { ChainLogo } from "@/components/ChainLogo";
-import { toDisplayValue } from "@aspens/terminal-sdk";
-import { formatWithoutTrailingZeros } from "@/lib/format";
 import {
   Select,
   SelectContent,
@@ -24,18 +22,11 @@ export function MarketHeader() {
   const selectedMarketId = useExchangeStore((state) => state.selectedMarketId);
   const selectMarket = useExchangeStore((state) => state.selectMarket);
   const selectedMarket = useExchangeStore(selectSelectedMarket);
-  const tokens = useExchangeStore((state) => state.tokens);
   const recentTrades = useExchangeStore((state) => state.recentTrades);
   // Use the adapter-formatted string (capped + zero-trimmed) rather than
   // re-formatting `priceValue` here — keeps every surface of the UI consistent.
   const currentPriceDisplay =
     recentTrades.length > 0 ? (recentTrades[0]?.priceDisplay ?? null) : null;
-
-  // Look up tokens for the selected market using O(1) Record access
-  const baseToken = selectedMarket ? tokens[selectedMarket.base_ticker] : null;
-  const quoteToken = selectedMarket
-    ? tokens[selectedMarket.quote_ticker]
-    : null;
 
   return (
     <>
@@ -109,56 +100,22 @@ export function MarketHeader() {
               </Select>
             )}
 
-            {selectedMarket && baseToken && quoteToken && (
-              <>
-                {/* The pair + chain marks live in the dropdown trigger now, so
-                    no separate pair label here — go straight to the stats. */}
-                <div className="flex items-center gap-1.5">
-                  <span className="text-primary/60 uppercase tracking-wider font-semibold">
-                    Price
-                  </span>
-                  <span className="text-primary font-mono font-bold">
-                    {currentPriceDisplay ?? "—"}
-                  </span>
-                  <span className="text-muted-foreground/60">
-                    {selectedMarket.quote_ticker}
-                  </span>
-                </div>
-                <div className="h-3.5 w-px bg-primary/40"></div>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-muted-foreground/60 uppercase tracking-wider">
-                    Tick
-                  </span>
-                  <span className="text-foreground font-mono font-medium">
-                    {formatWithoutTrailingZeros(
-                      parseFloat(
-                        toDisplayValue(
-                          selectedMarket.tick_size,
-                          quoteToken.decimals,
-                        ),
-                      ),
-                      Math.min(quoteToken.decimals, 8),
-                    )}
-                  </span>
-                </div>
-                <div className="h-3.5 w-px bg-primary/40"></div>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-muted-foreground/60 uppercase tracking-wider">
-                    Lot
-                  </span>
-                  <span className="text-foreground font-mono font-medium">
-                    {formatWithoutTrailingZeros(
-                      parseFloat(
-                        toDisplayValue(
-                          selectedMarket.lot_size,
-                          baseToken.decimals,
-                        ),
-                      ),
-                      Math.min(baseToken.decimals, 8),
-                    )}
-                  </span>
-                </div>
-              </>
+            {selectedMarket && (
+              <div className="flex items-center gap-1.5">
+                <span className="text-primary/60 uppercase tracking-wider font-semibold">
+                  Price
+                </span>
+                <span className="text-primary font-mono font-bold">
+                  {currentPriceDisplay ?? "—"}
+                </span>
+                <span className="text-muted-foreground/60">
+                  {selectedMarket.quote_ticker}
+                </span>
+                {/* Tick / Lot were removed: the config protocol (GetConfig
+                    `Market`) carries no tick_size/lot_size/orderbook_decimals,
+                    so they only ever rendered "0". Restore once the venue
+                    surfaces them — see tech-debt CONFIG-MARKET-NO-TICKLOT-1. */}
+              </div>
             )}
 
             {/* Right-aligned attestation link; sits on the same row as the
