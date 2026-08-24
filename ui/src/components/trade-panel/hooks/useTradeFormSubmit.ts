@@ -78,6 +78,39 @@ export function useTradeFormSubmit({
         return;
       }
 
+      // Dealroom fill-by-order-id: curated, synchronous validation before
+      // any signing work. `FillOrderIdInput` already strips non-digit
+      // characters, but that alone doesn't bound the value — an over-long
+      // digit string is valid `BigInt` (arbitrary precision) and would
+      // otherwise sail through all the way to `signOrder` → `serializeOrder`,
+      // where `@bufbuild/protobuf`'s uint64 codec throws a raw "invalid
+      // uint64: <value>" library string deep in the async submit path,
+      // after wallet/nonce/balance work has already run. Catch it here,
+      // synchronously, like every other field validation in this hook.
+      const matchingOrderId = data.matchingOrderIds?.[0];
+      if (matchingOrderId !== undefined) {
+        const isU64 =
+          /^[0-9]+$/.test(matchingOrderId) &&
+          BigInt(matchingOrderId) <= 18446744073709551615n; // u64::MAX
+        if (!isU64) {
+          setError("Order ID must be a number no larger than 2^64-1");
+          return;
+        }
+      }
+
+      // Dealroom fill-by-order-id is unsupported on the FCE transport: the
+      // ext-proxy's direct-action payload carries no `matching_order_ids`
+      // field, so the adapter would reconstruct the order without it and
+      // the envelope signature — which covers it — would no longer verify.
+      // The input is disabled in FCE mode already; this is the backstop for
+      // a value that got set before FCE mode turned on.
+      if (fceEnabled && data.matchingOrderIds?.length) {
+        setError(
+          "Fill order ID is not supported on this deployment (FCE transport)",
+        );
+        return;
+      }
+
       // Check balance
       const sizeNum = parseFloat(data.size);
       if (data.side === "buy") {
@@ -171,6 +204,14 @@ export function useTradeFormSubmit({
         const effectivePostOnly =
           data.orderType === "limit" ? data.postOnly : false;
 
+        // Discretionary fill-by-order-id is limit-only, like postOnly — it
+        // is gated by this order's own limit price, so there's nothing to
+        // gate against on a market order. Same defense as effectivePostOnly:
+        // the UI already hides the input outside "limit", this guards a
+        // stale value surviving a fast order-type switch.
+        const effectiveMatchingOrderIds =
+          data.orderType === "limit" ? data.matchingOrderIds : undefined;
+
         // Every order commits a budget denominated in the asset it gives, and
         // three of the four cells derive theirs: an ask gives `quantity` of
         // base; a limit bid gives at most `quantity * price` of quote. The
@@ -250,6 +291,7 @@ export function useTradeFormSubmit({
           hidden: data.hidden,
           quoteBudget,
           nonce,
+          matchingOrderIds: effectiveMatchingOrderIds,
         };
 
         // Sign the order envelope using the matched wallet. This
@@ -312,6 +354,7 @@ export function useTradeFormSubmit({
           // wire order won't match the bytes the wallet signed.
           quoteBudget,
           nonce,
+          matchingOrderIds: effectiveMatchingOrderIds,
         });
 
         // A hidden order that rested exists in NO server stream — this

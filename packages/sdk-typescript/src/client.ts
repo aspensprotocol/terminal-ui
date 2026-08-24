@@ -159,6 +159,14 @@ export interface PlaceOrderParams {
    * anonymous taker). Defaults to false (wire-skipped).
    */
   hidden?: boolean;
+  /**
+   * Dealroom "discretionary" fill — see `OrderSigningData.matchingOrderIds`,
+   * whose value this must equal (the envelope signature covers it, and
+   * `createOrderMessage` derives `Order.executionType` from it below).
+   * Unsupported on the FCE transport — `placeOrderFce` refuses a non-empty
+   * value, the same as it refuses hidden orders and a nonzero nonce.
+   */
+  matchingOrderIds?: string[];
 }
 
 export interface CancelOrderParams {
@@ -275,6 +283,7 @@ class RestClient {
       hidden: params.hidden ?? false,
       quoteBudget: params.quoteBudget,
       nonce: params.nonce,
+      matchingOrderIds: params.matchingOrderIds,
     });
 
     const response = await arborterService.sendOrder(order, params.signature);
@@ -313,6 +322,11 @@ class RestClient {
     if (params.hidden) {
       throw new Error(
         "FCE transport does not support hidden orders (the adapter reconstructs hidden=false, breaking signature parity)",
+      );
+    }
+    if (params.matchingOrderIds?.length) {
+      throw new Error(
+        "FCE transport does not support discretionary (dealroom fill-by-order-id) orders (the direct-action payload carries no matching_order_ids field, breaking signature parity)",
       );
     }
     if (!params.orderId) {

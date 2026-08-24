@@ -67,7 +67,20 @@ export interface OrderSigningData {
   marketId: string;
   baseAccountAddress: string;
   quoteAccountAddress: string;
-  matchingOrderIds?: number[];
+  /**
+   * Dealroom "discretionary" fill: resting order ids (from the makers'
+   * `SendOrderResponse.orderId`) this order is allowed to match against,
+   * gated by this order's own limit price at each maker's price. IOC —
+   * whatever doesn't fill against these ids never rests. `uint64` on the
+   * wire, so carried as decimal strings (not `number`) to avoid precision
+   * loss above 2^53; `BigInt()` parses either.
+   *
+   * `createOrderMessage` below derives `executionType` from this field
+   * rather than taking it as a separate input, so the two can never
+   * disagree: empty/absent ids ⇒ `UNSPECIFIED` (today's encoding,
+   * byte-identical), non-empty ⇒ `DISCRETIONARY`.
+   */
+  matchingOrderIds?: string[];
   /**
    * Post-only: arborter rejects the order if it would cross at
    * submission. The field IS signed-over (it's part of the encoded
@@ -197,7 +210,13 @@ export function createOrderMessage(data: OrderSigningData): Order {
     marketId: data.marketId,
     baseAccountAddress: data.baseAccountAddress,
     quoteAccountAddress: data.quoteAccountAddress,
-    executionType: ExecutionType.UNSPECIFIED,
+    // Derived, not separately supplied: a non-empty `matchingOrderIds`
+    // IS what makes an order discretionary, so there's no second input to
+    // fall out of sync with it. Empty/absent keeps today's encoding
+    // (`UNSPECIFIED`), byte-identical to before this field existed.
+    executionType: data.matchingOrderIds?.length
+      ? ExecutionType.DISCRETIONARY
+      : ExecutionType.UNSPECIFIED,
     matchingOrderIds: data.matchingOrderIds?.map((id) => BigInt(id)) || [],
     postOnly: data.postOnly ?? false,
     hidden: data.hidden ?? false,
