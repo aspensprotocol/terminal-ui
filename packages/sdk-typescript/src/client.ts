@@ -565,11 +565,9 @@ export class ExchangeClient {
    * fails — callers (notably the attestation modal) want to render an
    * error state rather than crash on a missing report.
    */
-  async getAttestation(
-    reportData?: Uint8Array,
-  ): Promise<AttestationReport | null> {
+  async getAttestation(nonce?: Uint8Array): Promise<AttestationReport | null> {
     try {
-      const response = await configService.getAttestation(reportData);
+      const response = await configService.getAttestation(nonce);
       return response.report ?? null;
     } catch (error) {
       console.warn("[SDK] Failed to fetch attestation:", error);

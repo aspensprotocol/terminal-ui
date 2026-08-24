@@ -10,27 +10,34 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file attestation.proto.
  */
 export const file_attestation: GenFile = /*@__PURE__*/
-  fileDesc("ChFhdHRlc3RhdGlvbi5wcm90bxIZeHl6LmFzcGVucy5hdHRlc3RhdGlvbi52MSJBChVHZXRBdHRlc3RhdGlvblJlcXVlc3QSGAoLcmVwb3J0X2RhdGEYASABKAxIAIgBAUIOCgxfcmVwb3J0X2RhdGEiVgoWR2V0QXR0ZXN0YXRpb25SZXNwb25zZRI8CgZyZXBvcnQYASABKAsyLC54eXouYXNwZW5zLmF0dGVzdGF0aW9uLnYxLkF0dGVzdGF0aW9uUmVwb3J0IvECChFBdHRlc3RhdGlvblJlcG9ydBITCgt0ZWVfdGNiX3N2bhgBIAEoCRIPCgdtcl9zZWFtGAIgASgJEhYKDm1yX3NpZ25lcl9zZWFtGAMgASgJEhcKD3NlYW1fYXR0cmlidXRlcxgEIAEoCRIVCg10ZF9hdHRyaWJ1dGVzGAUgASgJEgwKBHhmYW0YBiABKAkSDQoFbXJfdGQYByABKAkSFAoMbXJfY29uZmlnX2lkGAggASgJEhAKCG1yX293bmVyGAkgASgJEhcKD21yX293bmVyX2NvbmZpZxgKIAEoCRIOCgZydF9tcjAYCyABKAkSDgoGcnRfbXIxGAwgASgJEg4KBnJ0X21yMhgNIAEoCRIOCgZydF9tcjMYDiABKAkSEwoLcmVwb3J0X2RhdGEYDyABKAkSEQoJcmF3X3F1b3RlGBAgASgMEhIKCmNlcnRfY2hhaW4YESABKAwSFAoMaW1hZ2VfZGlnZXN0GBIgASgMMo0BChJBdHRlc3RhdGlvblNlcnZpY2USdwoOR2V0QXR0ZXN0YXRpb24SMC54eXouYXNwZW5zLmF0dGVzdGF0aW9uLnYxLkdldEF0dGVzdGF0aW9uUmVxdWVzdBoxLnh5ei5hc3BlbnMuYXR0ZXN0YXRpb24udjEuR2V0QXR0ZXN0YXRpb25SZXNwb25zZSIAQgJIAWIGcHJvdG8z");
+  fileDesc("ChFhdHRlc3RhdGlvbi5wcm90bxIZeHl6LmFzcGVucy5hdHRlc3RhdGlvbi52MSI1ChVHZXRBdHRlc3RhdGlvblJlcXVlc3QSEgoFbm9uY2UYASABKAxIAIgBAUIICgZfbm9uY2UiVgoWR2V0QXR0ZXN0YXRpb25SZXNwb25zZRI8CgZyZXBvcnQYASABKAsyLC54eXouYXNwZW5zLmF0dGVzdGF0aW9uLnYxLkF0dGVzdGF0aW9uUmVwb3J0IlAKEUF0dGVzdGF0aW9uUmVwb3J0EhEKCXJhd19xdW90ZRgBIAEoDBISCgpjZXJ0X2NoYWluGAIgASgMEhQKDGltYWdlX2RpZ2VzdBgDIAEoDDKNAQoSQXR0ZXN0YXRpb25TZXJ2aWNlEncKDkdldEF0dGVzdGF0aW9uEjAueHl6LmFzcGVucy5hdHRlc3RhdGlvbi52MS5HZXRBdHRlc3RhdGlvblJlcXVlc3QaMS54eXouYXNwZW5zLmF0dGVzdGF0aW9uLnYxLkdldEF0dGVzdGF0aW9uUmVzcG9uc2UiAEICSAFiBnByb3RvMw");
 
 /**
  * @generated from message xyz.aspens.attestation.v1.GetAttestationRequest
  */
 export type GetAttestationRequest = Message<"xyz.aspens.attestation.v1.GetAttestationRequest"> & {
   /**
-   * Caller-supplied freshness nonce (anti-replay). At most 64 bytes.
+   * Caller-supplied freshness nonce (anti-replay), chosen by the verifier.
    *
-   * NOTE: these semantics are narrower than they look. The signer no
-   * longer writes these bytes directly into REPORTDATA; it assembles REPORTDATA
-   * server-side as SHA-512( DOMAIN || SHA256(pubkey_manifest) || SHA256(image_digests) || SHA256(report_data) ),
-   * where `pubkey_manifest` is the canonical manifest binding ALL of the signer's
-   * tx pubkeys and `report_data` is these bytes — so the quote binds the signing
-   * keys the signer actually holds, not a single caller-supplied key. This field
-   * now carries only the nonce. Kept wire-compatible (still <=64 opaque bytes);
-   * rename to `nonce` at the next proto cleanup.
+   * The signer never echoes these bytes into the quote verbatim. It assembles
+   * the 64-byte TDX REPORTDATA server-side as
    *
-   * @generated from field: optional bytes report_data = 1;
+   *   REPORTDATA = SHA-512( DOMAIN || SHA256(pubkey_manifest) || SHA256(image_digests) || SHA256(nonce) )
+   *
+   * where `pubkey_manifest` is the canonical manifest binding ALL of the
+   * signer's tx pubkeys (derived in-signer from sealed key material) and
+   * `nonce` is these bytes. The quote therefore COMMITS to the nonce rather
+   * than containing it: a verifier recomputes the expected REPORTDATA from
+   * the nonce it chose (plus the operator-known pubkeys and image digests)
+   * and requires equality against the verified quote body. A recorded quote
+   * from an earlier challenge can never satisfy a fresh nonce.
+   *
+   * Each input is pre-hashed to 32 bytes, so the nonce has no length limit;
+   * 32 random bytes is the conventional choice.
+   *
+   * @generated from field: optional bytes nonce = 1;
    */
-  reportData?: Uint8Array;
+  nonce?: Uint8Array;
 };
 
 /**
@@ -58,119 +65,20 @@ export const GetAttestationResponseSchema: GenMessage<GetAttestationResponse> = 
   messageDesc(file_attestation, 1);
 
 /**
+ * The attestation artifact. The raw TD Quote is the ONLY authoritative
+ * content: a verifier reads measurements (MRTD/RTMRs/TCB) from the
+ * DCAP-verified quote body, never from self-reported fields.
+ *
  * @generated from message xyz.aspens.attestation.v1.AttestationReport
  */
 export type AttestationReport = Message<"xyz.aspens.attestation.v1.AttestationReport"> & {
   /**
-   * TEE TCB Security Version Number
-   *
-   * @generated from field: string tee_tcb_svn = 1;
-   */
-  teeTcbSvn: string;
-
-  /**
-   * Measurement of the SEAM module
-   *
-   * @generated from field: string mr_seam = 2;
-   */
-  mrSeam: string;
-
-  /**
-   * Signer of the SEAM module
-   *
-   * @generated from field: string mr_signer_seam = 3;
-   */
-  mrSignerSeam: string;
-
-  /**
-   * SEAM attributes
-   *
-   * @generated from field: string seam_attributes = 4;
-   */
-  seamAttributes: string;
-
-  /**
-   * TD attributes
-   *
-   * @generated from field: string td_attributes = 5;
-   */
-  tdAttributes: string;
-
-  /**
-   * Extended feature attribute mask
-   *
-   * @generated from field: string xfam = 6;
-   */
-  xfam: string;
-
-  /**
-   * Measurement of the TD
-   *
-   * @generated from field: string mr_td = 7;
-   */
-  mrTd: string;
-
-  /**
-   * Configuration ID
-   *
-   * @generated from field: string mr_config_id = 8;
-   */
-  mrConfigId: string;
-
-  /**
-   * Owner measurement
-   *
-   * @generated from field: string mr_owner = 9;
-   */
-  mrOwner: string;
-
-  /**
-   * Owner configuration
-   *
-   * @generated from field: string mr_owner_config = 10;
-   */
-  mrOwnerConfig: string;
-
-  /**
-   * Runtime measurement register 0
-   *
-   * @generated from field: string rt_mr0 = 11;
-   */
-  rtMr0: string;
-
-  /**
-   * Runtime measurement register 1
-   *
-   * @generated from field: string rt_mr1 = 12;
-   */
-  rtMr1: string;
-
-  /**
-   * Runtime measurement register 2
-   *
-   * @generated from field: string rt_mr2 = 13;
-   */
-  rtMr2: string;
-
-  /**
-   * Runtime measurement register 3
-   *
-   * @generated from field: string rt_mr3 = 14;
-   */
-  rtMr3: string;
-
-  /**
-   * Report data (user-provided data bound to the report)
-   *
-   * @generated from field: string report_data = 15;
-   */
-  reportData: string;
-
-  /**
    * Raw signed TD Quote (DCAP/QVL-verifiable): ECDSA chain to the Intel SGX
-   * Root CA over the TDREPORT. Empty on non-TDX / legacy builds.
+   * Root CA over the TDREPORT. Its REPORTDATA binds the signer's tx pubkeys,
+   * the self-reported image digests, and the caller's nonce (see
+   * GetAttestationRequest.nonce for the construction).
    *
-   * @generated from field: bytes raw_quote = 16;
+   * @generated from field: bytes raw_quote = 1;
    */
   rawQuote: Uint8Array;
 
@@ -179,7 +87,7 @@ export type AttestationReport = Message<"xyz.aspens.attestation.v1.AttestationRe
    * auxblob). Usually empty -- DCAP fetches collateral from Intel PCS/PCCS and
    * the PCK chain is embedded in the quote's certification data.
    *
-   * @generated from field: bytes cert_chain = 17;
+   * @generated from field: bytes cert_chain = 2;
    */
   certChain: Uint8Array;
 
@@ -188,7 +96,7 @@ export type AttestationReport = Message<"xyz.aspens.attestation.v1.AttestationRe
    * measurement policy, NOT on this self-report — a compromised signer can put
    * anything here.
    *
-   * @generated from field: bytes image_digest = 18;
+   * @generated from field: bytes image_digest = 3;
    */
   imageDigest: Uint8Array;
 };
