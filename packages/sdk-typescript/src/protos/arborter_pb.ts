@@ -350,14 +350,37 @@ export type Order = Message<"xyz.aspens.arborter.v1.Order"> & {
   quoteAccountAddress: string;
 
   /**
-   * 'DIRECT' (default) or 'DISCRETIONARY'
+   * 'DIRECT' (default): ordinary price-time-priority matching against the
+   * book. 'DISCRETIONARY': the dealroom flow — this order names the exact
+   * resting orders it is willing to fill, via `matching_order_ids` below.
+   * See that field and `ExecutionType` for the full contract.
    *
    * @generated from field: xyz.aspens.arborter.v1.ExecutionType execution_type = 7;
    */
   executionType: ExecutionType;
 
   /**
-   * When execution_type == 'discretionary', include order_ids to match with.
+   * DISCRETIONARY only: 1..=16 resting order ids to fill against, tried in
+   * the given sequence. Each is a `SendOrderResponse.order_id` value the
+   * maker shared with this caller out-of-band — there is no other way to
+   * learn one, and a hidden maker's id works the same as a visible one's.
+   *
+   * Fills happen ONLY against these named ids, in this order, and NEVER
+   * against any other resting order — no sweep of top-of-book alongside
+   * the named fills. Each fill executes at the RESTING (named) order's own
+   * price, gated by this order's own limit price: a named order priced
+   * worse than this order's limit is skipped, not filled at this order's
+   * price instead of its own. That limit price is REQUIRED for a
+   * DISCRETIONARY order (no market discretionary) and `quote_budget` is
+   * rejected on it, exactly as for any other limit order — the spend is
+   * `quantity x price`, already signed.
+   *
+   * Whatever quantity is left after walking the list is dropped, not
+   * rested: DISCRETIONARY is immediate-or-cancel only. Naming a resting
+   * order owned by this order's own signer rejects the WHOLE order (no
+   * self-match, no partial fill of the rest of the list first). The list
+   * must be non-empty and at most 16 ids long; empty (the default) is what
+   * every DIRECT order carries.
    *
    * @generated from field: repeated uint64 matching_order_ids = 8;
    */
@@ -802,14 +825,25 @@ export const SideSchema: GenEnum<Side> = /*@__PURE__*/
  */
 export enum ExecutionType {
   /**
-   * Default - direct
+   * Default: ordinary price-time-priority matching against the book.
+   * `Order.matching_order_ids` is empty for this type.
    *
    * @generated from enum value: EXECUTION_TYPE_UNSPECIFIED = 0;
    */
   UNSPECIFIED = 0,
 
   /**
-   * For dealroom use.
+   * Dealroom flow: this order carries `Order.matching_order_ids`, a
+   * caller-named list of 1..=16 resting order ids (each a
+   * `SendOrderResponse.order_id` the maker shared out-of-band) it is
+   * willing to fill against, tried in the listed sequence. Fills happen
+   * ONLY against those named ids — never against any other resting order —
+   * each at the RESTING order's own price, gated by this order's own
+   * (REQUIRED) limit price; `quote_budget` is rejected, same as any other
+   * limit order. Unfilled remainder is dropped rather than rested
+   * (immediate-or-cancel only). Naming one of the caller's own resting
+   * orders rejects the whole order. See `Order.matching_order_ids` for the
+   * full contract.
    *
    * @generated from enum value: EXECUTION_TYPE_DISCRETIONARY = 1;
    */
