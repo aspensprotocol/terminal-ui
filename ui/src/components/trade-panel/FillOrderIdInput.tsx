@@ -22,6 +22,11 @@
  * longer verify. The SDK throws for exactly this reason; disabling the
  * control turns that into something the user can see before they submit
  * rather than an error afterwards.
+ *
+ * `maxLength` caps entry at 20 digits — `u64::MAX` (18446744073709551615)
+ * is 20 digits — as a typing-time nudge only. It is not the validation:
+ * `useTradeFormSubmit` re-checks non-empty digits and the actual u64 bound
+ * synchronously before signing, since a pasted value can still exceed it.
  */
 
 "use client";
@@ -50,6 +55,7 @@ export function FillOrderIdInput({ value, onChange }: FillOrderIdInputProps) {
         type="text"
         inputMode="numeric"
         pattern="[0-9]*"
+        maxLength={20}
         value={fceEnabled ? "" : value}
         disabled={fceEnabled}
         onChange={(e) => onChange(e.target.value.replace(/[^0-9]/g, ""))}

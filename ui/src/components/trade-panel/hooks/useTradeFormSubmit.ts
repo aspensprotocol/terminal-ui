@@ -78,6 +78,26 @@ export function useTradeFormSubmit({
         return;
       }
 
+      // Dealroom fill-by-order-id: curated, synchronous validation before
+      // any signing work. `FillOrderIdInput` already strips non-digit
+      // characters, but that alone doesn't bound the value — an over-long
+      // digit string is valid `BigInt` (arbitrary precision) and would
+      // otherwise sail through all the way to `signOrder` → `serializeOrder`,
+      // where `@bufbuild/protobuf`'s uint64 codec throws a raw "invalid
+      // uint64: <value>" library string deep in the async submit path,
+      // after wallet/nonce/balance work has already run. Catch it here,
+      // synchronously, like every other field validation in this hook.
+      const matchingOrderId = data.matchingOrderIds?.[0];
+      if (matchingOrderId !== undefined) {
+        const isU64 =
+          /^[0-9]+$/.test(matchingOrderId) &&
+          BigInt(matchingOrderId) <= 18446744073709551615n; // u64::MAX
+        if (!isU64) {
+          setError("Order ID must be a number no larger than 2^64-1");
+          return;
+        }
+      }
+
       // Dealroom fill-by-order-id is unsupported on the FCE transport: the
       // ext-proxy's direct-action payload carries no `matching_order_ids`
       // field, so the adapter would reconstruct the order without it and
