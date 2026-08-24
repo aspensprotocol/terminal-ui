@@ -154,18 +154,17 @@ export const configService = {
   /**
    * Fetch the TEE attestation report from the arborter's signer.
    *
-   * `reportData` is an optional ≤64-byte payload that gets bound to the
-   * report's REPORTDATA field — useful for proving a specific value (e.g. a
-   * nonce or pubkey) was attested by the same TEE instance. Most callers
-   * just want the report itself and can omit it.
+   * `nonce` is an optional caller-chosen freshness value (any length; 32
+   * random bytes is conventional). The signer folds `SHA256(nonce)` into the
+   * quote's REPORTDATA, so the returned quote *commits* to the nonce — a
+   * recorded quote from before the nonce existed can never match it. Most
+   * callers just want the report itself and can omit it.
    */
-  async getAttestation(
-    reportData?: Uint8Array,
-  ): Promise<GetAttestationResponse> {
+  async getAttestation(nonce?: Uint8Array): Promise<GetAttestationResponse> {
     try {
       const request: GetAttestationRequest = create(
         GetAttestationRequestSchema,
-        reportData ? { reportData } : {},
+        nonce ? { nonce } : {},
       );
       const response = await getConfigClient().getAttestation(request);
       return response;
