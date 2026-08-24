@@ -79,21 +79,17 @@ export function useTradeFormSubmit({
       }
 
       // Dealroom fill-by-order-id: curated, synchronous validation before
-      // any signing work. `FillOrderIdInput` already strips non-digit
-      // characters, but that alone doesn't bound the value — an over-long
-      // digit string is valid `BigInt` (arbitrary precision) and would
-      // otherwise sail through all the way to `signOrder` → `serializeOrder`,
-      // where `@bufbuild/protobuf`'s uint64 codec throws a raw "invalid
-      // uint64: <value>" library string deep in the async submit path,
-      // after wallet/nonce/balance work has already run. Catch it here,
+      // any signing work. The order handle is the full 32-byte order id, a
+      // `0x`-prefixed hex string of exactly 64 hex digits — anything else
+      // would otherwise sail through all the way to `signOrder` →
+      // `serializeOrder`, where `hexToBytes` would silently produce the
+      // wrong number of bytes rather than fail loudly. Catch it here,
       // synchronously, like every other field validation in this hook.
       const matchingOrderId = data.matchingOrderIds?.[0];
       if (matchingOrderId !== undefined) {
-        const isU64 =
-          /^[0-9]+$/.test(matchingOrderId) &&
-          BigInt(matchingOrderId) <= 18446744073709551615n; // u64::MAX
-        if (!isU64) {
-          setError("Order ID must be a number no larger than 2^64-1");
+        const isOrderId = /^0x[0-9a-fA-F]{64}$/.test(matchingOrderId);
+        if (!isOrderId) {
+          setError("Order ID must be a 32-byte hex value (0x + 64 hex digits)");
           return;
         }
       }

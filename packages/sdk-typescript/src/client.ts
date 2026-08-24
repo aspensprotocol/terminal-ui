@@ -36,7 +36,7 @@ import {
   WithdrawResponseSchema,
   type WithdrawResponse,
 } from "./protos/arborter_pb.js";
-import { createOrderMessage } from "./signing.js";
+import { createOrderMessage, hexToBytes } from "./signing.js";
 import { fetchOnChainBalances, type WalletBinding } from "./balances.js";
 import { toDisplayValue, toDisplayValueCapped } from "./decimals.js";
 import { bytesToHex } from "viem";
@@ -362,7 +362,7 @@ class RestClient {
     // Shim the direct-action response into the gRPC response shape the
     // enhancer expects (it reads only orderId + orderInBook).
     const shim = {
-      orderId: BigInt(out.data.orderId),
+      orderId: hexToBytes(out.data.orderId),
       orderInBook: out.data.orderInBook,
     } as SendOrderResponse;
     return this.responseToEnhancedOrder(shim, params);
@@ -390,7 +390,7 @@ class RestClient {
       marketId: params.marketId,
       side: params.side === "buy" ? ProtoSide.BID : ProtoSide.ASK,
       tokenAddress: params.tokenAddress,
-      orderId: BigInt(params.orderId),
+      orderId: hexToBytes(params.orderId),
     });
 
     const response = await arborterService.cancelOrder(
@@ -432,7 +432,7 @@ class RestClient {
     );
 
     return {
-      id: response.orderId.toString(),
+      id: bytesToHex(response.orderId),
       user_address: params.userAddress,
       market_id: params.marketId,
       price: priceDecimal,
@@ -756,7 +756,7 @@ export class ExchangeClient {
 
       // Convert orderbook entries to EnhancedOrder format
       return entries.map((entry) => ({
-        id: entry.orderId.toString(),
+        id: bytesToHex(entry.orderId),
         user_address: entry.makerBaseAddress || entry.makerQuoteAddress,
         market_id: marketId,
         price: entry.price,

@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file arborter.proto.
  */
 export const file_arborter: GenFile = /*@__PURE__*/
-  fileDesc("Cg5hcmJvcnRlci5wcm90bxIWeHl6LmFzcGVucy5hcmJvcnRlci52MSIHCgVFbXB0eSJlCg9XaXRoZHJhd1JlcXVlc3QSDwoHbmV0d29yaxgBIAEoCRINCgV0b2tlbhgCIAEoCRIPCgdhY2NvdW50GAMgASgJEg4KBmFtb3VudBgEIAEoCRIRCglzaWduYXR1cmUYBSABKAwidAoQV2l0aGRyYXdSZXNwb25zZRIPCgdhY2NvdW50GAEgASgJEg0KBXRva2VuGAIgASgJEg4KBmFtb3VudBgDIAEoCRINCgVub25jZRgEIAEoBBIOCgZleHBpcnkYBSABKAQSEQoJc2lnbmF0dXJlGAYgASgMImIKEkNhbmNlbE9yZGVyUmVxdWVzdBI0CgVvcmRlchgBIAEoCzIlLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuT3JkZXJUb0NhbmNlbBIWCg5zaWduYXR1cmVfaGFzaBgCIAEoDCK1AQoTQ2FuY2VsT3JkZXJSZXNwb25zZRIWCg5vcmRlcl9jYW5jZWxlZBgBIAEoCBJDChJ0cmFuc2FjdGlvbl9oYXNoZXMYAiADKAsyJy54eXouYXNwZW5zLmFyYm9ydGVyLnYxLlRyYW5zYWN0aW9uSGFzaBJBChFjdXJyZW50X29yZGVyYm9vaxgDIAMoCzImLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuT3JkZXJib29rRW50cnkisgEKEE9yZGVyYm9va1JlcXVlc3QSFwoPY29udGludWVfc3RyZWFtGAEgASgIEhEKCW1hcmtldF9pZBgCIAEoCRIjChZoaXN0b3JpY2FsX29wZW5fb3JkZXJzGAMgASgISACIAQESHQoQZmlsdGVyX2J5X3RyYWRlchgEIAEoCUgBiAEBQhkKF19oaXN0b3JpY2FsX29wZW5fb3JkZXJzQhMKEV9maWx0ZXJfYnlfdHJhZGVyIrIBCgxUcmFkZVJlcXVlc3QSFwoPY29udGludWVfc3RyZWFtGAEgASgIEhEKCW1hcmtldF9pZBgCIAEoCRIlChhoaXN0b3JpY2FsX2Nsb3NlZF90cmFkZXMYAyABKAhIAIgBARIdChBmaWx0ZXJfYnlfdHJhZGVyGAQgASgJSAGIAQFCGwoZX2hpc3RvcmljYWxfY2xvc2VkX3RyYWRlc0ITChFfZmlsdGVyX2J5X3RyYWRlciJYChBTZW5kT3JkZXJSZXF1ZXN0EiwKBW9yZGVyGAEgASgLMh0ueHl6LmFzcGVucy5hcmJvcnRlci52MS5PcmRlchIWCg5zaWduYXR1cmVfaGFzaBgCIAEoDCLsAgoFT3JkZXISKgoEc2lkZRgBIAEoDjIcLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuU2lkZRIQCghxdWFudGl0eRgCIAEoCRISCgVwcmljZRgDIAEoCUgAiAEBEhEKCW1hcmtldF9pZBgEIAEoCRIcChRiYXNlX2FjY291bnRfYWRkcmVzcxgFIAEoCRIdChVxdW90ZV9hY2NvdW50X2FkZHJlc3MYBiABKAkSPQoOZXhlY3V0aW9uX3R5cGUYByABKA4yJS54eXouYXNwZW5zLmFyYm9ydGVyLnYxLkV4ZWN1dGlvblR5cGUSGgoSbWF0Y2hpbmdfb3JkZXJfaWRzGAggAygEEhEKCXBvc3Rfb25seRgJIAEoCBIOCgZoaWRkZW4YCiABKAgSGQoMcXVvdGVfYnVkZ2V0GAsgASgJSAGIAQESDQoFbm9uY2UYDCABKARCCAoGX3ByaWNlQg8KDV9xdW90ZV9idWRnZXQi3QIKBVRyYWRlEhEKCXRpbWVzdGFtcBgBIAEoBBINCgVwcmljZRgCIAEoCRILCgNxdHkYAyABKAkSEAoIbWFrZXJfaWQYBCABKAkSEAoIdGFrZXJfaWQYBSABKAkSGgoSbWFrZXJfYmFzZV9hZGRyZXNzGAYgASgJEhsKE21ha2VyX3F1b3RlX2FkZHJlc3MYByABKAkSGgoSdGFrZXJfYmFzZV9hZGRyZXNzGAggASgJEhsKE3Rha2VyX3F1b3RlX2FkZHJlc3MYCSABKAkSMwoIYnV5ZXJfaXMYCiABKA4yIS54eXouYXNwZW5zLmFyYm9ydGVyLnYxLlRyYWRlUm9sZRI0CglzZWxsZXJfaXMYCyABKA4yIS54eXouYXNwZW5zLmFyYm9ydGVyLnYxLlRyYWRlUm9sZRIRCglvcmRlcl9oaXQYDCABKAQSEQoJbWFya2V0X2lkGA0gASgJIjgKD1RyYW5zYWN0aW9uSGFzaBIRCgloYXNoX3R5cGUYASABKAkSEgoKaGFzaF92YWx1ZRgCIAEoCSKwAgoRU2VuZE9yZGVyUmVzcG9uc2USFQoNb3JkZXJfaW5fYm9vaxgBIAEoCBIxCgVvcmRlchgCIAEoCzIdLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuT3JkZXJIAIgBARItCgZ0cmFkZXMYAyADKAsyHS54eXouYXNwZW5zLmFyYm9ydGVyLnYxLlRyYWRlEkMKEnRyYW5zYWN0aW9uX2hhc2hlcxgEIAMoCzInLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuVHJhbnNhY3Rpb25IYXNoEkEKEWN1cnJlbnRfb3JkZXJib29rGAUgAygLMiYueHl6LmFzcGVucy5hcmJvcnRlci52MS5PcmRlcmJvb2tFbnRyeRIQCghvcmRlcl9pZBgGIAEoBEIICgZfb3JkZXIidwoNT3JkZXJUb0NhbmNlbBIRCgltYXJrZXRfaWQYASABKAkSKgoEc2lkZRgCIAEoDjIcLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuU2lkZRIVCg10b2tlbl9hZGRyZXNzGAMgASgJEhAKCG9yZGVyX2lkGAQgASgEIpQCCg5PcmRlcmJvb2tFbnRyeRIRCgl0aW1lc3RhbXAYASABKAQSEAoIb3JkZXJfaWQYAiABKAQSDQoFcHJpY2UYAyABKAkSEAoIcXVhbnRpdHkYBCABKAkSKgoEc2lkZRgFIAEoDjIcLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuU2lkZRIaChJtYWtlcl9iYXNlX2FkZHJlc3MYBiABKAkSGwoTbWFrZXJfcXVvdGVfYWRkcmVzcxgHIAEoCRIRCgltYXJrZXRfaWQYCCABKAkSMQoFc3RhdGUYCSABKA4yIi54eXouYXNwZW5zLmFyYm9ydGVyLnYxLk9yZGVyU3RhdGUSEQoJcG9zdF9vbmx5GAogASgIKjgKBFNpZGUSFAoQU0lERV9VTlNQRUNJRklFRBAAEgwKCFNJREVfQklEEAESDAoIU0lERV9BU0sQAipRCg1FeGVjdXRpb25UeXBlEh4KGkVYRUNVVElPTl9UWVBFX1VOU1BFQ0lGSUVEEAASIAocRVhFQ1VUSU9OX1RZUEVfRElTQ1JFVElPTkFSWRABKqkBCgpPcmRlclN0YXRlEhsKF09SREVSX1NUQVRFX1VOU1BFQ0lGSUVEEAASFwoTT1JERVJfU1RBVEVfUEVORElORxABEhkKFU9SREVSX1NUQVRFX0NPTkZJUk1FRBACEhcKE09SREVSX1NUQVRFX01BVENIRUQQAxIYChRPUkRFUl9TVEFURV9DQU5DRUxFRBAEEhcKE09SREVSX1NUQVRFX1NFVFRMRUQQBSo9CglUcmFkZVJvbGUSGgoWVFJBREVfUk9MRV9VTlNQRUNJRklFRBAAEgkKBU1BS0VSEAESCQoFVEFLRVIQAjL2AwoPQXJib3J0ZXJTZXJ2aWNlEmIKCVNlbmRPcmRlchIoLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuU2VuZE9yZGVyUmVxdWVzdBopLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuU2VuZE9yZGVyUmVzcG9uc2UiABJoCgtDYW5jZWxPcmRlchIqLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuQ2FuY2VsT3JkZXJSZXF1ZXN0GisueHl6LmFzcGVucy5hcmJvcnRlci52MS5DYW5jZWxPcmRlclJlc3BvbnNlIgASUQoGVHJhZGVzEiQueHl6LmFzcGVucy5hcmJvcnRlci52MS5UcmFkZVJlcXVlc3QaHS54eXouYXNwZW5zLmFyYm9ydGVyLnYxLlRyYWRlIgAwARJhCglPcmRlcmJvb2sSKC54eXouYXNwZW5zLmFyYm9ydGVyLnYxLk9yZGVyYm9va1JlcXVlc3QaJi54eXouYXNwZW5zLmFyYm9ydGVyLnYxLk9yZGVyYm9va0VudHJ5IgAwARJfCghXaXRoZHJhdxInLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuV2l0aGRyYXdSZXF1ZXN0GigueHl6LmFzcGVucy5hcmJvcnRlci52MS5XaXRoZHJhd1Jlc3BvbnNlIgBCAkgBYgZwcm90bzM");
+  fileDesc("Cg5hcmJvcnRlci5wcm90bxIWeHl6LmFzcGVucy5hcmJvcnRlci52MSIHCgVFbXB0eSJlCg9XaXRoZHJhd1JlcXVlc3QSDwoHbmV0d29yaxgBIAEoCRINCgV0b2tlbhgCIAEoCRIPCgdhY2NvdW50GAMgASgJEg4KBmFtb3VudBgEIAEoCRIRCglzaWduYXR1cmUYBSABKAwidAoQV2l0aGRyYXdSZXNwb25zZRIPCgdhY2NvdW50GAEgASgJEg0KBXRva2VuGAIgASgJEg4KBmFtb3VudBgDIAEoCRINCgVub25jZRgEIAEoBBIOCgZleHBpcnkYBSABKAQSEQoJc2lnbmF0dXJlGAYgASgMImIKEkNhbmNlbE9yZGVyUmVxdWVzdBI0CgVvcmRlchgBIAEoCzIlLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuT3JkZXJUb0NhbmNlbBIWCg5zaWduYXR1cmVfaGFzaBgCIAEoDCK1AQoTQ2FuY2VsT3JkZXJSZXNwb25zZRIWCg5vcmRlcl9jYW5jZWxlZBgBIAEoCBJDChJ0cmFuc2FjdGlvbl9oYXNoZXMYAiADKAsyJy54eXouYXNwZW5zLmFyYm9ydGVyLnYxLlRyYW5zYWN0aW9uSGFzaBJBChFjdXJyZW50X29yZGVyYm9vaxgDIAMoCzImLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuT3JkZXJib29rRW50cnkisgEKEE9yZGVyYm9va1JlcXVlc3QSFwoPY29udGludWVfc3RyZWFtGAEgASgIEhEKCW1hcmtldF9pZBgCIAEoCRIjChZoaXN0b3JpY2FsX29wZW5fb3JkZXJzGAMgASgISACIAQESHQoQZmlsdGVyX2J5X3RyYWRlchgEIAEoCUgBiAEBQhkKF19oaXN0b3JpY2FsX29wZW5fb3JkZXJzQhMKEV9maWx0ZXJfYnlfdHJhZGVyIrIBCgxUcmFkZVJlcXVlc3QSFwoPY29udGludWVfc3RyZWFtGAEgASgIEhEKCW1hcmtldF9pZBgCIAEoCRIlChhoaXN0b3JpY2FsX2Nsb3NlZF90cmFkZXMYAyABKAhIAIgBARIdChBmaWx0ZXJfYnlfdHJhZGVyGAQgASgJSAGIAQFCGwoZX2hpc3RvcmljYWxfY2xvc2VkX3RyYWRlc0ITChFfZmlsdGVyX2J5X3RyYWRlciJYChBTZW5kT3JkZXJSZXF1ZXN0EiwKBW9yZGVyGAEgASgLMh0ueHl6LmFzcGVucy5hcmJvcnRlci52MS5PcmRlchIWCg5zaWduYXR1cmVfaGFzaBgCIAEoDCLsAgoFT3JkZXISKgoEc2lkZRgBIAEoDjIcLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuU2lkZRIQCghxdWFudGl0eRgCIAEoCRISCgVwcmljZRgDIAEoCUgAiAEBEhEKCW1hcmtldF9pZBgEIAEoCRIcChRiYXNlX2FjY291bnRfYWRkcmVzcxgFIAEoCRIdChVxdW90ZV9hY2NvdW50X2FkZHJlc3MYBiABKAkSPQoOZXhlY3V0aW9uX3R5cGUYByABKA4yJS54eXouYXNwZW5zLmFyYm9ydGVyLnYxLkV4ZWN1dGlvblR5cGUSGgoSbWF0Y2hpbmdfb3JkZXJfaWRzGAggAygMEhEKCXBvc3Rfb25seRgJIAEoCBIOCgZoaWRkZW4YCiABKAgSGQoMcXVvdGVfYnVkZ2V0GAsgASgJSAGIAQESDQoFbm9uY2UYDCABKARCCAoGX3ByaWNlQg8KDV9xdW90ZV9idWRnZXQi3QIKBVRyYWRlEhEKCXRpbWVzdGFtcBgBIAEoBBINCgVwcmljZRgCIAEoCRILCgNxdHkYAyABKAkSEAoIbWFrZXJfaWQYBCABKAkSEAoIdGFrZXJfaWQYBSABKAkSGgoSbWFrZXJfYmFzZV9hZGRyZXNzGAYgASgJEhsKE21ha2VyX3F1b3RlX2FkZHJlc3MYByABKAkSGgoSdGFrZXJfYmFzZV9hZGRyZXNzGAggASgJEhsKE3Rha2VyX3F1b3RlX2FkZHJlc3MYCSABKAkSMwoIYnV5ZXJfaXMYCiABKA4yIS54eXouYXNwZW5zLmFyYm9ydGVyLnYxLlRyYWRlUm9sZRI0CglzZWxsZXJfaXMYCyABKA4yIS54eXouYXNwZW5zLmFyYm9ydGVyLnYxLlRyYWRlUm9sZRIRCglvcmRlcl9oaXQYDCABKAwSEQoJbWFya2V0X2lkGA0gASgJIjgKD1RyYW5zYWN0aW9uSGFzaBIRCgloYXNoX3R5cGUYASABKAkSEgoKaGFzaF92YWx1ZRgCIAEoCSKwAgoRU2VuZE9yZGVyUmVzcG9uc2USFQoNb3JkZXJfaW5fYm9vaxgBIAEoCBIxCgVvcmRlchgCIAEoCzIdLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuT3JkZXJIAIgBARItCgZ0cmFkZXMYAyADKAsyHS54eXouYXNwZW5zLmFyYm9ydGVyLnYxLlRyYWRlEkMKEnRyYW5zYWN0aW9uX2hhc2hlcxgEIAMoCzInLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuVHJhbnNhY3Rpb25IYXNoEkEKEWN1cnJlbnRfb3JkZXJib29rGAUgAygLMiYueHl6LmFzcGVucy5hcmJvcnRlci52MS5PcmRlcmJvb2tFbnRyeRIQCghvcmRlcl9pZBgGIAEoDEIICgZfb3JkZXIidwoNT3JkZXJUb0NhbmNlbBIRCgltYXJrZXRfaWQYASABKAkSKgoEc2lkZRgCIAEoDjIcLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuU2lkZRIVCg10b2tlbl9hZGRyZXNzGAMgASgJEhAKCG9yZGVyX2lkGAQgASgMIpQCCg5PcmRlcmJvb2tFbnRyeRIRCgl0aW1lc3RhbXAYASABKAQSEAoIb3JkZXJfaWQYAiABKAwSDQoFcHJpY2UYAyABKAkSEAoIcXVhbnRpdHkYBCABKAkSKgoEc2lkZRgFIAEoDjIcLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuU2lkZRIaChJtYWtlcl9iYXNlX2FkZHJlc3MYBiABKAkSGwoTbWFrZXJfcXVvdGVfYWRkcmVzcxgHIAEoCRIRCgltYXJrZXRfaWQYCCABKAkSMQoFc3RhdGUYCSABKA4yIi54eXouYXNwZW5zLmFyYm9ydGVyLnYxLk9yZGVyU3RhdGUSEQoJcG9zdF9vbmx5GAogASgIKjgKBFNpZGUSFAoQU0lERV9VTlNQRUNJRklFRBAAEgwKCFNJREVfQklEEAESDAoIU0lERV9BU0sQAipRCg1FeGVjdXRpb25UeXBlEh4KGkVYRUNVVElPTl9UWVBFX1VOU1BFQ0lGSUVEEAASIAocRVhFQ1VUSU9OX1RZUEVfRElTQ1JFVElPTkFSWRABKqkBCgpPcmRlclN0YXRlEhsKF09SREVSX1NUQVRFX1VOU1BFQ0lGSUVEEAASFwoTT1JERVJfU1RBVEVfUEVORElORxABEhkKFU9SREVSX1NUQVRFX0NPTkZJUk1FRBACEhcKE09SREVSX1NUQVRFX01BVENIRUQQAxIYChRPUkRFUl9TVEFURV9DQU5DRUxFRBAEEhcKE09SREVSX1NUQVRFX1NFVFRMRUQQBSo9CglUcmFkZVJvbGUSGgoWVFJBREVfUk9MRV9VTlNQRUNJRklFRBAAEgkKBU1BS0VSEAESCQoFVEFLRVIQAjL2AwoPQXJib3J0ZXJTZXJ2aWNlEmIKCVNlbmRPcmRlchIoLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuU2VuZE9yZGVyUmVxdWVzdBopLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuU2VuZE9yZGVyUmVzcG9uc2UiABJoCgtDYW5jZWxPcmRlchIqLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuQ2FuY2VsT3JkZXJSZXF1ZXN0GisueHl6LmFzcGVucy5hcmJvcnRlci52MS5DYW5jZWxPcmRlclJlc3BvbnNlIgASUQoGVHJhZGVzEiQueHl6LmFzcGVucy5hcmJvcnRlci52MS5UcmFkZVJlcXVlc3QaHS54eXouYXNwZW5zLmFyYm9ydGVyLnYxLlRyYWRlIgAwARJhCglPcmRlcmJvb2sSKC54eXouYXNwZW5zLmFyYm9ydGVyLnYxLk9yZGVyYm9va1JlcXVlc3QaJi54eXouYXNwZW5zLmFyYm9ydGVyLnYxLk9yZGVyYm9va0VudHJ5IgAwARJfCghXaXRoZHJhdxInLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuV2l0aGRyYXdSZXF1ZXN0GigueHl6LmFzcGVucy5hcmJvcnRlci52MS5XaXRoZHJhd1Jlc3BvbnNlIgBCAkgBYgZwcm90bzM");
 
 /**
  * @generated from message xyz.aspens.arborter.v1.Empty
@@ -361,9 +361,11 @@ export type Order = Message<"xyz.aspens.arborter.v1.Order"> & {
 
   /**
    * DISCRETIONARY only: 1..=16 resting order ids to fill against, tried in
-   * the given sequence. Each is a `SendOrderResponse.order_id` value the
-   * maker shared with this caller out-of-band — there is no other way to
-   * learn one, and a hidden maker's id works the same as a visible one's.
+   * the given sequence. Each is the full 32-byte canonical order id from
+   * that resting order's `SendOrderResponse.order_id`, carried here as raw
+   * bytes — the maker shares it as `0x`-prefixed hex with this caller
+   * out-of-band for the dealroom flow; there is no other way to learn one,
+   * and a hidden maker's id works the same as a visible one's.
    *
    * Fills happen ONLY against these named ids, in this order, and NEVER
    * against any other resting order — no sweep of top-of-book alongside
@@ -382,9 +384,9 @@ export type Order = Message<"xyz.aspens.arborter.v1.Order"> & {
    * must be non-empty and at most 16 ids long; empty (the default) is what
    * every DIRECT order carries.
    *
-   * @generated from field: repeated uint64 matching_order_ids = 8;
+   * @generated from field: repeated bytes matching_order_ids = 8;
    */
-  matchingOrderIds: bigint[];
+  matchingOrderIds: Uint8Array[];
 
   /**
    * Post-only: if true, the order MUST rest on the book. If it would
@@ -550,11 +552,14 @@ export type Trade = Message<"xyz.aspens.arborter.v1.Trade"> & {
   sellerIs: TradeRole;
 
   /**
-   * The order_id that created this trade.
+   * Which order this trade matched: the full 32-byte canonical order id,
+   * shown as `0x`-prefixed hex, matching that order's
+   * `SendOrderResponse.order_id`. Server-derived — the order's owner never
+   * chose it, only received it back.
    *
-   * @generated from field: uint64 order_hit = 12;
+   * @generated from field: bytes order_hit = 12;
    */
-  orderHit: bigint;
+  orderHit: Uint8Array;
 
   /**
    * Which market this trade executed on:
@@ -653,11 +658,13 @@ export type SendOrderResponse = Message<"xyz.aspens.arborter.v1.SendOrderRespons
   currentOrderbook: OrderbookEntry[];
 
   /**
-   * The unique identifier for this order
+   * The order's canonical identifier: the full 32-byte order id, shown as
+   * `0x`-prefixed hex. Always server-derived from the signed order — the
+   * caller cannot choose or influence it, only learn it from this response.
    *
-   * @generated from field: uint64 order_id = 6;
+   * @generated from field: bytes order_id = 6;
    */
-  orderId: bigint;
+  orderId: Uint8Array;
 };
 
 /**
@@ -695,11 +702,14 @@ export type OrderToCancel = Message<"xyz.aspens.arborter.v1.OrderToCancel"> & {
   tokenAddress: string;
 
   /**
-   * Internal order Id.
+   * The order's canonical identifier: the full 32-byte order id, shown as
+   * `0x`-prefixed hex, exactly as returned in `SendOrderResponse.order_id`.
+   * Server-derived at order entry — the caller only echoes it back here to
+   * identify which order to cancel, never chooses it.
    *
-   * @generated from field: uint64 order_id = 4;
+   * @generated from field: bytes order_id = 4;
    */
-  orderId: bigint;
+  orderId: Uint8Array;
 };
 
 /**
@@ -723,11 +733,13 @@ export type OrderbookEntry = Message<"xyz.aspens.arborter.v1.OrderbookEntry"> & 
   timestamp: bigint;
 
   /**
-   * internal id of the order
+   * The order's canonical identifier: the full 32-byte order id, shown as
+   * `0x`-prefixed hex, matching `SendOrderResponse.order_id` for the same
+   * order. Server-derived; not choosable by the order's owner.
    *
-   * @generated from field: uint64 order_id = 2;
+   * @generated from field: bytes order_id = 2;
    */
-  orderId: bigint;
+  orderId: Uint8Array;
 
   /**
    * price of the order - in non-decimal form

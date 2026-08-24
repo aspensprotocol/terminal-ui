@@ -46,6 +46,9 @@ function floatRaw(decimal: string, decimals: number): string {
 
 const SIGNATURE = new Uint8Array(65).fill(7);
 
+/** A distinct 32-byte order id — the shape `SendOrderResponse.orderId` carries. */
+const ORDER_ID = new Uint8Array(32).fill(9);
+
 /**
  * Swap in a capturing `sendOrder` for one call. `arborterService` is a plain
  * object literal shared by every importer, so replacing the property
@@ -56,7 +59,7 @@ async function captureWireOrder(params: PlaceOrderParams): Promise<Order> {
   let captured: Order | undefined;
   arborterService.sendOrder = async (order: Order) => {
     captured = order;
-    return { orderId: 42n, orderInBook: true } as SendOrderResponse;
+    return { orderId: ORDER_ID, orderInBook: true } as SendOrderResponse;
   };
   try {
     await new ExchangeClient({ grpcUrl: "http://localhost:0" }).placeOrder(
