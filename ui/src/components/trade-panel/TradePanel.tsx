@@ -11,6 +11,7 @@ import { SideSelector } from "./SideSelector";
 import { PriceInput } from "./PriceInput";
 import { PostOnlyToggle } from "./PostOnlyToggle";
 import { HiddenToggle } from "./HiddenToggle";
+import { FillOrderIdInput } from "./FillOrderIdInput";
 import { SizeInput } from "./SizeInput";
 import { OrderSummary } from "./OrderSummary";
 import { SubmitButton } from "./SubmitButton";
@@ -45,6 +46,7 @@ export function TradePanel() {
       size: "",
       postOnly: false,
       hidden: false,
+      matchingOrderIds: [],
     },
   });
 
@@ -174,9 +176,13 @@ export function TradePanel() {
         value={formData.orderType}
         onChange={(value) => {
           setValue("orderType", value);
-          // Post-only is limit-only; clear it on a switch to market so
-          // the previous toggle state can't ride along silently.
-          if (value === "market") setValue("postOnly", false);
+          // Post-only and discretionary fill-by-order-id are both
+          // limit-only; clear them on a switch to market so the
+          // previous state can't ride along silently.
+          if (value === "market") {
+            setValue("postOnly", false);
+            setValue("matchingOrderIds", []);
+          }
         }}
       />
 
@@ -214,6 +220,12 @@ export function TradePanel() {
               <PostOnlyToggle
                 value={formData.postOnly}
                 onChange={(value) => setValue("postOnly", value)}
+              />
+              <FillOrderIdInput
+                value={formData.matchingOrderIds?.[0] ?? ""}
+                onChange={(value) =>
+                  setValue("matchingOrderIds", value ? [value] : [])
+                }
               />
             </>
           )}

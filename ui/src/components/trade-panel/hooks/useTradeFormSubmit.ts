@@ -78,6 +78,19 @@ export function useTradeFormSubmit({
         return;
       }
 
+      // Dealroom fill-by-order-id is unsupported on the FCE transport: the
+      // ext-proxy's direct-action payload carries no `matching_order_ids`
+      // field, so the adapter would reconstruct the order without it and
+      // the envelope signature — which covers it — would no longer verify.
+      // The input is disabled in FCE mode already; this is the backstop for
+      // a value that got set before FCE mode turned on.
+      if (fceEnabled && data.matchingOrderIds?.length) {
+        setError(
+          "Fill order ID is not supported on this deployment (FCE transport)",
+        );
+        return;
+      }
+
       // Check balance
       const sizeNum = parseFloat(data.size);
       if (data.side === "buy") {
@@ -171,6 +184,14 @@ export function useTradeFormSubmit({
         const effectivePostOnly =
           data.orderType === "limit" ? data.postOnly : false;
 
+        // Discretionary fill-by-order-id is limit-only, like postOnly — it
+        // is gated by this order's own limit price, so there's nothing to
+        // gate against on a market order. Same defense as effectivePostOnly:
+        // the UI already hides the input outside "limit", this guards a
+        // stale value surviving a fast order-type switch.
+        const effectiveMatchingOrderIds =
+          data.orderType === "limit" ? data.matchingOrderIds : undefined;
+
         // Every order commits a budget denominated in the asset it gives, and
         // three of the four cells derive theirs: an ask gives `quantity` of
         // base; a limit bid gives at most `quantity * price` of quote. The
@@ -250,6 +271,7 @@ export function useTradeFormSubmit({
           hidden: data.hidden,
           quoteBudget,
           nonce,
+          matchingOrderIds: effectiveMatchingOrderIds,
         };
 
         // Sign the order envelope using the matched wallet. This
@@ -312,6 +334,7 @@ export function useTradeFormSubmit({
           // wire order won't match the bytes the wallet signed.
           quoteBudget,
           nonce,
+          matchingOrderIds: effectiveMatchingOrderIds,
         });
 
         // A hidden order that rested exists in NO server stream — this
