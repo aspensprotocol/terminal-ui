@@ -71,9 +71,9 @@ export interface OrderSigningData {
    * Dealroom "discretionary" fill: resting order ids (from the makers'
    * `SendOrderResponse.orderId`) this order is allowed to match against,
    * gated by this order's own limit price at each maker's price. IOC —
-   * whatever doesn't fill against these ids never rests. `uint64` on the
-   * wire, so carried as decimal strings (not `number`) to avoid precision
-   * loss above 2^53; `BigInt()` parses either.
+   * whatever doesn't fill against these ids never rests. `bytes` (32-byte
+   * order id) on the wire, carried here as `0x`-prefixed hex strings and
+   * converted with {@link hexToBytes} when building the signed message.
    *
    * `createOrderMessage` below derives `executionType` from this field
    * rather than taking it as a separate input, so the two can never
@@ -217,7 +217,7 @@ export function createOrderMessage(data: OrderSigningData): Order {
     executionType: data.matchingOrderIds?.length
       ? ExecutionType.DISCRETIONARY
       : ExecutionType.UNSPECIFIED,
-    matchingOrderIds: data.matchingOrderIds?.map((id) => BigInt(id)) || [],
+    matchingOrderIds: data.matchingOrderIds?.map((id) => hexToBytes(id)) || [],
     postOnly: data.postOnly ?? false,
     hidden: data.hidden ?? false,
     // Optional proto field: left unset (and wire-skipped) unless the caller
@@ -246,7 +246,7 @@ export function createCancelMessage(data: CancelSigningData): OrderToCancel {
     marketId: data.marketId,
     side: data.side === "buy" ? Side.BID : Side.ASK,
     tokenAddress: data.tokenAddress,
-    orderId: BigInt(data.orderId),
+    orderId: hexToBytes(data.orderId),
   });
 }
 

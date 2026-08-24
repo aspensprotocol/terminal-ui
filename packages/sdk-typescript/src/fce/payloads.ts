@@ -1,15 +1,22 @@
 /**
- * u64 fields cross this wire as QUOTED STRINGS, never bare numbers.
+ * u64 fields (`nonce`, `expiry`) cross this wire as QUOTED STRINGS, never bare
+ * numbers.
  *
  * JSON.parse rounds any integer above 2^53, because JS numbers are doubles.
- * That silently broke cancel in production: the arborter held order
- * 173852891691592598, the browser read 173852891691592600, sent it back, and
- * find_order missed — the order stayed in the book with its collateral
- * reserved. Keep these as strings end to end; convert with BigInt only where
- * arithmetic is genuinely needed, never via Number().
+ * That silently broke cancel in production, back when the order handle was
+ * itself a u64: the arborter held order 173852891691592598, the browser read
+ * 173852891691592600, sent it back, and find_order missed — the order stayed
+ * in the book with its collateral reserved. Keep these as strings end to end;
+ * convert with BigInt only where arithmetic is genuinely needed, never via
+ * Number().
  *
  * Matches the Go side's types.U64String and proto3's JSON mapping for 64-bit
  * integers, and the u128 amounts that were already strings here.
+ *
+ * The order handle itself (`orderId` / `orderHit` below) is no longer a u64:
+ * it is the full 32-byte canonical order id, carried as a `0x`-prefixed hex
+ * string — not subject to the precision concern above, since a hex string
+ * was never a JSON number in the first place.
  */
 /**
  * Direct-action request/response payloads — the JSON that rides in
@@ -55,7 +62,7 @@ export interface PlaceOrderRequest {
   postOnly?: boolean;
   /** EIP-712 order signature, 0x-hex */
   signatureHash: Hex;
-  /** SDK-derived canonical order id */
+  /** SDK-derived canonical order id: 0x-prefixed 32-byte hex. */
   orderId: string;
   /**
    * NOTE: `amountIn` was dropped along with `OrderAuthorization.amount_in`.
@@ -67,6 +74,7 @@ export interface PlaceOrderRequest {
 }
 
 export interface PlaceOrderResponse {
+  /** The 32-byte canonical order id, 0x-prefixed hex. */
   orderId: string;
   orderInBook: boolean;
   fills: number;
@@ -78,6 +86,7 @@ export interface CancelOrderRequest {
   marketId: string;
   side: "BID" | "ASK";
   tokenAddress: string;
+  /** The 32-byte canonical order id, 0x-prefixed hex. */
   orderId: string;
   signatureHash: Hex;
 }
@@ -116,6 +125,7 @@ export interface GetMyStateResponse {
   openOrders: OpenOrder[];
 }
 export interface OpenOrder {
+  /** The 32-byte canonical order id, 0x-prefixed hex. */
   orderId: string;
   marketId: string;
   side: string;
@@ -157,6 +167,7 @@ export interface TradeRecord {
   timestamp: string;
   price: string;
   quantity: string;
+  /** The 32-byte canonical order id this trade matched, 0x-prefixed hex. */
   orderHit: string;
   /** "MAKER" | "TAKER" | "" — "" when the arborter left the role unset. */
   buyerIs: string;

@@ -28,7 +28,7 @@ function redactedMakerTrade(overrides: Record<string, unknown> = {}) {
     takerQuoteAddress: "0xtakerq",
     buyerIs: 2, // TAKER bought
     sellerIs: 1, // MAKER sold
-    orderHit: 0n, // redacted
+    orderHit: new Uint8Array(32), // redacted
     ...overrides,
   });
 }

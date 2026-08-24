@@ -6,6 +6,7 @@ import type { Trade as ProtoTrade, TradeRole } from "../protos/arborter_pb.js";
 import type { EnhancedTrade, Side } from "../types.js";
 import { rawToDecimal } from "./orderbook-adapter.js";
 import { toDisplayValueCapped } from "../decimals.js";
+import { bytesToHex } from "../signing.js";
 
 /**
  * Determine the trade side based on buyer/seller roles
@@ -70,7 +71,7 @@ export function toEnhancedTrade(
   // disambiguate all but byte-identical simultaneous redacted fills.
   // Do NOT add a positional index — ids must be stable across polls or
   // the store double-counts trades.
-  const id = `${trade.timestamp}-${trade.orderHit}-${trade.price}-${trade.qty}`;
+  const id = `${trade.timestamp}-${bytesToHex(trade.orderHit)}-${trade.price}-${trade.qty}`;
 
   const { buyer_address, seller_address } = addressesByRole(trade);
 
@@ -82,7 +83,7 @@ export function toEnhancedTrade(
     market_id: marketId,
     buyer_address,
     seller_address,
-    buyer_order_id: trade.orderHit.toString(),
+    buyer_order_id: bytesToHex(trade.orderHit),
     seller_order_id: trade.makerId,
     price: trade.price,
     size: trade.qty,

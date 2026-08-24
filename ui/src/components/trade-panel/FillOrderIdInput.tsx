@@ -23,10 +23,11 @@
  * control turns that into something the user can see before they submit
  * rather than an error afterwards.
  *
- * `maxLength` caps entry at 20 digits — `u64::MAX` (18446744073709551615)
- * is 20 digits — as a typing-time nudge only. It is not the validation:
- * `useTradeFormSubmit` re-checks non-empty digits and the actual u64 bound
- * synchronously before signing, since a pasted value can still exceed it.
+ * `maxLength` caps entry at 66 characters — `0x` plus the 64 hex digits of
+ * a full 32-byte order id — as a typing-time nudge only. It is not the
+ * validation: `useTradeFormSubmit` re-checks the exact `0x` + 64-hex-digit
+ * shape synchronously before signing, since a pasted value can still be the
+ * wrong length or carry non-hex characters.
  */
 
 "use client";
@@ -53,13 +54,21 @@ export function FillOrderIdInput({ value, onChange }: FillOrderIdInputProps) {
       </Label>
       <Input
         type="text"
-        inputMode="numeric"
-        pattern="[0-9]*"
-        maxLength={20}
+        inputMode="text"
+        pattern="0x[0-9a-fA-F]*"
+        maxLength={66}
         value={fceEnabled ? "" : value}
         disabled={fceEnabled}
-        onChange={(e) => onChange(e.target.value.replace(/[^0-9]/g, ""))}
-        placeholder="Resting order id"
+        onChange={(e) => {
+          const raw = e.target.value.trim();
+          const hasPrefix = raw.toLowerCase().startsWith("0x");
+          const hex = (hasPrefix ? raw.slice(2) : raw).replace(
+            /[^0-9a-fA-F]/g,
+            "",
+          );
+          onChange(hex ? `0x${hex}` : "");
+        }}
+        placeholder="0x-prefixed resting order id"
         className="font-mono h-9 text-sm border-border/40 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 bg-muted/20 disabled:cursor-not-allowed disabled:opacity-50"
       />
     </div>

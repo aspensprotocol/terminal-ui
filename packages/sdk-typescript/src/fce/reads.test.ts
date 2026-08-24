@@ -57,7 +57,7 @@ describe("fceOpenOrdersToEnhanced", () => {
       {
         openOrders: [
           {
-            orderId: 7,
+            orderId: `0x${"7".padStart(64, "0")}`,
             marketId: "m",
             side: "BID",
             price: "900000",
@@ -82,7 +82,7 @@ describe("fceOpenOrdersToEnhanced", () => {
       {
         openOrders: [
           {
-            orderId: 8,
+            orderId: `0x${"8".padStart(64, "0")}`,
             marketId: "m",
             side: "ASK",
             price: "1",
@@ -104,7 +104,7 @@ describe("fceTradesToEnhanced", () => {
     timestamp: 1_700_000_000_000,
     price: "1000000",
     quantity: "2000000",
-    orderHit: 42,
+    orderHit: `0x${"42".padStart(64, "0")}`,
     makerBaseAddress: "0xmb",
     makerQuoteAddress: "0xmq",
     takerBaseAddress: "0xtb",

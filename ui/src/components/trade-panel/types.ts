@@ -38,8 +38,9 @@ export interface TradeFormData {
    */
   hidden: boolean;
   /**
-   * Dealroom "discretionary" fill — resting order ids (as decimal strings,
-   * `uint64` on the wire) this order is restricted to matching against. v1
+   * Dealroom "discretionary" fill — resting order ids (as `0x`-prefixed
+   * 32-byte hex strings, `bytes` on the wire) this order is restricted to
+   * matching against. v1
    * carries at most one id, entered via a single "Fill order ID" input, but
    * the form field and the signed proto field are both arrays (0 or 1
    * elements here) so this threads straight into

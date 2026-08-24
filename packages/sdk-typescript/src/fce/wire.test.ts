@@ -83,7 +83,11 @@ describe("hexutil.Bytes decoding", () => {
   });
 
   test("hexJsonToObject decodes an ActionResult.data payload", () => {
-    const obj = { orderId: 7, orderInBook: true, fills: 0 };
+    const obj = {
+      orderId: `0x${"7".padStart(64, "0")}`,
+      orderInBook: true,
+      fills: 0,
+    };
     const hex = bytesToHex(new TextEncoder().encode(JSON.stringify(obj)));
     expect(hexJsonToObject(hex)).toEqual(obj);
   });
