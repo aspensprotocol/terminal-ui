@@ -96,6 +96,71 @@ just ci          # Full CI pipeline (install, build, fmt, lint, typecheck)
 
 Protobuf types in `packages/sdk-typescript/src/protos/` are generated from arborter's `.proto` files using `protoc-gen-es v2`. The SDK adapters in `packages/sdk-typescript/src/adapters/` convert protobuf types to the SDK's `Market`, `Token`, `EnhancedTrade`, etc.
 
+### Dev server against a DEPLOYED stack (validated 2026-08-25 against a live testnet stack)
+
+Endpoint facts that cost time to rediscover:
+
+- The browser-facing **gRPC-Web** endpoint of a deployed stack is the main
+  domain's `/api/*` path (`https://<stack-domain>/api`). The
+  `grpc.<stack>` subdomain is **native gRPC** — gRPC-Web POSTs to it return
+  404. Do not point `NEXT_PUBLIC_GRPC_URL` at either one directly.
+- The deployed front proxy answers CORS for **its own origin only**, so a
+  `localhost:3000` dev server is blocked on preflight. Run a local CORS
+  proxy and point the dev server at that instead.
+- Port **8811 is usually taken locally** (the local-rig Envoy under
+  OrbStack/Docker); use another port for the proxy.
+
+Recipe:
+
+```bash
+# 1. CORS proxy (any scratch dir). NODE_TLS_REJECT_UNAUTHORIZED=0 is needed
+#    because Bun's fetch rejects the stack's TLS chain that curl accepts.
+cat > /tmp/cors-proxy.ts <<'EOF'
+const UPSTREAM = "https://<stack-domain>/api"; // <- your stack's main domain
+const CORS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
+  "Access-Control-Allow-Headers":
+    "content-type, x-grpc-web, x-user-agent, grpc-timeout, authorization, connect-protocol-version, connect-timeout-ms",
+  "Access-Control-Expose-Headers": "*",
+};
+Bun.serve({
+  port: 8812,
+  async fetch(req) {
+    if (req.method === "OPTIONS")
+      return new Response(null, { status: 204, headers: CORS });
+    const url = new URL(req.url);
+    // Strip Host/Origin (the upstream front proxy routes by Host) and
+    // Content-Length (recomputed); BUFFER the request body — piping the
+    // browser's stream through two hops trips the upstream's framing.
+    const fwd = new Headers();
+    for (const [k, v] of req.headers)
+      if (!["host", "origin", "referer", "connection", "content-length"].includes(k.toLowerCase()))
+        fwd.set(k, v);
+    const body =
+      req.method === "GET" || req.method === "HEAD" ? undefined : await req.arrayBuffer();
+    const upstream = await fetch(UPSTREAM + url.pathname + url.search, {
+      method: req.method, headers: fwd, body,
+    });
+    const headers = new Headers(upstream.headers);
+    for (const [k, v] of Object.entries(CORS)) headers.set(k, v);
+    return new Response(upstream.body, { status: upstream.status, headers });
+  },
+});
+EOF
+NODE_TLS_REJECT_UNAUTHORIZED=0 bun run /tmp/cors-proxy.ts &
+
+# 2. Dev server pointed at the proxy
+cd ui && NEXT_PUBLIC_GRPC_URL=http://localhost:8812 bun run dev
+```
+
+Known artifact of this setup: the console shows `[SDK] Error polling
+trades: … premature EOF` — the proxy truncates the server-streaming
+Trades poll on abort. The deployed UI itself has no such errors; ignore
+them, or fix the proxy's streaming if they get in the way. Everything
+else (GetConfig, markets, orderbook stream, order submission path) flows
+cleanly.
+
 ### Envoy Proxy (local)
 
 Config: `../infra/stacks/local/envoy.yaml` — listens on port 8811, proxies gRPC-Web to arborter on port 50051 via `host.docker.internal`. CORS allows headers needed by Connect RPC: `content-type, x-grpc-web, x-user-agent, grpc-timeout, authorization, connect-protocol-version, connect-timeout-ms`.
