@@ -164,6 +164,16 @@ export {
   type RpcResolvableChain,
 } from "./rpc-urls.js";
 
+// Per-leg settlement addresses for order entry: validation mirroring the
+// arborter's SendOrder rules (plus client-side EIP-55 checksum catching),
+// and the give-leg/receive-leg resolution contract. See settlement.ts.
+export {
+  validateSettleAddress,
+  sameSettleAddress,
+  resolveLegAddresses,
+  type ResolveLegAddressesParams,
+} from "./settlement.js";
+
 // Solana Midrib instruction builders. Deposit is user-signed; the exit is
 // the TEE-signed `withdraw_voucher` paired with an Ed25519 precompile ix
 // (the program has no permissionless `withdraw`) — see solana-ix.ts.

@@ -7,12 +7,15 @@ import {
   decimalToRaw,
   FCE_ORDER_NONCE,
   marketBidQuoteBudget,
+  resolveLegAddresses,
+  sameSettleAddress,
   signOrder,
   type OrderSigningData,
 } from "@aspens/terminal-sdk";
 import { createActiveSigningAdapter } from "@/lib/signing-adapter";
 import { useFceEnabled } from "@/lib/providers/fce-context";
-import { marketEcosystem } from "@/lib/wallet";
+import { sideLegs } from "@/lib/wallet";
+import { hasSameAddressAck, recordSameAddressAck } from "@/lib/settlement-ack";
 import type { Market, Token } from "@/lib/types/exchange";
 import type { TradeFormData } from "../types";
 
@@ -126,8 +129,12 @@ export function useTradeFormSubmit({
         }
       }
 
-      // Resolve which wallet ecosystem this market needs to sign with.
-      const requiredEcosystem = marketEcosystem(selectedMarket);
+      // Resolve which wallet ecosystem SIGNS this order — the giving leg's
+      // (buy → quote, sell → base). Side-aware on purpose: the other leg
+      // only needs an address, not a signature, which is what makes a
+      // cross-ecosystem market tradeable at all.
+      const legs = sideLegs(selectedMarket, data.side);
+      const requiredEcosystem = legs.signingEcosystem;
       if (!requiredEcosystem) {
         setError(
           "This market's chains aren't supported by any connected wallet yet",
@@ -137,6 +144,8 @@ export function useTradeFormSubmit({
 
       // Pick the signing wallet: prefer the active one if it matches,
       // otherwise switch to a connected wallet of the required ecosystem.
+      // The switch matters beyond preference — `createActiveSigningAdapter`
+      // signs with whatever wallet is ACTIVE.
       const { connectedWallets, activeWalletId } = useExchangeStore.getState();
       const activeWallet = activeWalletId
         ? connectedWallets[activeWalletId]
@@ -159,6 +168,106 @@ export function useTradeFormSubmit({
             : "Connect an EVM wallet to trade this market",
         );
         return;
+      }
+
+      // The receiving leg's default settlement wallet, if one is connected.
+      const receivingWallet =
+        legs.receivingEcosystem === null
+          ? null
+          : (Object.values(connectedWallets).find(
+              (w) => w.ecosystem === legs.receivingEcosystem,
+            ) ?? null);
+
+      // The receiving-leg override: only honored when the user opted in
+      // (`settleToDifferent`), or when there is no receiving wallet and an
+      // entered address is the only way to settle at all. A leftover
+      // string with the toggle off must never redirect an order.
+      const overrideRaw = data.settleAddress.trim();
+      const overrideInPlay =
+        (data.settleToDifferent || receivingWallet === null) &&
+        overrideRaw !== ""
+          ? overrideRaw
+          : undefined;
+
+      // The FCE direct-action wire derives both account addresses from the
+      // wallets, so an override would be silently DROPPED there — refuse
+      // rather than sign something the transport can't express.
+      if (fceEnabled && overrideInPlay !== undefined) {
+        setError(
+          "Settling to a different address is not supported on this deployment (FCE transport)",
+        );
+        return;
+      }
+
+      // Both per-chain account addresses of the signed order. The giving
+      // leg is the signing wallet by construction; the receiving leg is
+      // the connected wallet on that chain or the validated override.
+      const baseArchitecture = selectedMarket.baseChainArchitecture ?? "";
+      const quoteArchitecture = selectedMarket.quoteChainArchitecture ?? "";
+      let legAddresses: { baseAddress: string; quoteAddress: string };
+      try {
+        legAddresses = resolveLegAddresses({
+          side: data.side,
+          baseArchitecture,
+          quoteArchitecture,
+          baseWalletAddress:
+            legs.givingLeg === "base"
+              ? signingWallet.address
+              : (receivingWallet?.address ?? null),
+          quoteWalletAddress:
+            legs.givingLeg === "quote"
+              ? signingWallet.address
+              : (receivingWallet?.address ?? null),
+          baseOverride:
+            legs.receivingLeg === "base" ? overrideInPlay : undefined,
+          quoteOverride:
+            legs.receivingLeg === "quote" ? overrideInPlay : undefined,
+        });
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Invalid settlement address");
+        return;
+      }
+      // A REDIRECT (settling somewhere other than a connected wallet)
+      // needs its per-order acknowledgement: nothing can verify anyone
+      // holds the redirected address's key.
+      const receiveArchitecture =
+        legs.receivingLeg === "base" ? baseArchitecture : quoteArchitecture;
+      const isRedirect =
+        overrideInPlay !== undefined &&
+        (receivingWallet === null ||
+          !sameSettleAddress(
+            receiveArchitecture,
+            overrideInPlay,
+            receivingWallet.address,
+          ));
+      if (isRedirect && !data.settleRedirectAck) {
+        setError(
+          "Confirm the settlement address: proceeds go to it and only its key holder can withdraw them",
+        );
+        return;
+      }
+
+      // The EVM/EVM single-wallet default settles BOTH legs to one
+      // address. Acknowledged once per wallet (the checkbox persists it);
+      // after that it is a passive note.
+      const isSolanaArch = (a: string) => a.toLowerCase() === "solana";
+      const sameAddressDefault =
+        !isRedirect &&
+        !isSolanaArch(baseArchitecture) &&
+        !isSolanaArch(quoteArchitecture) &&
+        sameSettleAddress(
+          "evm",
+          legAddresses.baseAddress,
+          legAddresses.quoteAddress,
+        );
+      if (sameAddressDefault) {
+        if (!hasSameAddressAck(signingWallet.address) && !data.sameAddressAck) {
+          setError(
+            "Confirm settlement: both legs of this market settle to your one connected address (see the Settlement section)",
+          );
+          return;
+        }
+        recordSameAddressAck(signingWallet.address);
       }
 
       setLoading(true);
@@ -281,8 +390,8 @@ export function useTradeFormSubmit({
           quantity: sizeRaw,
           price: priceRaw,
           marketId: selectedMarket.id,
-          baseAccountAddress: signerAddress,
-          quoteAccountAddress: signerAddress,
+          baseAccountAddress: legAddresses.baseAddress,
+          quoteAccountAddress: legAddresses.quoteAddress,
           postOnly: effectivePostOnly,
           hidden: data.hidden,
           quoteBudget,
@@ -315,9 +424,10 @@ export function useTradeFormSubmit({
             market: selectedMarket,
             config,
             side: data.side,
-            // The address the signature verified against — a bid signs with
-            // the quote account, an ask with the base account, and this UI
-            // uses one wallet for both.
+            // The address the signature verifies against — the GIVING
+            // leg's, which is always the signing wallet (a redirected
+            // settlement address only ever changes the receiving leg, and
+            // overrides are refused over FCE above anyway).
             userAddress: signerAddress,
             quantityRaw: sizeRaw,
             priceRaw,
@@ -341,8 +451,10 @@ export function useTradeFormSubmit({
           sizeRaw,
           pairDecimals,
           signature,
-          baseAccountAddress: signerAddress,
-          quoteAccountAddress: signerAddress,
+          // The SAME two strings that went into `orderData` above — the
+          // wire order must be byte-identical to what the wallet signed.
+          baseAccountAddress: legAddresses.baseAddress,
+          quoteAccountAddress: legAddresses.quoteAddress,
           orderId,
           postOnly: effectivePostOnly,
           hidden: data.hidden,

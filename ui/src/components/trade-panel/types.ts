@@ -51,4 +51,34 @@ export interface TradeFormData {
    * way: forced to empty when `orderType` is not `"limit"`.
    */
   matchingOrderIds?: string[];
+  /**
+   * Settle the RECEIVING leg (buy → base, sell → quote) to an address
+   * other than the connected wallet's. The address itself is
+   * `settleAddress`; this flag is the user's explicit opt-in, so a
+   * leftover address string can never silently redirect an order after
+   * the toggle was turned back off.
+   */
+  settleToDifferent: boolean;
+  /**
+   * The settlement address for the receiving leg when
+   * `settleToDifferent` is on — or, on a market whose receiving chain
+   * has no connected wallet, the mandatory settlement address. Kept
+   * byte-verbatim: the venue credits (and the wallet signs) this exact
+   * string.
+   */
+  settleAddress: string;
+  /**
+   * Per-order acknowledgement that a REDIRECTED settlement address is
+   * meant: the venue cannot check anyone holds its key, and funds
+   * credited there are withdrawable only by that key's holder. Never
+   * persisted — every redirected order re-asks. Reset on submit success.
+   */
+  settleRedirectAck: boolean;
+  /**
+   * Acknowledgement that an EVM/EVM market settles BOTH legs to the one
+   * connected address. Only consulted when that situation is on screen
+   * and the wallet hasn't acknowledged it before (see
+   * `lib/settlement-ack.ts` — checking the box is what persists it).
+   */
+  sameAddressAck: boolean;
 }

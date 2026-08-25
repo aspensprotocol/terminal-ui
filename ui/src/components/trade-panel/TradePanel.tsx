@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useExchangeStore } from "@/lib/store";
-import { marketEcosystem } from "@/lib/wallet";
+import { sideLegs } from "@/lib/wallet";
 import { useWalletConnect } from "@/lib/hooks/useWalletConnect";
 import { Card, CardContent } from "@/components/ui/card";
 import { OrderTypeSelector } from "./OrderTypeSelector";
@@ -14,6 +14,7 @@ import { HiddenToggle } from "./HiddenToggle";
 import { FillOrderIdInput } from "./FillOrderIdInput";
 import { SizeInput } from "./SizeInput";
 import { OrderSummary } from "./OrderSummary";
+import { SettlementSection } from "./SettlementSection";
 import { SubmitButton } from "./SubmitButton";
 import { TransferDialog } from "@/components/TransferDialog";
 import { AvailableBalance } from "./AvailableBalance";
@@ -47,6 +48,10 @@ export function TradePanel() {
       postOnly: false,
       hidden: false,
       matchingOrderIds: [],
+      settleToDifferent: false,
+      settleAddress: "",
+      settleRedirectAck: false,
+      sameAddressAck: false,
     },
   });
 
@@ -94,6 +99,10 @@ export function TradePanel() {
     onSuccess: () => {
       setValue("price", "");
       setValue("size", "");
+      // The redirect acknowledgement is PER ORDER — every redirected
+      // order re-asks. The address and toggle stay, for a user placing
+      // several orders to the same destination on purpose.
+      setValue("settleRedirectAck", false);
     },
   });
 
@@ -113,12 +122,18 @@ export function TradePanel() {
       ? parseFloat(formData.price) || null
       : (formData.side === "buy" ? bestAsk : bestBid) || lastTradePrice;
 
-  // If the selected market needs a wallet ecosystem the user hasn't connected,
-  // surface a connect-wallet CTA in place of the submit button.
+  // If placing this order needs a wallet ecosystem the user hasn't
+  // connected, surface a connect-wallet CTA in place of the submit button.
+  // Side-aware: the SIGNING wallet is the giving leg's (buy → quote,
+  // sell → base), which is what makes cross-ecosystem markets tradeable —
+  // the receiving leg needs only an address (see SettlementSection).
   // Hooks must run unconditionally — compute before any early returns.
   const requiredEcosystem = useMemo(
-    () => (selectedMarket ? marketEcosystem(selectedMarket) : null),
-    [selectedMarket],
+    () =>
+      selectedMarket
+        ? sideLegs(selectedMarket, formData.side).signingEcosystem
+        : null,
+    [selectedMarket, formData.side],
   );
   const hasMatchingWallet = useMemo(
     () =>
@@ -249,6 +264,18 @@ export function TradePanel() {
             availableQuote={availableQuote}
             currentPrice={currentPrice}
             isAuthenticated={isAuthenticated}
+          />
+
+          {/* Settlement — where each leg of this order settles, and the
+              settle-to-a-different-address controls. */}
+          <SettlementSection
+            market={selectedMarket}
+            side={formData.side}
+            settleToDifferent={formData.settleToDifferent}
+            settleAddress={formData.settleAddress}
+            settleRedirectAck={formData.settleRedirectAck}
+            sameAddressAck={formData.sameAddressAck}
+            setValue={setValue}
           />
 
           {/* Error/Success Messages */}
