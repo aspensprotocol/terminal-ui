@@ -14,7 +14,7 @@ import {
 } from "@aspens/terminal-sdk";
 import { createActiveSigningAdapter } from "@/lib/signing-adapter";
 import { useFceEnabled } from "@/lib/providers/fce-context";
-import { sideLegs } from "@/lib/wallet";
+import { settlementWallets, sideLegs } from "@/lib/wallet";
 import { hasSameAddressAck, recordSameAddressAck } from "@/lib/settlement-ack";
 import type { Market, Token } from "@/lib/types/exchange";
 import type { TradeFormData } from "../types";
@@ -110,7 +110,13 @@ export function useTradeFormSubmit({
         return;
       }
 
-      // Check balance
+      // Check balance. Known limitation on cross-ecosystem markets: these
+      // figures aggregate deposits across ALL connected wallets per
+      // ticker, while the venue draws collateral from the giving-leg
+      // ADDRESS specifically — so this check can pass on the other
+      // wallet's deposits and the order still be refused server-side for
+      // insufficient balance. Confusing, not funds-unsafe; scoping the
+      // check to the signing address is a follow-up.
       const sizeNum = parseFloat(data.size);
       if (data.side === "buy") {
         const priceNum =
@@ -142,25 +148,16 @@ export function useTradeFormSubmit({
         return;
       }
 
-      // Pick the signing wallet: prefer the active one if it matches,
-      // otherwise switch to a connected wallet of the required ecosystem.
-      // The switch matters beyond preference — `createActiveSigningAdapter`
-      // signs with whatever wallet is ACTIVE.
+      // Both legs' wallets, from the SAME shared selection the settlement
+      // section renders (`settlementWallets`) — what the user saw is what
+      // gets signed, by construction rather than by two code paths
+      // happening to agree.
       const { connectedWallets, activeWalletId } = useExchangeStore.getState();
-      const activeWallet = activeWalletId
-        ? connectedWallets[activeWalletId]
-        : null;
-      let signingWallet =
-        activeWallet?.ecosystem === requiredEcosystem ? activeWallet : null;
-      if (!signingWallet) {
-        const match = Object.values(connectedWallets).find(
-          (w) => w.ecosystem === requiredEcosystem,
-        );
-        if (match) {
-          setActiveWallet(match.id);
-          signingWallet = match;
-        }
-      }
+      const { signingWallet, receivingWallet } = settlementWallets(
+        connectedWallets,
+        activeWalletId,
+        legs,
+      );
       if (!signingWallet) {
         setError(
           requiredEcosystem === "solana"
@@ -169,14 +166,11 @@ export function useTradeFormSubmit({
         );
         return;
       }
-
-      // The receiving leg's default settlement wallet, if one is connected.
-      const receivingWallet =
-        legs.receivingEcosystem === null
-          ? null
-          : (Object.values(connectedWallets).find(
-              (w) => w.ecosystem === legs.receivingEcosystem,
-            ) ?? null);
+      // `createActiveSigningAdapter` signs with whatever wallet is ACTIVE,
+      // so make the selected signing wallet active before signing.
+      if (activeWalletId !== signingWallet.id) {
+        setActiveWallet(signingWallet.id);
+      }
 
       // The receiving-leg override: only honored when the user opted in
       // (`settleToDifferent`), or when there is no receiving wallet and an
@@ -189,12 +183,27 @@ export function useTradeFormSubmit({
           ? overrideRaw
           : undefined;
 
-      // The FCE direct-action wire derives both account addresses from the
-      // wallets, so an override would be silently DROPPED there — refuse
-      // rather than sign something the transport can't express.
+      // The FCE direct-action wire CAN carry both account addresses (the
+      // ext-proxy adapter forwards them verbatim into the Order it
+      // rebuilds), but the FCE path is parked and its deployed adapter
+      // predates this feature — nothing has validated a redirected
+      // address end-to-end over it. Refuse rather than find out with
+      // someone's funds.
       if (fceEnabled && overrideInPlay !== undefined) {
         setError(
           "Settling to a different address is not supported on this deployment (FCE transport)",
+        );
+        return;
+      }
+      // On FCE the address input is absent by design, so a missing
+      // receiving wallet needs its own message — the generic "connect a
+      // wallet or enter an address" would point at an input that isn't
+      // there.
+      if (fceEnabled && receivingWallet === null) {
+        setError(
+          legs.receivingEcosystem === "solana"
+            ? "Connect a Solana wallet to receive on this market"
+            : "Connect an EVM wallet to receive on this market",
         );
         return;
       }
@@ -202,6 +211,14 @@ export function useTradeFormSubmit({
       // Both per-chain account addresses of the signed order. The giving
       // leg is the signing wallet by construction; the receiving leg is
       // the connected wallet on that chain or the validated override.
+      //
+      // A missing architecture string falls back to "" and is validated
+      // under the EVM rules (`validateSettleAddress` treats everything
+      // non-Solana as EVM). That cannot happen for a SIGNABLE order —
+      // `sideLegs` already returned a real ecosystem for the giving leg,
+      // and the receiving arch comes from the same config join — but it
+      // is the failure shape if config ever ships a market without chain
+      // metadata: an address validated under the wrong chain's rules.
       const baseArchitecture = selectedMarket.baseChainArchitecture ?? "";
       const quoteArchitecture = selectedMarket.quoteChainArchitecture ?? "";
       let legAddresses: { baseAddress: string; quoteAddress: string };

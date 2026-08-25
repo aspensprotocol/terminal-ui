@@ -33,8 +33,8 @@ import { ChevronDown, ChevronRight } from "lucide-react";
 import type { UseFormSetValue } from "react-hook-form";
 import { sameSettleAddress, validateSettleAddress } from "@aspens/terminal-sdk";
 import { useExchangeStore } from "@/lib/store";
-import { sideLegs } from "@/lib/wallet";
-import { hasSameAddressAck, recordSameAddressAck } from "@/lib/settlement-ack";
+import { settlementWallets, sideLegs } from "@/lib/wallet";
+import { hasSameAddressAck } from "@/lib/settlement-ack";
 import { shortenAddress } from "@/lib/utils";
 import { ChainLogo } from "@/components/ChainLogo";
 import { Label } from "@/components/ui/label";
@@ -84,22 +84,14 @@ export function SettlementSection({
       ? market.quoteChainArchitecture
       : market.baseChainArchitecture) ?? "";
 
-  // The signing wallet: the active wallet if it matches the giving leg's
-  // ecosystem, else any connected wallet that does — the same preference
-  // the submit hook applies, so what this section shows is what signs.
-  const wallets = Object.values(connectedWallets);
-  const activeWallet = activeWalletId ? connectedWallets[activeWalletId] : null;
-  const signingWallet =
-    activeWallet?.ecosystem === legs.signingEcosystem
-      ? activeWallet
-      : (wallets.find((w) => w.ecosystem === legs.signingEcosystem) ?? null);
-  const receivingWallet =
-    legs.receivingEcosystem === null
-      ? null
-      : activeWallet?.ecosystem === legs.receivingEcosystem
-        ? activeWallet
-        : (wallets.find((w) => w.ecosystem === legs.receivingEcosystem) ??
-          null);
+  // ONE selection, shared with the submit hook (`settlementWallets`):
+  // what this section shows must be what gets signed, so neither side
+  // carries its own preference order.
+  const { signingWallet, receivingWallet } = settlementWallets(
+    connectedWallets,
+    activeWalletId,
+    legs,
+  );
 
   // No toggle without a wallet to toggle back to: the address is mandatory.
   const addressIsMandatory = receivingWallet === null;
@@ -141,9 +133,15 @@ export function SettlementSection({
   const sameAddressAlreadyAcked =
     signingWallet !== null && hasSameAddressAck(signingWallet.address);
 
+  // Keyed by leg role, not network — a single-chain market has the same
+  // network on both legs, which would collide as a React key.
   const summary = [
-    { network: giveNetwork, address: signingWallet?.address ?? "—" },
-    { network: receiveNetwork, address: receiveAddress || "—" },
+    {
+      leg: "give",
+      network: giveNetwork,
+      address: signingWallet?.address ?? "—",
+    },
+    { leg: "receive", network: receiveNetwork, address: receiveAddress || "—" },
   ];
 
   return (
@@ -164,8 +162,8 @@ export function SettlementSection({
         </span>
         {!expanded && (
           <span className="flex items-center gap-2 text-xs text-muted-foreground">
-            {summary.map(({ network, address }) => (
-              <span key={network} className="flex items-center gap-1">
+            {summary.map(({ leg, network, address }) => (
+              <span key={leg} className="flex items-center gap-1">
                 <ChainLogo network={network} />
                 <span title={address}>
                   {address === "—" ? "—" : shortenAddress(address)}
@@ -201,10 +199,12 @@ export function SettlementSection({
 
             {fceEnabled ? (
               <p className="font-mono break-all">
-                {receiveAddress || "no wallet connected for this chain"}
+                {receiveAddress ||
+                  `connect a ${receiveNetwork} wallet to receive`}
                 <span className="block font-sans text-muted-foreground mt-0.5">
-                  This deployment settles to the signing wallet; choosing a
-                  different address isn&apos;t available here.
+                  Proceeds settle to this connected wallet. Choosing a different
+                  address isn&apos;t available on this deployment&apos;s
+                  transport.
                 </span>
               </p>
             ) : (
@@ -242,9 +242,13 @@ export function SettlementSection({
                           : "0x…"
                       }
                       value={settleAddress}
-                      onChange={(e) =>
-                        setValue("settleAddress", e.target.value)
-                      }
+                      onChange={(e) => {
+                        setValue("settleAddress", e.target.value);
+                        // The redirect ack is per ADDRESS as much as per
+                        // order — a box checked for one address must not
+                        // stand for the next one typed over it.
+                        setValue("settleRedirectAck", false);
+                      }}
                       className="font-mono text-xs"
                     />
                     {addressIsMandatory && (
@@ -308,14 +312,9 @@ export function SettlementSection({
                     type="checkbox"
                     className="h-4 w-4 accent-primary"
                     checked={sameAddressAck}
-                    onChange={(e) => {
-                      setValue("sameAddressAck", e.target.checked);
-                      // Checking the box IS the acknowledgement; remember it
-                      // so this wallet is never asked again.
-                      if (e.target.checked && signingWallet) {
-                        recordSameAddressAck(signingWallet.address);
-                      }
-                    }}
+                    onChange={(e) =>
+                      setValue("sameAddressAck", e.target.checked)
+                    }
                   />
                   <Label
                     htmlFor="settle-same-ack"
@@ -327,7 +326,8 @@ export function SettlementSection({
                 <p className="text-muted-foreground">
                   Both chains are EVM and this order settles BOTH legs to{" "}
                   {shortenAddress(receiveAddress)} — the one connected wallet.
-                  Confirm once and it&apos;s remembered for this wallet.
+                  Confirm it with your first order and it&apos;s remembered for
+                  this wallet.
                 </p>
               </div>
             ))}

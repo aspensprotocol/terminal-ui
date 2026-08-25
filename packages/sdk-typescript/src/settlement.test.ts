@@ -40,6 +40,7 @@ const CHECKSUMMED = checksumAddress(
   "0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed",
 );
 const OTHER_EVM = checksumAddress("0x00000000000000000000000000000000feedbeef");
+const THIRD_EVM = checksumAddress("0x00000000000000000000000000000000cafebabe");
 /** The Solana System Program pubkey: 32 zero bytes in base58. */
 const SOL_PUBKEY = "11111111111111111111111111111111";
 const OTHER_SOL = "So11111111111111111111111111111111111111112";
@@ -112,43 +113,48 @@ describe("sameSettleAddress", () => {
 });
 
 describe("resolveLegAddresses", () => {
+  // DISTINCT wallets per leg: with one address on both legs, a base/quote
+  // swap inside resolveLegAddresses would be invisible to every equality
+  // below (the project's recurring vacuous-test trap).
   const evmEvm = {
     baseArchitecture: "evm",
     quoteArchitecture: "evm",
     baseWalletAddress: CHECKSUMMED,
-    quoteWalletAddress: CHECKSUMMED,
+    quoteWalletAddress: OTHER_EVM,
   };
 
   test("defaults to the wallets' addresses on both sides", () => {
     for (const side of ["buy", "sell"] as const) {
       expect(resolveLegAddresses({ ...evmEvm, side })).toEqual({
         baseAddress: CHECKSUMMED,
-        quoteAddress: CHECKSUMMED,
+        quoteAddress: OTHER_EVM,
       });
     }
   });
 
   test("a receive-leg override redirects settlement", () => {
+    // THIRD_EVM is neither leg's wallet, so the override must be what
+    // comes back — a swap or an ignored override both fail these.
     // A SELL gives base and receives quote: the quote address is free.
     expect(
       resolveLegAddresses({
         ...evmEvm,
         side: "sell",
-        quoteOverride: OTHER_EVM,
+        quoteOverride: THIRD_EVM,
       }),
-    ).toEqual({ baseAddress: CHECKSUMMED, quoteAddress: OTHER_EVM });
+    ).toEqual({ baseAddress: CHECKSUMMED, quoteAddress: THIRD_EVM });
     // A BUY gives quote and receives base: the base address is free.
     expect(
-      resolveLegAddresses({ ...evmEvm, side: "buy", baseOverride: OTHER_EVM }),
-    ).toEqual({ baseAddress: OTHER_EVM, quoteAddress: CHECKSUMMED });
+      resolveLegAddresses({ ...evmEvm, side: "buy", baseOverride: THIRD_EVM }),
+    ).toEqual({ baseAddress: THIRD_EVM, quoteAddress: OTHER_EVM });
   });
 
   test("a give-leg override may only restate the signer", () => {
     expect(() =>
-      resolveLegAddresses({ ...evmEvm, side: "sell", baseOverride: OTHER_EVM }),
+      resolveLegAddresses({ ...evmEvm, side: "sell", baseOverride: THIRD_EVM }),
     ).toThrow(/sign/);
     expect(() =>
-      resolveLegAddresses({ ...evmEvm, side: "buy", quoteOverride: OTHER_EVM }),
+      resolveLegAddresses({ ...evmEvm, side: "buy", quoteOverride: THIRD_EVM }),
     ).toThrow(/sign/);
     // Restating it in different casing IS the same address, and the
     // caller's spelling is kept (the field is byte-verbatim once signed).

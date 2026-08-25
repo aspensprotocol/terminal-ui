@@ -8,3 +8,8 @@ export {
   sideLegs,
   type SideLegs,
 } from "./ecosystem";
+export {
+  pickWalletForEcosystem,
+  settlementWallets,
+  type SettlementWallets,
+} from "./selection";

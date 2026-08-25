@@ -50,6 +50,16 @@ export function WalletSync() {
     prevEvmRef.current = evmAddress;
 
     if (evmConnected && evmAddress) {
+      // An account SWITCH (still connected, address changed) must retire
+      // the previous entry: a stale same-ecosystem wallet left in the
+      // store is one every "find a wallet of this ecosystem" consumer —
+      // settlement defaults included — can silently land on.
+      if (prevEvmAddress && prevEvmAddress !== evmAddress) {
+        const staleId = `evm:${prevEvmAddress}`;
+        if (connectedWallets[staleId]) {
+          disconnectWallet(staleId);
+        }
+      }
       const walletId = `evm:${evmAddress}`;
       if (!connectedWallets[walletId]) {
         connectWallet({
@@ -85,6 +95,13 @@ export function WalletSync() {
     prevSolanaRef.current = solanaAddress;
 
     if (solanaWallet.connected && solanaAddress) {
+      // Same stale-entry retirement as the EVM effect above.
+      if (prevSolanaAddress && prevSolanaAddress !== solanaAddress) {
+        const staleId = `solana:${prevSolanaAddress}`;
+        if (connectedWallets[staleId]) {
+          disconnectWallet(staleId);
+        }
+      }
       const walletId = `solana:${solanaAddress}`;
       if (!connectedWallets[walletId]) {
         connectWallet({

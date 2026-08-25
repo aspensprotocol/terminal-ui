@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useExchangeStore } from "@/lib/store";
 import { sideLegs } from "@/lib/wallet";
@@ -33,6 +33,7 @@ export function TradePanel() {
   const connectedWallets = useExchangeStore((state) => state.connectedWallets);
   const { connectEvm, connectSolana } = useWalletConnect();
   const [faucetOpen, setFaucetOpen] = useState(false);
+  const lastMarketIdRef = useRef<string | null>(null);
 
   // React Hook Form
   const {
@@ -115,6 +116,23 @@ export function TradePanel() {
     quoteToken,
     setValue,
   });
+
+  // A settlement address names a chain; a different market may put a
+  // different chain (even a different architecture) on the receiving leg.
+  // Clear the whole settlement subform on a market switch rather than
+  // letting an address entered for one market ride into another.
+  useEffect(() => {
+    if (
+      lastMarketIdRef.current !== null &&
+      lastMarketIdRef.current !== selectedMarketId
+    ) {
+      setValue("settleToDifferent", false);
+      setValue("settleAddress", "");
+      setValue("settleRedirectAck", false);
+      setValue("sameAddressAck", false);
+    }
+    lastMarketIdRef.current = selectedMarketId;
+  }, [selectedMarketId, setValue]);
 
   // Calculate current price for size calculations
   const currentPrice =
@@ -209,7 +227,15 @@ export function TradePanel() {
           {/* Buy/Sell Buttons */}
           <SideSelector
             value={formData.side}
-            onChange={(value) => setValue("side", value)}
+            onChange={(value) => {
+              setValue("side", value);
+              // Flipping the side swaps which leg receives — a settlement
+              // address entered for one chain may now name the other, and
+              // an acknowledgement given for one destination must not
+              // carry over. Validation would catch a wrong-architecture
+              // address anyway; the ack reset is the part that matters.
+              setValue("settleRedirectAck", false);
+            }}
           />
 
           {/* Available Balance */}
