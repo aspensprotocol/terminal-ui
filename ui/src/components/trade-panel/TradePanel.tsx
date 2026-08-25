@@ -1,9 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useExchangeStore } from "@/lib/store";
-import { marketEcosystem } from "@/lib/wallet";
+import { sideLegs } from "@/lib/wallet";
 import { useWalletConnect } from "@/lib/hooks/useWalletConnect";
 import { Card, CardContent } from "@/components/ui/card";
 import { OrderTypeSelector } from "./OrderTypeSelector";
@@ -14,6 +14,7 @@ import { HiddenToggle } from "./HiddenToggle";
 import { FillOrderIdInput } from "./FillOrderIdInput";
 import { SizeInput } from "./SizeInput";
 import { OrderSummary } from "./OrderSummary";
+import { SettlementSection } from "./SettlementSection";
 import { SubmitButton } from "./SubmitButton";
 import { TransferDialog } from "@/components/TransferDialog";
 import { AvailableBalance } from "./AvailableBalance";
@@ -32,6 +33,7 @@ export function TradePanel() {
   const connectedWallets = useExchangeStore((state) => state.connectedWallets);
   const { connectEvm, connectSolana } = useWalletConnect();
   const [faucetOpen, setFaucetOpen] = useState(false);
+  const lastMarketIdRef = useRef<string | null>(null);
 
   // React Hook Form
   const {
@@ -47,6 +49,10 @@ export function TradePanel() {
       postOnly: false,
       hidden: false,
       matchingOrderIds: [],
+      settleToDifferent: false,
+      settleAddress: "",
+      settleRedirectAck: false,
+      sameAddressAck: false,
     },
   });
 
@@ -94,6 +100,10 @@ export function TradePanel() {
     onSuccess: () => {
       setValue("price", "");
       setValue("size", "");
+      // The redirect acknowledgement is PER ORDER — every redirected
+      // order re-asks. The address and toggle stay, for a user placing
+      // several orders to the same destination on purpose.
+      setValue("settleRedirectAck", false);
     },
   });
 
@@ -107,18 +117,41 @@ export function TradePanel() {
     setValue,
   });
 
+  // A settlement address names a chain; a different market may put a
+  // different chain (even a different architecture) on the receiving leg.
+  // Clear the whole settlement subform on a market switch rather than
+  // letting an address entered for one market ride into another.
+  useEffect(() => {
+    if (
+      lastMarketIdRef.current !== null &&
+      lastMarketIdRef.current !== selectedMarketId
+    ) {
+      setValue("settleToDifferent", false);
+      setValue("settleAddress", "");
+      setValue("settleRedirectAck", false);
+      setValue("sameAddressAck", false);
+    }
+    lastMarketIdRef.current = selectedMarketId;
+  }, [selectedMarketId, setValue]);
+
   // Calculate current price for size calculations
   const currentPrice =
     formData.orderType === "limit"
       ? parseFloat(formData.price) || null
       : (formData.side === "buy" ? bestAsk : bestBid) || lastTradePrice;
 
-  // If the selected market needs a wallet ecosystem the user hasn't connected,
-  // surface a connect-wallet CTA in place of the submit button.
+  // If placing this order needs a wallet ecosystem the user hasn't
+  // connected, surface a connect-wallet CTA in place of the submit button.
+  // Side-aware: the SIGNING wallet is the giving leg's (buy → quote,
+  // sell → base), which is what makes cross-ecosystem markets tradeable —
+  // the receiving leg needs only an address (see SettlementSection).
   // Hooks must run unconditionally — compute before any early returns.
   const requiredEcosystem = useMemo(
-    () => (selectedMarket ? marketEcosystem(selectedMarket) : null),
-    [selectedMarket],
+    () =>
+      selectedMarket
+        ? sideLegs(selectedMarket, formData.side).signingEcosystem
+        : null,
+    [selectedMarket, formData.side],
   );
   const hasMatchingWallet = useMemo(
     () =>
@@ -194,7 +227,15 @@ export function TradePanel() {
           {/* Buy/Sell Buttons */}
           <SideSelector
             value={formData.side}
-            onChange={(value) => setValue("side", value)}
+            onChange={(value) => {
+              setValue("side", value);
+              // Flipping the side swaps which leg receives — a settlement
+              // address entered for one chain may now name the other, and
+              // an acknowledgement given for one destination must not
+              // carry over. Validation would catch a wrong-architecture
+              // address anyway; the ack reset is the part that matters.
+              setValue("settleRedirectAck", false);
+            }}
           />
 
           {/* Available Balance */}
@@ -249,6 +290,18 @@ export function TradePanel() {
             availableQuote={availableQuote}
             currentPrice={currentPrice}
             isAuthenticated={isAuthenticated}
+          />
+
+          {/* Settlement — where each leg of this order settles, and the
+              settle-to-a-different-address controls. */}
+          <SettlementSection
+            market={selectedMarket}
+            side={formData.side}
+            settleToDifferent={formData.settleToDifferent}
+            settleAddress={formData.settleAddress}
+            settleRedirectAck={formData.settleRedirectAck}
+            sameAddressAck={formData.sameAddressAck}
+            setValue={setValue}
           />
 
           {/* Error/Success Messages */}
