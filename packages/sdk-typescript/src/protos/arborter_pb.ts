@@ -336,14 +336,25 @@ export type Order = Message<"xyz.aspens.arborter.v1.Order"> & {
   marketId: string;
 
   /**
-   * User's pubkey (address) on the Base chain
+   * User's pubkey (address) on the Base chain.
+   *
+   * Casing contract: this field is part of the SIGNED order, so when the
+   * server echoes this message back (`SendOrderResponse.order`) it carries the
+   * address BYTE-VERBATIM as submitted — an EIP-55 checksummed submission
+   * comes back checksummed. That is deliberate: rewriting a field of a signed
+   * message would detach the echo from the signature that authorized it.
+   * Every OTHER address the server emits (`OrderbookEntry`, `Trade`) is
+   * canonicalized instead (EVM lowercased, base58 byte-exact), so do not
+   * string-compare this echo against those fields without lowercasing the EVM
+   * case first.
    *
    * @generated from field: string base_account_address = 5;
    */
   baseAccountAddress: string;
 
   /**
-   * User's pubkey (address) on the Quote chain
+   * User's pubkey (address) on the Quote chain. Echoed byte-verbatim, same as
+   * `base_account_address`.
    *
    * @generated from field: string quote_account_address = 6;
    */
@@ -482,14 +493,20 @@ export type Trade = Message<"xyz.aspens.arborter.v1.Trade"> & {
   timestamp: bigint;
 
   /**
-   * The setttled price net of fees
+   * Execution price, in pair-decimal units — the resting (maker) order's own
+   * price. No fee is applied here: fees are taken at settlement, not on the
+   * trade print.
    *
    * @generated from field: string price = 2;
    */
   price: string;
 
   /**
-   * How much or many of the quote token
+   * Traded quantity in BASE units at pair decimals — the same units as
+   * `Order.quantity`. (This has always been what the server sends; an older
+   * version of this comment claimed quote units, which was never true.) The
+   * quote amount is not on the wire: derive it as `qty * price / 10^pair_decimals`
+   * if needed.
    *
    * @generated from field: string qty = 3;
    */
@@ -510,28 +527,41 @@ export type Trade = Message<"xyz.aspens.arborter.v1.Trade"> & {
   takerId: string;
 
   /**
-   * The maker's base chain wallet address
+   * The maker's base chain wallet address.
+   *
+   * All four wallet addresses on this message are CANONICALIZED by the server:
+   * EVM addresses arrive as lowercase hex regardless of how the trader
+   * submitted them (an EIP-55 checksummed submission is lowercased), and
+   * base58 (Solana) addresses pass through byte-exact, case significant. The
+   * same rule covers `OrderbookEntry`'s maker addresses. The ONE exception on
+   * the wire is `Order.base_account_address` / `Order.quote_account_address`
+   * in a placement response, which echo the signed submission byte-verbatim —
+   * see the comments there. Clients comparing any of these four fields
+   * against a locally-held EVM address must lowercase their own side first.
    *
    * @generated from field: string maker_base_address = 6;
    */
   makerBaseAddress: string;
 
   /**
-   * The maker's quote chain wallet address
+   * The maker's quote chain wallet address (canonicalized; see
+   * `maker_base_address`)
    *
    * @generated from field: string maker_quote_address = 7;
    */
   makerQuoteAddress: string;
 
   /**
-   * The taker's base chain wallet address
+   * The taker's base chain wallet address (canonicalized; see
+   * `maker_base_address`)
    *
    * @generated from field: string taker_base_address = 8;
    */
   takerBaseAddress: string;
 
   /**
-   * The taker's quote chain wallet address
+   * The taker's quote chain wallet address (canonicalized; see
+   * `maker_base_address`)
    *
    * @generated from field: string taker_quote_address = 9;
    */
@@ -763,14 +793,18 @@ export type OrderbookEntry = Message<"xyz.aspens.arborter.v1.OrderbookEntry"> & 
   side: Side;
 
   /**
-   * The maker's base chain wallet address
+   * The maker's base chain wallet address. Canonicalized by the server —
+   * EVM lowercased hex, base58 byte-exact — same rule as `Trade`'s address
+   * fields; see `Trade.maker_base_address` for the full contract, including
+   * the one byte-verbatim exception (`Order`'s echoed addresses).
    *
    * @generated from field: string maker_base_address = 6;
    */
   makerBaseAddress: string;
 
   /**
-   * The maker's quote chain wallet address
+   * The maker's quote chain wallet address (canonicalized; see
+   * `maker_base_address`)
    *
    * @generated from field: string maker_quote_address = 7;
    */
