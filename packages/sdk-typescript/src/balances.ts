@@ -148,7 +148,7 @@ export async function fetchWalletBalance(opts: {
   chain: ChainConfig;
   tokenAddress: string;
   user: string;
-  /** Overrides the (masked) `chain.rpcUrl`; see `rpc-urls.ts`. */
+  /** Overrides the (masked) first-enabled `chain.rpcs` endpoint; see `rpc-urls.ts`. */
   rpcUrls?: RpcUrlMap;
 }): Promise<bigint> {
   const arch = opts.chain.architecture.toLowerCase();

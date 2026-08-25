@@ -9,6 +9,7 @@ import type {
   Chain as ProtoChain,
 } from "../protos/arborter_config_pb.js";
 import type { Market, Token } from "../types.js";
+import { primaryEndpointUrl } from "../rpc-urls.js";
 
 /**
  * Convert a protobuf Market to SDK Market type.
@@ -101,13 +102,22 @@ export interface ChainInfo {
 }
 
 /**
- * Convert Configuration chains to ChainInfo array
+ * Convert Configuration chains to ChainInfo array.
+ *
+ * `rpcUrl` is the first ENABLED endpoint's url from `chain.rpcs`
+ * ([`primaryEndpointUrl`]) — `Chain` no longer carries a single `rpc_url`
+ * string field, and every consumer of "the" endpoint for a chain (this SDK,
+ * the Rust sdk crate's `primary_endpoint_url`, the arborter's own
+ * `primary_rpc_url`) agrees on "first enabled, priority order". Like the raw
+ * proto field it replaces, the value here is whatever `GetConfig` returned —
+ * MASKED unless the caller already resolved a real endpoint; see
+ * `rpc-urls.ts` for turning this into something dialable.
  */
 export function toChains(config: Configuration): ChainInfo[] {
   return config.chains.map((chain) => ({
     chainId: chain.chainId,
     network: chain.network,
-    rpcUrl: chain.rpcUrl,
+    rpcUrl: primaryEndpointUrl(chain),
     explorerUrl: chain.explorerUrl,
     factoryAddress: chain.factoryAddress,
     tradeContractAddress: chain.tradeContract?.address,
