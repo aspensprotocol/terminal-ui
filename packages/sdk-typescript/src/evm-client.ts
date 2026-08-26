@@ -17,13 +17,25 @@
  */
 
 import { createPublicClient, http, type PublicClient } from "viem";
-import { resolveRpcUrl, type RpcUrlMap } from "./rpc-urls.js";
+import {
+  resolveRpcUrl,
+  type RpcEndpointLike,
+  type RpcUrlMap,
+} from "./rpc-urls.js";
+
+/**
+ * Minimal chain shape needed to check/switch a wallet's network — no RPC
+ * endpoint involved. `walletChainMismatch`/`ensureWalletChain` only ever
+ * compare `chainId`, so this is deliberately narrower than [`EvmChainRef`].
+ */
+export interface ChainNetworkRef {
+  network: string;
+  chainId: number;
+}
 
 /** Minimal chain shape — matches `Configuration.chains[n]`. */
-export interface EvmChainRef {
-  network: string;
-  rpcUrl: string;
-  chainId: number;
+export interface EvmChainRef extends ChainNetworkRef {
+  rpcs: RpcEndpointLike[];
 }
 
 /**
@@ -56,7 +68,7 @@ export function publicClientFor(
  * caller checks for a connected account separately.
  */
 export function walletChainMismatch(
-  chain: EvmChainRef,
+  chain: ChainNetworkRef,
   actual: number | undefined,
 ): string | null {
   if (actual === undefined) return null;
@@ -96,7 +108,7 @@ export interface WalletChainDeps {
  * separately, and prompting to switch networks on no wallet is nonsense.
  */
 export async function ensureWalletChain(
-  chain: EvmChainRef,
+  chain: ChainNetworkRef,
   deps: WalletChainDeps,
 ): Promise<void> {
   const mismatch = walletChainMismatch(chain, deps.currentChainId());

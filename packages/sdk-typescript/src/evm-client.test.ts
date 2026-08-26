@@ -4,7 +4,7 @@ import { MASKED_RPC_URL } from "./rpc-urls.js";
 
 const coston2 = {
   network: "flare-coston2",
-  rpcUrl: MASKED_RPC_URL,
+  rpcs: [{ url: MASKED_RPC_URL, enabled: true }],
   chainId: 114,
 };
 
@@ -26,7 +26,24 @@ describe("publicClientFor", () => {
 
   it("falls back to the config url when it is not masked", () => {
     const c = publicClientFor(
-      { ...coston2, rpcUrl: "https://from-config.example/rpc" },
+      {
+        ...coston2,
+        rpcs: [{ url: "https://from-config.example/rpc", enabled: true }],
+      },
+      {},
+    );
+    expect(c.transport.url).toBe("https://from-config.example/rpc");
+  });
+
+  it("skips a disabled endpoint and falls through to the next enabled one", () => {
+    const c = publicClientFor(
+      {
+        ...coston2,
+        rpcs: [
+          { url: "https://disabled.example/rpc", enabled: false },
+          { url: "https://from-config.example/rpc", enabled: true },
+        ],
+      },
       {},
     );
     expect(c.transport.url).toBe("https://from-config.example/rpc");
@@ -52,7 +69,7 @@ describe("walletChainMismatch", () => {
   it("catches the HyperEVM case, which wagmi never had configured", () => {
     const hyper = {
       network: "hyperevm-testnet",
-      rpcUrl: MASKED_RPC_URL,
+      rpcs: [{ url: MASKED_RPC_URL, enabled: true }],
       chainId: 998,
     };
     expect(walletChainMismatch(hyper, 114)).toContain("998");

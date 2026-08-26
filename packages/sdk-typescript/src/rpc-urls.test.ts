@@ -1,8 +1,16 @@
 import { describe, expect, it } from "bun:test";
-import { MASKED_RPC_URL, isUsableRpcUrl, resolveRpcUrl } from "./rpc-urls.js";
+import {
+  MASKED_RPC_URL,
+  isUsableRpcUrl,
+  primaryEndpointUrl,
+  resolveRpcUrl,
+} from "./rpc-urls.js";
 
-const chain = (network: string, rpcUrl: string) =>
-  ({ network, rpcUrl }) as Parameters<typeof resolveRpcUrl>[0];
+/** A chain with a single enabled endpoint at `url` — the common case. */
+const chain = (network: string, url: string) => ({
+  network,
+  rpcs: [{ url, enabled: true }],
+});
 
 describe("isUsableRpcUrl", () => {
   it("rejects the arborter's mask", () => {
@@ -28,6 +36,58 @@ describe("isUsableRpcUrl", () => {
       true,
     );
     expect(isUsableRpcUrl("http://localhost:8545")).toBe(true);
+  });
+
+  // I-1: the arborter's mask now also sentinel-writes "***" into every
+  // masked query value, userinfo, and non-empty path segment (not just the
+  // whole-string legacy mask) — the detector must recognize all three
+  // shapes, the same substring check infra's `redacted()` uses.
+  it("rejects the current partial mask in every position it can appear", () => {
+    expect(isUsableRpcUrl("https://rpc.example/v2?key=***")).toBe(false);
+    expect(isUsableRpcUrl("https://***:***@rpc.example/v2")).toBe(false);
+    expect(isUsableRpcUrl("https://rpc.example/***/***")).toBe(false);
+  });
+
+  // Anti-vacuity: a real, never-masked url must still pass, even one with
+  // path segments and a query string — proving the check above rejects for
+  // the reason it claims rather than rejecting everything with a path/query.
+  it("still accepts a real url with a path and query string", () => {
+    expect(isUsableRpcUrl("https://rpc.example/v2/abcdef123456?debug=1")).toBe(
+      true,
+    );
+  });
+});
+
+describe("primaryEndpointUrl", () => {
+  it("returns the first enabled endpoint's url", () => {
+    expect(
+      primaryEndpointUrl({
+        rpcs: [
+          { url: "https://primary.example/rpc", enabled: true },
+          { url: "https://backup.example/rpc", enabled: true },
+        ],
+      }),
+    ).toBe("https://primary.example/rpc");
+  });
+
+  it("skips a disabled leading endpoint", () => {
+    expect(
+      primaryEndpointUrl({
+        rpcs: [
+          { url: "https://disabled.example/rpc", enabled: false },
+          { url: "https://enabled.example/rpc", enabled: true },
+        ],
+      }),
+    ).toBe("https://enabled.example/rpc");
+  });
+
+  it("returns an empty string when no endpoint is enabled (or the set is empty)", () => {
+    expect(
+      primaryEndpointUrl({
+        rpcs: [{ url: "https://disabled.example/rpc", enabled: false }],
+      }),
+    ).toBe("");
+    expect(primaryEndpointUrl({ rpcs: [] })).toBe("");
   });
 });
 
@@ -72,6 +132,17 @@ describe("resolveRpcUrl", () => {
     expect(
       resolveRpcUrl(c, { "flare-coston2": "https://override.example/rpc" }),
     ).toBeNull();
+  });
+
+  it("uses the first ENABLED config endpoint, skipping a disabled leading one", () => {
+    const c = {
+      network: "flare-coston2",
+      rpcs: [
+        { url: "https://disabled.example/rpc", enabled: false },
+        { url: "https://from-config.example/rpc", enabled: true },
+      ],
+    };
+    expect(resolveRpcUrl(c, undefined)).toBe("https://from-config.example/rpc");
   });
 });
 

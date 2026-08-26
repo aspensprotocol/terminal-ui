@@ -1,12 +1,13 @@
 /**
  * RPC endpoint resolution for browser-side chain reads.
  *
- * The arborter masks every `rpc_url` in its `GetConfig` response (RPC URLs
- * commonly embed an API key and `GetConfig` is unauthenticated), so a browser
- * client cannot dial the URL it receives in `Configuration`. Callers supply
- * their own map of `chain.network` -> endpoint instead; `resolveRpcUrl`
- * prefers that map and falls back to the config value only when it is
- * genuinely usable.
+ * The arborter masks every RPC endpoint's `url` in its `GetConfig` response
+ * (RPC URLs commonly embed an API key — in the query string, userinfo, OR a
+ * path segment for hosted providers like Alchemy/Infura — and `GetConfig` is
+ * unauthenticated), so a browser client cannot dial the URL it receives in
+ * `Configuration`. Callers supply their own map of `chain.network` -> endpoint
+ * instead; `resolveRpcUrl` prefers that map and falls back to the config
+ * value only when it is genuinely usable.
  *
  * When neither yields a usable endpoint this returns `null` so the caller can
  * SKIP the chain and say so. That is the point of the module: the previous
@@ -18,37 +19,71 @@
  * so this map is unnecessary; see the RPC-MASK-1 tech-debt item.
  */
 
-/** The fixed mask the arborter substitutes for a chain's `rpc_url`. */
+/** The fixed mask the arborter substitutes for a whole unparseable `rpc_url`. */
 export const MASKED_RPC_URL = "********";
 
-/** Minimal shape needed to resolve an endpoint — matches `Configuration.chains[n]`. */
+/** Minimal shape of one `chain.rpcs[n]` entry needed to pick an endpoint. */
+export interface RpcEndpointLike {
+  url: string;
+  enabled: boolean;
+}
+
+/**
+ * Minimal shape needed to resolve an endpoint — matches `Configuration.chains[n]`
+ * post `Chain.rpcs` (the single-`rpc_url`-string field is gone; every chain now
+ * carries a priority-ordered, per-endpoint-auth `rpcs` list).
+ */
 export interface RpcResolvableChain {
   network: string;
-  rpcUrl: string;
+  rpcs: RpcEndpointLike[];
+}
+
+/**
+ * The url of the first ENABLED entry in `chain.rpcs` (priority order), or
+ * `""` when there is none (an empty or all-disabled set).
+ *
+ * Mirrors the sdk crate's `primary_endpoint_url` convention
+ * (`sdk/aspens/src/chain_client.rs`) and the arborter's own
+ * `primary_rpc_url`/`resolved_rpcs`, so every consumer of `Chain.rpcs` agrees
+ * on which endpoint is "the" one for a chain with several configured.
+ */
+export function primaryEndpointUrl(chain: { rpcs: RpcEndpointLike[] }): string {
+  return chain.rpcs.find((rpc) => rpc.enabled)?.url ?? "";
 }
 
 /** A `chain.network` -> endpoint map, as supplied by the host application. */
 export type RpcUrlMap = Record<string, string>;
 
 /**
- * Whether `url` is something we can actually dial. Rejects the arborter mask
- * (and any all-asterisk run, so a future mask of a different length still
- * fails closed), blanks, and anything that isn't http(s).
+ * Whether `url` is something we can actually dial. Rejects:
+ *   - blanks,
+ *   - the legacy whole-string arborter mask (any all-asterisk run, so a
+ *     future mask of a different length still fails closed),
+ *   - the CURRENT partial mask (I-1): the arborter sentinel-writes the
+ *     literal substring `***` into every masked query value, userinfo, and
+ *     non-empty path segment, so any url containing that substring anywhere
+ *     is treated as masked. Same check as infra's `redacted()`
+ *     (`infra/deployer/internal/venue/resources.go`) — a url that happens to
+ *     contain a genuine, never-masked `***` is a false positive this accepts
+ *     on purpose: failing closed (treat as unusable) beats dialing a masked
+ *     value,
+ *   - anything that isn't http(s).
  */
 export function isUsableRpcUrl(url: string | undefined | null): boolean {
   if (!url) return false;
   const trimmed = url.trim();
   if (trimmed === "") return false;
   if (/^\*+$/.test(trimmed)) return false;
+  if (trimmed.includes("***")) return false;
   return /^https?:\/\/./i.test(trimmed);
 }
 
 /**
  * Endpoint for `chain`, or `null` when none is usable.
  *
- * Precedence: the caller's override for `chain.network`, then the config's own
- * `rpcUrl`. An unusable override falls through to the config value rather than
- * being dialed.
+ * Precedence: the caller's override for `chain.network`, then the config's
+ * own first-enabled `rpcs` entry ([`primaryEndpointUrl`]). An unusable
+ * override falls through to the config value rather than being dialed.
  */
 export function resolveRpcUrl(
   chain: RpcResolvableChain,
@@ -56,7 +91,8 @@ export function resolveRpcUrl(
 ): string | null {
   const override = overrides?.[chain.network];
   if (isUsableRpcUrl(override)) return override!.trim();
-  if (isUsableRpcUrl(chain.rpcUrl)) return chain.rpcUrl.trim();
+  const configUrl = primaryEndpointUrl(chain);
+  if (isUsableRpcUrl(configUrl)) return configUrl.trim();
   return null;
 }
 
