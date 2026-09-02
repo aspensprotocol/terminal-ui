@@ -16,7 +16,7 @@
  * `priceValue` / `sizeValue` numeric fields still carry full float precision
  * for math; this only affects the formatted string.
  */
-export const DEFAULT_DISPLAY_DECIMALS = 8;
+const DEFAULT_DISPLAY_DECIMALS = 8;
 
 /**
  * Convert a raw scaled-integer string to a human-readable decimal string.
@@ -73,24 +73,6 @@ export function toDisplayValueCapped(
   if (fractional.length <= maxDecimals) return full;
   const truncated = fractional.slice(0, maxDecimals).replace(/0+$/, "");
   return truncated ? `${full.slice(0, dot)}.${truncated}` : full.slice(0, dot);
-}
-
-/**
- * Format an already-human-readable decimal number for display, applying the
- * standard cap-then-strip-trailing-zeros rule.
- *
- * Use when the source is a JS number (e.g. computed `priceValue * sizeValue`)
- * rather than a raw scaled integer.
- */
-export function formatDisplayNumber(
-  value: number,
-  maxDecimals: number = DEFAULT_DISPLAY_DECIMALS,
-): string {
-  if (!Number.isFinite(value)) return "0";
-  if (value === 0) return "0";
-  const fixed = value.toFixed(maxDecimals);
-  const trimmed = fixed.replace(/\.?0+$/, "");
-  return trimmed === "" || trimmed === "-" ? "0" : trimmed;
 }
 
 /**

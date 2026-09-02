@@ -66,7 +66,7 @@ export function deriveAssociatedTokenAccount(
 }
 
 /** Derive UserBalance PDA — seeds: `b"balance" || instance || user || mint`. */
-export function deriveUserBalancePda(
+function deriveUserBalancePda(
   instance: PublicKey,
   user: PublicKey,
   mint: PublicKey,
@@ -85,7 +85,7 @@ export function deriveUserBalancePda(
 }
 
 /** Derive the per-mint SPL vault PDA — seeds: `b"instance_vault" || instance || mint`. */
-export function deriveInstanceVaultPda(
+function deriveInstanceVaultPda(
   instance: PublicKey,
   mint: PublicKey,
   programId: PublicKey,
@@ -102,7 +102,7 @@ export function deriveInstanceVaultPda(
 }
 
 /** Derive the vault-authority PDA — seeds: `b"instance_vault" || instance`. */
-export function deriveVaultAuthorityPda(
+function deriveVaultAuthorityPda(
   instance: PublicKey,
   programId: PublicKey,
 ): PublicKey {

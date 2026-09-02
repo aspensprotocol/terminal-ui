@@ -240,7 +240,7 @@ export function serializeOrder(order: Order): Uint8Array {
 /**
  * Create a protobuf OrderToCancel message from cancel data
  */
-export function createCancelMessage(data: CancelSigningData): OrderToCancel {
+function createCancelMessage(data: CancelSigningData): OrderToCancel {
   return create(OrderToCancelSchema, {
     marketId: data.marketId,
     side: data.side === "buy" ? Side.BID : Side.ASK,
@@ -251,7 +251,7 @@ export function createCancelMessage(data: CancelSigningData): OrderToCancel {
 /**
  * Serialize an OrderToCancel message to bytes for signing
  */
-export function serializeCancelOrder(order: OrderToCancel): Uint8Array {
+function serializeCancelOrder(order: OrderToCancel): Uint8Array {
   return toBinary(OrderToCancelSchema, order);
 }
 
@@ -309,20 +309,4 @@ export async function signCancelOrder(
   console.log("[Signing] Cancel signature received:", signature);
 
   return normalizeWalletSignature(hexToBytes(signature));
-}
-
-/**
- * Get the protobuf Order object for inspection or manual submission
- */
-export function getOrderForSigning(data: OrderSigningData): Order {
-  return createOrderMessage(data);
-}
-
-/**
- * Get the protobuf OrderToCancel object for inspection or manual submission
- */
-export function getCancelOrderForSigning(
-  data: CancelSigningData,
-): OrderToCancel {
-  return createCancelMessage(data);
 }

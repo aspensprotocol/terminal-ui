@@ -18,7 +18,6 @@
  */
 
 import { sha256 } from "@noble/hashes/sha256";
-import { hexToBytes } from "viem";
 
 // -- Chain-agnostic order id ---------------------------------------------
 
@@ -99,6 +98,3 @@ function u128Le(n: bigint): Uint8Array {
   }
   return out;
 }
-
-/** Convenience: hex `0x...` → Uint8Array (re-exported for test ergonomics). */
-export { hexToBytes };

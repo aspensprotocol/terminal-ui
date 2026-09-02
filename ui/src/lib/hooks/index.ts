@@ -3,7 +3,6 @@
  */
 
 export { useCancelOrder } from "./useCancelOrder";
-export { useExchangeClient } from "./useExchangeClient";
 export { useMarkets } from "./useMarkets";
 export { useOrderbook } from "./useOrderbook";
 export { useTrades } from "./useTrades";

@@ -128,16 +128,9 @@ export function getWagmiConfig(): Config {
   return _wagmiConfig;
 }
 
-export { createWagmiConfig };
-
 // NOTE: a `createDynamicChains` / `updateWagmiConfig` pair used to live here,
 // intended to rebuild this config from the arborter's chain list. Nothing ever
 // called it, and it could not have worked: it fed wagmi the `rpc_url` from
 // GetConfig, which the arborter masks, and hardcoded every chain's native
 // currency to ETH/18. Chain reads now bypass wagmi transports entirely
 // (see the SDK's evm-client.ts), so it has been removed rather than fixed.
-
-// Reset the config (useful for testing)
-export const resetWagmiConfig = (): void => {
-  _wagmiConfig = null;
-};

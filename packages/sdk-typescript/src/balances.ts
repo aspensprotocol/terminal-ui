@@ -143,42 +143,6 @@ export async function fetchChainBalanceSlices(opts: {
   return results.flat();
 }
 
-/** Fetch wallet-only balance for a single (chain, token, user) tuple. */
-export async function fetchWalletBalance(opts: {
-  chain: ChainConfig;
-  tokenAddress: string;
-  user: string;
-  /** Overrides the (masked) first-enabled `chain.rpcs` endpoint; see `rpc-urls.ts`. */
-  rpcUrls?: RpcUrlMap;
-}): Promise<bigint> {
-  const arch = opts.chain.architecture.toLowerCase();
-  const rpcUrl = resolveRpcUrl(opts.chain, opts.rpcUrls);
-  if (!rpcUrl) {
-    throw new Error(
-      `no usable RPC endpoint for chain '${opts.chain.network}' ` +
-        `(GetConfig masks rpc_url — supply one via CHAIN_RPC_URLS)`,
-    );
-  }
-  if (arch === "evm") {
-    const client = createPublicClient({ transport: http(rpcUrl) });
-    return readEvmWalletBalance(
-      client,
-      opts.tokenAddress,
-      getAddress(opts.user),
-    );
-  }
-  if (arch === "solana") {
-    const conn = new Connection(rpcUrl);
-    const mint = new PublicKey(opts.tokenAddress);
-    const owner = new PublicKey(opts.user);
-    const ata = deriveAssociatedTokenAccount(owner, mint);
-    return solanaNativeWallet(conn, opts.tokenAddress, owner, ata);
-  }
-  throw new Error(
-    `unsupported chain architecture '${opts.chain.architecture}'`,
-  );
-}
-
 /**
  * A user's on-chain holding of `tokenAddress`, native asset included.
  *
