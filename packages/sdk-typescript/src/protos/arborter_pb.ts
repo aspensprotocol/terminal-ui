@@ -400,9 +400,10 @@ export type Order = Message<"xyz.aspens.arborter.v1.Order"> & {
   /**
    * Post-only: if true, the order MUST rest on the book. If it would
    * cross any opposing confirmed order at submission time the request
-   * is rejected with FAILED_PRECONDITION and nothing is reserved. Limit orders only — incompatible with market (no price)
-   * and with DISCRETIONARY execution_type. Defaults to false, which
-   * preserves legacy take-or-rest behavior.
+   * is rejected with FAILED_PRECONDITION and nothing is reserved. Limit
+   * orders only — incompatible with market (no price) and with
+   * DISCRETIONARY execution_type. Defaults to false, which preserves
+   * legacy take-or-rest behavior.
    *
    * @generated from field: bool post_only = 9;
    */
