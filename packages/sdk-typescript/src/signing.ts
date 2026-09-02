@@ -145,7 +145,6 @@ export interface OrderSigningData {
 export interface CancelSigningData {
   marketId: string;
   side: "buy" | "sell";
-  tokenAddress: string;
   orderId: string;
 }
 
@@ -245,7 +244,6 @@ export function createCancelMessage(data: CancelSigningData): OrderToCancel {
   return create(OrderToCancelSchema, {
     marketId: data.marketId,
     side: data.side === "buy" ? Side.BID : Side.ASK,
-    tokenAddress: data.tokenAddress,
     orderId: hexToBytes(data.orderId),
   });
 }

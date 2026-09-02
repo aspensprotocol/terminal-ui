@@ -66,7 +66,6 @@ export interface ApiTrade {
   buyer_address: string;
   seller_address: string;
   buyer_order_id: string;
-  seller_order_id: string;
   price: string;
   size: string;
   side: Side;
@@ -197,7 +196,6 @@ export interface TradeData {
   buyer_address: string;
   seller_address: string;
   buyer_order_id: string;
-  seller_order_id: string;
   price: string;
   size: string;
   side: Side;

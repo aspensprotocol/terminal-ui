@@ -84,7 +84,6 @@ export function toEnhancedTrade(
     buyer_address,
     seller_address,
     buyer_order_id: bytesToHex(trade.orderHit),
-    seller_order_id: trade.makerId,
     price: trade.price,
     size: trade.qty,
     side,

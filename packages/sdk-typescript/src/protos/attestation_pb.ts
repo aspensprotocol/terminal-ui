@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file attestation.proto.
  */
 export const file_attestation: GenFile = /*@__PURE__*/
-  fileDesc("ChFhdHRlc3RhdGlvbi5wcm90bxIZeHl6LmFzcGVucy5hdHRlc3RhdGlvbi52MSI1ChVHZXRBdHRlc3RhdGlvblJlcXVlc3QSEgoFbm9uY2UYASABKAxIAIgBAUIICgZfbm9uY2UiVgoWR2V0QXR0ZXN0YXRpb25SZXNwb25zZRI8CgZyZXBvcnQYASABKAsyLC54eXouYXNwZW5zLmF0dGVzdGF0aW9uLnYxLkF0dGVzdGF0aW9uUmVwb3J0IlAKEUF0dGVzdGF0aW9uUmVwb3J0EhEKCXJhd19xdW90ZRgBIAEoDBISCgpjZXJ0X2NoYWluGAIgASgMEhQKDGltYWdlX2RpZ2VzdBgDIAEoDDKNAQoSQXR0ZXN0YXRpb25TZXJ2aWNlEncKDkdldEF0dGVzdGF0aW9uEjAueHl6LmFzcGVucy5hdHRlc3RhdGlvbi52MS5HZXRBdHRlc3RhdGlvblJlcXVlc3QaMS54eXouYXNwZW5zLmF0dGVzdGF0aW9uLnYxLkdldEF0dGVzdGF0aW9uUmVzcG9uc2UiAEICSAFiBnByb3RvMw");
+  fileDesc("ChFhdHRlc3RhdGlvbi5wcm90bxIZeHl6LmFzcGVucy5hdHRlc3RhdGlvbi52MSI1ChVHZXRBdHRlc3RhdGlvblJlcXVlc3QSEgoFbm9uY2UYASABKAxIAIgBAUIICgZfbm9uY2UiVgoWR2V0QXR0ZXN0YXRpb25SZXNwb25zZRI8CgZyZXBvcnQYASABKAsyLC54eXouYXNwZW5zLmF0dGVzdGF0aW9uLnYxLkF0dGVzdGF0aW9uUmVwb3J0IjwKEUF0dGVzdGF0aW9uUmVwb3J0EhEKCXJhd19xdW90ZRgBIAEoDBIUCgxpbWFnZV9kaWdlc3QYAiABKAwyjQEKEkF0dGVzdGF0aW9uU2VydmljZRJ3Cg5HZXRBdHRlc3RhdGlvbhIwLnh5ei5hc3BlbnMuYXR0ZXN0YXRpb24udjEuR2V0QXR0ZXN0YXRpb25SZXF1ZXN0GjEueHl6LmFzcGVucy5hdHRlc3RhdGlvbi52MS5HZXRBdHRlc3RhdGlvblJlc3BvbnNlIgBCAkgBYgZwcm90bzM");
 
 /**
  * @generated from message xyz.aspens.attestation.v1.GetAttestationRequest
@@ -83,20 +83,13 @@ export type AttestationReport = Message<"xyz.aspens.attestation.v1.AttestationRe
   rawQuote: Uint8Array;
 
   /**
-   * Optional collateral the verifier couldn't otherwise obtain (PCK chain /
-   * auxblob). Usually empty -- DCAP fetches collateral from Intel PCS/PCCS and
-   * the PCK chain is embedded in the quote's certification data.
+   * Self-reported running image digest(s): the raw bytes of the signer's
+   * digests file, unparsed by any verifier. Trust rests on the MRTD/RTMR
+   * measurement policy, NOT on this self-report — a compromised signer can
+   * put anything here. A verifier must compare the quote's REPORTDATA
+   * against an EXPECTED digest it supplies itself, never against this echo.
    *
-   * @generated from field: bytes cert_chain = 2;
-   */
-  certChain: Uint8Array;
-
-  /**
-   * Self-reported running image digest(s). Trust rests on the MRTD/RTMR
-   * measurement policy, NOT on this self-report — a compromised signer can put
-   * anything here.
-   *
-   * @generated from field: bytes image_digest = 3;
+   * @generated from field: bytes image_digest = 2;
    */
   imageDigest: Uint8Array;
 };

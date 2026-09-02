@@ -322,14 +322,12 @@ export const arborterService = {
 
   async getOrderbook(
     marketId: string,
-    continueStream = false,
     historicalOpenOrders?: boolean,
     filterByTrader?: string,
   ): Promise<OrderbookEntry[]> {
     try {
       const request: OrderbookRequest = create(OrderbookRequestSchema, {
         marketId,
-        continueStream,
         historicalOpenOrders,
         filterByTrader,
       });
@@ -344,14 +342,12 @@ export const arborterService = {
 
   async getTrades(
     marketId: string,
-    continueStream = false,
     historicalClosedTrades?: boolean,
     filterByTrader?: string,
   ): Promise<Trade[]> {
     try {
       const request: TradeRequest = create(TradeRequestSchema, {
         marketId,
-        continueStream,
         historicalClosedTrades,
         filterByTrader,
       });

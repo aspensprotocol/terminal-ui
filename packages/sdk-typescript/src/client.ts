@@ -174,7 +174,6 @@ export interface CancelOrderParams {
   orderId: string;
   marketId: string;
   side: Side;
-  tokenAddress: string;
   signature: Uint8Array;
 }
 
@@ -373,7 +372,6 @@ class RestClient {
       const out = await this.fce.cancelOrder({
         marketId: params.marketId,
         side: params.side === "buy" ? "BID" : "ASK",
-        tokenAddress: params.tokenAddress,
         // Pass the id through as a STRING. Number() rounds anything above
         // 2^53 — this line is what sent 173852891691592600 for order
         // 173852891691592598 and made every cancel fail with NotFound.
@@ -389,7 +387,6 @@ class RestClient {
     const orderToCancel: OrderToCancel = create(OrderToCancelSchema, {
       marketId: params.marketId,
       side: params.side === "buy" ? ProtoSide.BID : ProtoSide.ASK,
-      tokenAddress: params.tokenAddress,
       orderId: hexToBytes(params.orderId),
     });
 
@@ -749,7 +746,6 @@ export class ExchangeClient {
       }
       const entries = await arborterService.getOrderbook(
         marketId,
-        false,
         true, // historicalOpenOrders
         userAddress, // filterByTrader
       );
@@ -811,7 +807,6 @@ export class ExchangeClient {
       }
       const trades = await arborterService.getTrades(
         marketId,
-        false,
         true, // historicalClosedTrades
         userAddress, // filterByTrader
       );
@@ -845,7 +840,7 @@ export class ExchangeClient {
               ? fceTradesToEnhanced(out.data, marketId, pairDecimals)
               : [];
         } else {
-          const trades = await arborterService.getTrades(marketId, false, true);
+          const trades = await arborterService.getTrades(marketId, true);
           enhancedTrades = toEnhancedTrades(trades, marketId, pairDecimals);
         }
 
@@ -898,11 +893,7 @@ export class ExchangeClient {
           callback(fceBookToEnhanced(out.data, pairDecimals));
           return;
         }
-        const entries = await arborterService.getOrderbook(
-          marketId,
-          false,
-          true,
-        );
+        const entries = await arborterService.getOrderbook(marketId, true);
         const { bids, asks } = toEnhancedOrderbook(entries, pairDecimals);
         callback({ bids, asks });
       } catch (error) {

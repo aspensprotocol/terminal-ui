@@ -158,7 +158,6 @@ export function fceTradesToEnhanced(
       buyer_address,
       seller_address,
       buyer_order_id: "",
-      seller_order_id: "",
       price: t.price,
       size: t.quantity,
       // Only the taker's direction is meaningful; default to "buy" when the

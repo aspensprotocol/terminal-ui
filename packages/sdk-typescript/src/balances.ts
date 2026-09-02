@@ -301,8 +301,7 @@ async function fetchSolanaChainSlices(
   const owner = new PublicKey(userAddress);
 
   // Program id + instance PDA for the Midrib trade program on this chain.
-  const programIdStr =
-    chain.factoryAddress || chain.tradeContract?.contractId || "";
+  const programIdStr = chain.factoryAddress || "";
   const instanceStr = chain.tradeContract?.address ?? "";
   const programId = programIdStr ? new PublicKey(programIdStr) : null;
   const instance = instanceStr ? new PublicKey(instanceStr) : null;

@@ -20,8 +20,6 @@ function redactedMakerTrade(overrides: Record<string, unknown> = {}) {
     timestamp: 1700000000000n,
     price: "50000000",
     qty: "1000000",
-    makerId: "", // redacted
-    takerId: "takerid",
     makerBaseAddress: "", // redacted
     makerQuoteAddress: "", // redacted
     takerBaseAddress: "0xtaker",
