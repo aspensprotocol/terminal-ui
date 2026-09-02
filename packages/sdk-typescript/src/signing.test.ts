@@ -10,7 +10,9 @@
  */
 
 import { describe, expect, test } from "bun:test";
+import { create, toBinary } from "@bufbuild/protobuf";
 import { normalizeWalletSignature } from "./signing.js";
+import { OrderToCancelSchema, Side } from "./protos/arborter_pb";
 
 describe("normalizeWalletSignature", () => {
   test("passes a 65-byte EVM ECDSA signature through unchanged", () => {
@@ -53,5 +55,27 @@ describe("normalizeWalletSignature", () => {
     expect(() => normalizeWalletSignature(tooShort)).toThrow(/length 63/);
     expect(() => normalizeWalletSignature(tooLong)).toThrow(/length 66/);
     expect(() => normalizeWalletSignature(way_off)).toThrow(/length 32/);
+  });
+});
+
+describe("OrderToCancel wire encoding", () => {
+  test("is {market_id=1, side=2, order_id=3} — same bytes the arborter and sdk pin", () => {
+    const msg = create(OrderToCancelSchema, {
+      marketId: "a::0x1::b::0x2",
+      side: Side.ASK,
+      orderId: Uint8Array.from({ length: 32 }, (_, i) => i + 1),
+    });
+    const bytes = toBinary(OrderToCancelSchema, msg);
+    const expected = new Uint8Array([
+      0x0a,
+      14,
+      ...new TextEncoder().encode("a::0x1::b::0x2"),
+      0x10,
+      0x02,
+      0x1a,
+      32,
+      ...Array.from({ length: 32 }, (_, i) => i + 1),
+    ]);
+    expect(bytes).toEqual(expected);
   });
 });

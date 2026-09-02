@@ -70,7 +70,7 @@ describe("submitCancelOrder NOT_FOUND handling", () => {
     });
 
     await expect(
-      submitCancelOrder(order, "0xtoken", "0xuser", "order-1", deps),
+      submitCancelOrder(order, "0xuser", "order-1", deps),
     ).resolves.toBeUndefined();
 
     expect(deps.recordCancelledOrder).toHaveBeenCalledTimes(1);
@@ -90,7 +90,7 @@ describe("submitCancelOrder NOT_FOUND handling", () => {
     });
 
     await expect(
-      submitCancelOrder(order, "0xtoken", "0xuser", "order-1", deps),
+      submitCancelOrder(order, "0xuser", "order-1", deps),
     ).rejects.toThrow("deadline exceeded");
 
     expect(deps.recordCancelledOrder).not.toHaveBeenCalled();
@@ -106,7 +106,7 @@ describe("submitCancelOrder NOT_FOUND handling", () => {
     });
 
     await expect(
-      submitCancelOrder(order, "0xtoken", "0xuser", "order-1", deps),
+      submitCancelOrder(order, "0xuser", "order-1", deps),
     ).resolves.toBeUndefined();
 
     expect(deps.recordCancelledOrder).toHaveBeenCalledTimes(1);

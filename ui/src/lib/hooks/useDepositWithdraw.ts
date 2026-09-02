@@ -280,8 +280,7 @@ export function useDepositWithdraw(): UseDepositWithdrawResult {
             // For Solana: `factory_address` is the program id, and
             // `trade_contract.address` is the instance PDA. Both are
             // required to build deposit_ix.
-            programIdStr:
-              chain.factoryAddress || chain.tradeContract?.contractId || "",
+            programIdStr: chain.factoryAddress || "",
             instanceStr: midrib,
             mintStr: token.address,
             amount: params.amount,
@@ -415,8 +414,7 @@ export function useDepositWithdraw(): UseDepositWithdrawResult {
             Boolean(params.unwrapNative) && isWsolMint(token.address);
           await submitSolanaIxs({
             chainRpcUrl: resolveSolanaRpcUrl(chain, rpcUrls),
-            programIdStr:
-              chain.factoryAddress || chain.tradeContract?.contractId || "",
+            programIdStr: chain.factoryAddress || "",
             instanceStr: midrib,
             mintStr: token.address,
             amount: params.amount,

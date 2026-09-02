@@ -85,7 +85,6 @@ export interface PlaceOrderResponse {
 export interface CancelOrderRequest {
   marketId: string;
   side: "BID" | "ASK";
-  tokenAddress: string;
   /** The 32-byte canonical order id, 0x-prefixed hex. */
   orderId: string;
   signatureHash: Hex;

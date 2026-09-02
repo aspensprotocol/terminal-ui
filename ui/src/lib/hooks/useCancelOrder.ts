@@ -2,10 +2,10 @@
  * Hook for cancelling a user's open order.
  *
  * Looks up the order by id from the exchange store, derives the side /
- * market / collateral token from it, signs a `OrderToCancel` via the active
- * wallet, and submits via the SDK. The arborter verifies the envelope
- * signature and closes the order's collateral lot, returning the reservation
- * to the account's available balance. That is an off-chain ledger move — no
+ * market from it, signs a `OrderToCancel` via the active wallet, and
+ * submits via the SDK. The arborter verifies the envelope signature and
+ * closes the order's collateral lot, returning the reservation to the
+ * account's available balance. That is an off-chain ledger move — no
  * transaction, no gas, nothing on the contract changes.
  */
 
@@ -38,7 +38,6 @@ export interface CancelSubmissionDeps {
     orderId: string;
     marketId: string;
     side: Order["side"];
-    tokenAddress: string;
     signature: Uint8Array;
   }) => Promise<unknown>;
   recordCancelledOrder: (entry: CancelledOrderEntry) => void;
@@ -51,7 +50,6 @@ export interface CancelSubmissionDeps {
  */
 export async function submitCancelOrder(
   order: Order,
-  collateralTokenAddress: string,
   userAddress: string,
   orderId: string,
   deps: CancelSubmissionDeps,
@@ -62,7 +60,6 @@ export async function submitCancelOrder(
       {
         marketId: order.market_id,
         side: order.side,
-        tokenAddress: collateralTokenAddress,
         orderId,
       },
       signingAdapter,
@@ -73,7 +70,6 @@ export async function submitCancelOrder(
       orderId,
       marketId: order.market_id,
       side: order.side,
-      tokenAddress: collateralTokenAddress,
       signature,
     });
 
@@ -144,51 +140,24 @@ export function useCancelOrder() {
     async (userAddress: string, orderId: string) => {
       if (!userAddress) throw new Error("User address required");
 
-      const { userOrders, markets, userBalances } = useExchangeStore.getState();
+      const { userOrders, userBalances } = useExchangeStore.getState();
       void userBalances; // store-only touch to silence unused lints in future
       const order = userOrders[orderId];
       if (!order) {
         throw new Error(`Order ${orderId} not found in local cache`);
       }
-      const market = markets[order.market_id];
-      if (!market) {
-        throw new Error(
-          `Market ${order.market_id} not found — cannot resolve collateral token`,
-        );
-      }
-
-      // The collateral token is whichever side's balance funded the order —
-      // an order commits a budget denominated in the asset it gives, so a buy
-      // commits quote and a sell commits base. The arborter needs the address
-      // to identify the ledger lot to close.
-      const collateralTicker =
-        order.side === "buy" ? market.quote_ticker : market.base_ticker;
-      const collateralToken =
-        useExchangeStore.getState().tokens[collateralTicker];
-      if (!collateralToken || !collateralToken.address) {
-        throw new Error(
-          `Token ${collateralTicker} not configured (missing address) — cannot build cancel signature`,
-        );
-      }
-      const collateralTokenAddress = collateralToken.address;
 
       setCancellingOrders((prev) => new Set(prev).add(orderId));
       try {
-        await submitCancelOrder(
-          order,
-          collateralTokenAddress,
-          userAddress,
-          orderId,
-          {
-            createSigningAdapter: createActiveSigningAdapter,
-            signCancel: signCancelOrder,
-            submitCancel: (params) => client.cancelOrder(params),
-            recordCancelledOrder: (entry) =>
-              useExchangeStore.getState().recordCancelledOrder(entry),
-            removeHiddenOrder: (id) =>
-              useExchangeStore.getState().removeHiddenOrder(id),
-          },
-        );
+        await submitCancelOrder(order, userAddress, orderId, {
+          createSigningAdapter: createActiveSigningAdapter,
+          signCancel: signCancelOrder,
+          submitCancel: (params) => client.cancelOrder(params),
+          recordCancelledOrder: (entry) =>
+            useExchangeStore.getState().recordCancelledOrder(entry),
+          removeHiddenOrder: (id) =>
+            useExchangeStore.getState().removeHiddenOrder(id),
+        });
       } finally {
         setCancellingOrders((prev) => {
           const next = new Set(prev);
