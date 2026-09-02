@@ -35,7 +35,7 @@ function multiplyScaled(a: string, b: string, pairDecimals: number): string {
 /**
  * Convert a protobuf OrderbookEntry to an EnhancedOrderbookLevel
  */
-export function toEnhancedOrderbookLevel(
+function toEnhancedOrderbookLevel(
   entry: OrderbookEntry,
   pairDecimals: number,
 ): EnhancedOrderbookLevel {
@@ -53,8 +53,6 @@ export function toEnhancedOrderbookLevel(
     size: entry.quantity,
     priceValue,
     sizeValue,
-    displayPrice,
-    displaySize,
     priceDisplay: displayPrice,
     sizeDisplay: displaySize,
     total: totalRaw,

@@ -2,21 +2,8 @@
  * Type adapters - convert protobuf types to SDK Enhanced types
  */
 
-export {
-  toEnhancedOrderbookLevel,
-  toEnhancedOrderbook,
-  rawToDecimal,
-} from "./orderbook-adapter.js";
+export { toEnhancedOrderbook } from "./orderbook-adapter.js";
 
 export { toEnhancedTrade, toEnhancedTrades } from "./trade-adapter.js";
 
-export {
-  toMarket,
-  toMarkets,
-  toToken,
-  toTokens,
-  toChains,
-  findChainByNetwork,
-  getPairDecimals,
-  type ChainInfo,
-} from "./config-adapter.js";
+export { toMarkets, toTokens, getPairDecimals } from "./config-adapter.js";

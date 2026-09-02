@@ -36,11 +36,7 @@ export {
 } from "./client.js";
 
 // Re-export gRPC transport utilities
-export {
-  setGrpcBaseUrl,
-  getGrpcBaseUrl,
-  resetTransport,
-} from "./grpc-transport.js";
+export { setGrpcBaseUrl, resetTransport } from "./grpc-transport.js";
 
 // FCE (Flare Confidential Extension) direct-action transport. Opt in via
 // `new ExchangeClient({ grpcUrl, transport: "fce", fce: { proxyUrl, apiKey } })`;
@@ -61,7 +57,6 @@ export {
   type PlaceOrderResponse,
   type CancelOrderRequest,
   type CancelOrderResponse,
-  type WithdrawRequest as FceWithdrawRequest,
   type WithdrawVoucher,
   type GetMyStateRequest,
   type GetMyStateResponse,
@@ -87,14 +82,11 @@ export type {
 
 // Re-export type adapters
 export {
-  toEnhancedOrderbookLevel,
   toEnhancedOrderbook,
   toEnhancedTrade,
   toEnhancedTrades,
   toMarkets,
   toTokens,
-  toChains,
-  type ChainInfo,
 } from "./adapters/index.js";
 
 // Re-export signing utilities
@@ -102,11 +94,7 @@ export {
   signOrder,
   signCancelOrder,
   createOrderMessage,
-  createCancelMessage,
   serializeOrder,
-  serializeCancelOrder,
-  getOrderForSigning,
-  getCancelOrderForSigning,
   hexToBytes,
   bytesToHex,
   normalizeWalletSignature,
@@ -137,7 +125,6 @@ export {
 export {
   fetchOnChainBalances,
   fetchChainBalanceSlices,
-  fetchWalletBalance,
   readEvmWalletBalance,
   solanaNativeWallet,
   type WalletBinding,
@@ -180,9 +167,6 @@ export {
 export {
   depositIx,
   deriveAssociatedTokenAccount,
-  deriveUserBalancePda,
-  deriveInstanceVaultPda,
-  deriveVaultAuthorityPda,
   deriveWithdrawNoncePda,
   deriveWithdrawEpochPda,
   anchorIxDiscriminator,
@@ -219,9 +203,7 @@ import type { Token } from "./types.js";
 export {
   toDisplayValue,
   toDisplayValueCapped,
-  formatDisplayNumber,
   decimalToRaw,
-  DEFAULT_DISPLAY_DECIMALS,
   marketBidQuoteBudget,
   type MarketBidQuoteBudgetOpts,
 } from "./decimals.js";
@@ -330,7 +312,11 @@ export function getDecimalPlaces(
   return 0;
 }
 
-export interface CalculatePercentageSizeParams {
+/**
+ * Calculate a percentage of available balance for trading
+ * Returns the size as a string formatted for the input
+ */
+export function calculatePercentageSize(params: {
   percentage: number;
   side: "buy" | "sell";
   availableBase: number;
@@ -338,15 +324,7 @@ export interface CalculatePercentageSizeParams {
   currentPrice: number;
   market: { lot_size: string };
   baseToken: Token;
-}
-
-/**
- * Calculate a percentage of available balance for trading
- * Returns the size as a string formatted for the input
- */
-export function calculatePercentageSize(
-  params: CalculatePercentageSizeParams,
-): string {
+}): string {
   const {
     percentage,
     side,

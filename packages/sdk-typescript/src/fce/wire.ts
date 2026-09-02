@@ -78,11 +78,6 @@ export function buildDirectInstruction(
   };
 }
 
-/** Encode a `Uint8Array` (e.g. a signature) as go-ethereum `hexutil.Bytes`. */
-export function bytesToHexBytes(b: Uint8Array): Hex {
-  return bytesToHex(b);
-}
-
 /** Decode `0x`-hex (`hexutil.Bytes`) back to raw bytes; `"0x"` → empty. */
 export function hexBytesToBytes(h: Hex): Uint8Array {
   return h === "0x" ? new Uint8Array(0) : hexToBytes(h);

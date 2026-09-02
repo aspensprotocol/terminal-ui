@@ -15,9 +15,7 @@ export {
   toBytes32,
   toBytes32Hex,
   buildDirectInstruction,
-  bytesToHexBytes,
   hexBytesToBytes,
-  hexJsonToObject,
   type DirectInstruction,
 } from "./wire.js";
 export {
@@ -25,11 +23,7 @@ export {
   fceOpenOrdersToEnhanced,
   fceTradesToEnhanced,
 } from "./reads.js";
-export {
-  decodeConfigEnvelope,
-  type GetConfigEnvelope,
-  type GetConfigRequest,
-} from "./config.js";
+export { decodeConfigEnvelope, type GetConfigEnvelope } from "./config.js";
 export { FCE_ORDER_NONCE } from "./payloads.js";
 export type {
   PlaceOrderRequest,

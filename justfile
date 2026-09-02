@@ -25,6 +25,9 @@ lint:
 typecheck:
   bun run typecheck
 
+test:
+  bun test
+
 clean:
   bun run clean
 
@@ -34,3 +37,4 @@ ci:
   just fmt
   just lint
   just typecheck
+  just test

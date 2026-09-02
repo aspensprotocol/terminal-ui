@@ -65,7 +65,6 @@ export interface ApiTrade {
   market_id: string;
   buyer_address: string;
   seller_address: string;
-  buyer_order_id: string;
   price: string;
   size: string;
   side: Side;
@@ -95,8 +94,6 @@ export interface EnhancedTrade extends ApiTrade {
   priceValue: number;
   sizeValue: number;
   // Display strings
-  displayPrice: string;
-  displaySize: string;
   priceDisplay: string;
   sizeDisplay: string;
 }
@@ -107,9 +104,6 @@ export interface EnhancedOrder extends ApiOrder {
   sizeValue: number;
   filledValue: number;
   // Display strings
-  displayPrice: string;
-  displaySize: string;
-  displayFilledSize: string;
   priceDisplay: string;
   sizeDisplay: string;
   filledDisplay: string;
@@ -144,8 +138,6 @@ export interface EnhancedOrderbookLevel {
   priceValue: number;
   sizeValue: number;
   // Display strings
-  displayPrice: string;
-  displaySize: string;
   priceDisplay: string;
   sizeDisplay: string;
   total: string;
@@ -195,7 +187,6 @@ export interface TradeData {
   market_id: string;
   buyer_address: string;
   seller_address: string;
-  buyer_order_id: string;
   price: string;
   size: string;
   side: Side;

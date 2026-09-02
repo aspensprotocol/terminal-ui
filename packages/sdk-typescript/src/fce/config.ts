@@ -18,9 +18,6 @@ import {
 } from "../protos/arborter_config_pb.js";
 import { hexBytesToBytes } from "./wire.js";
 
-/** GET_CONFIG takes no arguments — the arborter's request message is empty. */
-export type GetConfigRequest = Record<string, never>;
-
 /** `{"configProto": "0x<protobuf>"}` — the adapter's one-field envelope. */
 export interface GetConfigEnvelope {
   /** `0x`-hex of `GetConfigResponse`'s protobuf encoding. */

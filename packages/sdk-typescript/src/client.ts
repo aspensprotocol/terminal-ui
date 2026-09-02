@@ -444,9 +444,6 @@ class RestClient {
       priceValue,
       sizeValue,
       filledValue: 0,
-      displayPrice: priceDisplay,
-      displaySize: sizeDisplay,
-      displayFilledSize: "0",
       priceDisplay,
       sizeDisplay,
       filledDisplay: "0",
@@ -766,13 +763,6 @@ export class ExchangeClient {
         priceValue: parseFloat(entry.price) / Math.pow(10, pairDecimals),
         sizeValue: parseFloat(entry.quantity) / Math.pow(10, pairDecimals),
         filledValue: 0,
-        displayPrice: (
-          parseFloat(entry.price) / Math.pow(10, pairDecimals)
-        ).toFixed(pairDecimals),
-        displaySize: (
-          parseFloat(entry.quantity) / Math.pow(10, pairDecimals)
-        ).toFixed(pairDecimals),
-        displayFilledSize: "0",
         priceDisplay: (
           parseFloat(entry.price) / Math.pow(10, pairDecimals)
         ).toFixed(pairDecimals),

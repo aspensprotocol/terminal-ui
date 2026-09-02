@@ -8,7 +8,6 @@ import {
   CancelOrderRequestSchema,
   type CancelOrderResponse,
   type Order,
-  OrderSchema,
   OrderToCancelSchema,
   type OrderbookEntry,
   type OrderbookRequest,
@@ -52,13 +51,6 @@ export function setGrpcBaseUrl(url: string): void {
 }
 
 /**
- * Get the current gRPC base URL
- */
-export function getGrpcBaseUrl(): string {
-  return grpcBaseUrl;
-}
-
-/**
  * Create gRPC-Web transport with retry interceptor
  */
 function createTransport() {
@@ -92,14 +84,14 @@ let _configClient: ReturnType<
   typeof createClient<typeof ConfigService>
 > | null = null;
 
-export function getArborterClient() {
+function getArborterClient() {
   if (!_arborterClient) {
     _arborterClient = createClient(ArborterService, getTransport());
   }
   return _arborterClient;
 }
 
-export function getConfigClient() {
+function getConfigClient() {
   if (!_configClient) {
     _configClient = createClient(ConfigService, getTransport());
   }
@@ -362,15 +354,12 @@ export const arborterService = {
 };
 
 // Export protobuf types and schemas for use in other modules
-export { create, OrderSchema, OrderToCancelSchema };
+export { create, OrderToCancelSchema };
 
 export type {
   Order,
   OrderToCancel,
-  OrderbookEntry,
-  Trade,
   SendOrderResponse,
-  CancelOrderResponse,
   Configuration,
   AttestationReport,
   GetAttestationResponse,

@@ -46,13 +46,3 @@ export function getExchangeClient(fceEnabled = false): ExchangeClient {
   }
   return _exchange;
 }
-
-/**
- * Reset the exchange client (useful for testing or when URL changes)
- */
-export function resetExchangeClient(): void {
-  if (_exchange) {
-    _exchange.disconnect();
-    _exchange = null;
-  }
-}
