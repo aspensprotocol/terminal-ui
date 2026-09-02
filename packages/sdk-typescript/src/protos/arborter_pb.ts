@@ -49,7 +49,7 @@ export type WithdrawRequest = Message<"xyz.aspens.arborter.v1.WithdrawRequest"> 
 
   /**
    * Signature by `account`'s key over the canonical request bytes
-   *   "<network>|<token>|<account>|<amount>"
+   *   `"<network>|<token>|<account>|<amount>"`
    * — EIP-191 personal-sign (secp256k1, 65 bytes) on EVM, raw Ed25519 (64
    * bytes) on Solana; the curve follows `network`'s architecture. The server
    * rebuilds those bytes from the request it receives: each string field is
