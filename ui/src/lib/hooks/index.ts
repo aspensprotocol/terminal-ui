@@ -10,4 +10,3 @@ export { useTrades } from "./useTrades";
 export { useUserBalances } from "./useUserBalances";
 export { useUserOrders } from "./useUserOrders";
 export { useUserTrades } from "./useUserTrades";
-export { useSigningAdapter } from "./useSigningAdapter";

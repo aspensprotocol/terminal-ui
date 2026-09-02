@@ -82,5 +82,8 @@ jobs:
       - name: Type check
         run: just typecheck
 
+      - name: Test
+        run: just test
+
       - name: Build
         run: just build
