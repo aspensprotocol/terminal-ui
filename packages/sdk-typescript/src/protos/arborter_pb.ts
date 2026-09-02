@@ -10,20 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file arborter.proto.
  */
 export const file_arborter: GenFile = /*@__PURE__*/
-  fileDesc("Cg5hcmJvcnRlci5wcm90bxIWeHl6LmFzcGVucy5hcmJvcnRlci52MSIHCgVFbXB0eSJlCg9XaXRoZHJhd1JlcXVlc3QSDwoHbmV0d29yaxgBIAEoCRINCgV0b2tlbhgCIAEoCRIPCgdhY2NvdW50GAMgASgJEg4KBmFtb3VudBgEIAEoCRIRCglzaWduYXR1cmUYBSABKAwidAoQV2l0aGRyYXdSZXNwb25zZRIPCgdhY2NvdW50GAEgASgJEg0KBXRva2VuGAIgASgJEg4KBmFtb3VudBgDIAEoCRINCgVub25jZRgEIAEoBBIOCgZleHBpcnkYBSABKAQSEQoJc2lnbmF0dXJlGAYgASgMImIKEkNhbmNlbE9yZGVyUmVxdWVzdBI0CgVvcmRlchgBIAEoCzIlLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuT3JkZXJUb0NhbmNlbBIWCg5zaWduYXR1cmVfaGFzaBgCIAEoDCK1AQoTQ2FuY2VsT3JkZXJSZXNwb25zZRIWCg5vcmRlcl9jYW5jZWxlZBgBIAEoCBJDChJ0cmFuc2FjdGlvbl9oYXNoZXMYAiADKAsyJy54eXouYXNwZW5zLmFyYm9ydGVyLnYxLlRyYW5zYWN0aW9uSGFzaBJBChFjdXJyZW50X29yZGVyYm9vaxgDIAMoCzImLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuT3JkZXJib29rRW50cnkisgEKEE9yZGVyYm9va1JlcXVlc3QSFwoPY29udGludWVfc3RyZWFtGAEgASgIEhEKCW1hcmtldF9pZBgCIAEoCRIjChZoaXN0b3JpY2FsX29wZW5fb3JkZXJzGAMgASgISACIAQESHQoQZmlsdGVyX2J5X3RyYWRlchgEIAEoCUgBiAEBQhkKF19oaXN0b3JpY2FsX29wZW5fb3JkZXJzQhMKEV9maWx0ZXJfYnlfdHJhZGVyIrIBCgxUcmFkZVJlcXVlc3QSFwoPY29udGludWVfc3RyZWFtGAEgASgIEhEKCW1hcmtldF9pZBgCIAEoCRIlChhoaXN0b3JpY2FsX2Nsb3NlZF90cmFkZXMYAyABKAhIAIgBARIdChBmaWx0ZXJfYnlfdHJhZGVyGAQgASgJSAGIAQFCGwoZX2hpc3RvcmljYWxfY2xvc2VkX3RyYWRlc0ITChFfZmlsdGVyX2J5X3RyYWRlciJYChBTZW5kT3JkZXJSZXF1ZXN0EiwKBW9yZGVyGAEgASgLMh0ueHl6LmFzcGVucy5hcmJvcnRlci52MS5PcmRlchIWCg5zaWduYXR1cmVfaGFzaBgCIAEoDCLsAgoFT3JkZXISKgoEc2lkZRgBIAEoDjIcLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuU2lkZRIQCghxdWFudGl0eRgCIAEoCRISCgVwcmljZRgDIAEoCUgAiAEBEhEKCW1hcmtldF9pZBgEIAEoCRIcChRiYXNlX2FjY291bnRfYWRkcmVzcxgFIAEoCRIdChVxdW90ZV9hY2NvdW50X2FkZHJlc3MYBiABKAkSPQoOZXhlY3V0aW9uX3R5cGUYByABKA4yJS54eXouYXNwZW5zLmFyYm9ydGVyLnYxLkV4ZWN1dGlvblR5cGUSGgoSbWF0Y2hpbmdfb3JkZXJfaWRzGAggAygMEhEKCXBvc3Rfb25seRgJIAEoCBIOCgZoaWRkZW4YCiABKAgSGQoMcXVvdGVfYnVkZ2V0GAsgASgJSAGIAQESDQoFbm9uY2UYDCABKARCCAoGX3ByaWNlQg8KDV9xdW90ZV9idWRnZXQi3QIKBVRyYWRlEhEKCXRpbWVzdGFtcBgBIAEoBBINCgVwcmljZRgCIAEoCRILCgNxdHkYAyABKAkSEAoIbWFrZXJfaWQYBCABKAkSEAoIdGFrZXJfaWQYBSABKAkSGgoSbWFrZXJfYmFzZV9hZGRyZXNzGAYgASgJEhsKE21ha2VyX3F1b3RlX2FkZHJlc3MYByABKAkSGgoSdGFrZXJfYmFzZV9hZGRyZXNzGAggASgJEhsKE3Rha2VyX3F1b3RlX2FkZHJlc3MYCSABKAkSMwoIYnV5ZXJfaXMYCiABKA4yIS54eXouYXNwZW5zLmFyYm9ydGVyLnYxLlRyYWRlUm9sZRI0CglzZWxsZXJfaXMYCyABKA4yIS54eXouYXNwZW5zLmFyYm9ydGVyLnYxLlRyYWRlUm9sZRIRCglvcmRlcl9oaXQYDCABKAwSEQoJbWFya2V0X2lkGA0gASgJIjgKD1RyYW5zYWN0aW9uSGFzaBIRCgloYXNoX3R5cGUYASABKAkSEgoKaGFzaF92YWx1ZRgCIAEoCSKwAgoRU2VuZE9yZGVyUmVzcG9uc2USFQoNb3JkZXJfaW5fYm9vaxgBIAEoCBIxCgVvcmRlchgCIAEoCzIdLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuT3JkZXJIAIgBARItCgZ0cmFkZXMYAyADKAsyHS54eXouYXNwZW5zLmFyYm9ydGVyLnYxLlRyYWRlEkMKEnRyYW5zYWN0aW9uX2hhc2hlcxgEIAMoCzInLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuVHJhbnNhY3Rpb25IYXNoEkEKEWN1cnJlbnRfb3JkZXJib29rGAUgAygLMiYueHl6LmFzcGVucy5hcmJvcnRlci52MS5PcmRlcmJvb2tFbnRyeRIQCghvcmRlcl9pZBgGIAEoDEIICgZfb3JkZXIidwoNT3JkZXJUb0NhbmNlbBIRCgltYXJrZXRfaWQYASABKAkSKgoEc2lkZRgCIAEoDjIcLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuU2lkZRIVCg10b2tlbl9hZGRyZXNzGAMgASgJEhAKCG9yZGVyX2lkGAQgASgMIpQCCg5PcmRlcmJvb2tFbnRyeRIRCgl0aW1lc3RhbXAYASABKAQSEAoIb3JkZXJfaWQYAiABKAwSDQoFcHJpY2UYAyABKAkSEAoIcXVhbnRpdHkYBCABKAkSKgoEc2lkZRgFIAEoDjIcLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuU2lkZRIaChJtYWtlcl9iYXNlX2FkZHJlc3MYBiABKAkSGwoTbWFrZXJfcXVvdGVfYWRkcmVzcxgHIAEoCRIRCgltYXJrZXRfaWQYCCABKAkSMQoFc3RhdGUYCSABKA4yIi54eXouYXNwZW5zLmFyYm9ydGVyLnYxLk9yZGVyU3RhdGUSEQoJcG9zdF9vbmx5GAogASgIKjgKBFNpZGUSFAoQU0lERV9VTlNQRUNJRklFRBAAEgwKCFNJREVfQklEEAESDAoIU0lERV9BU0sQAipRCg1FeGVjdXRpb25UeXBlEh4KGkVYRUNVVElPTl9UWVBFX1VOU1BFQ0lGSUVEEAASIAocRVhFQ1VUSU9OX1RZUEVfRElTQ1JFVElPTkFSWRABKqkBCgpPcmRlclN0YXRlEhsKF09SREVSX1NUQVRFX1VOU1BFQ0lGSUVEEAASFwoTT1JERVJfU1RBVEVfUEVORElORxABEhkKFU9SREVSX1NUQVRFX0NPTkZJUk1FRBACEhcKE09SREVSX1NUQVRFX01BVENIRUQQAxIYChRPUkRFUl9TVEFURV9DQU5DRUxFRBAEEhcKE09SREVSX1NUQVRFX1NFVFRMRUQQBSo9CglUcmFkZVJvbGUSGgoWVFJBREVfUk9MRV9VTlNQRUNJRklFRBAAEgkKBU1BS0VSEAESCQoFVEFLRVIQAjL2AwoPQXJib3J0ZXJTZXJ2aWNlEmIKCVNlbmRPcmRlchIoLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuU2VuZE9yZGVyUmVxdWVzdBopLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuU2VuZE9yZGVyUmVzcG9uc2UiABJoCgtDYW5jZWxPcmRlchIqLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuQ2FuY2VsT3JkZXJSZXF1ZXN0GisueHl6LmFzcGVucy5hcmJvcnRlci52MS5DYW5jZWxPcmRlclJlc3BvbnNlIgASUQoGVHJhZGVzEiQueHl6LmFzcGVucy5hcmJvcnRlci52MS5UcmFkZVJlcXVlc3QaHS54eXouYXNwZW5zLmFyYm9ydGVyLnYxLlRyYWRlIgAwARJhCglPcmRlcmJvb2sSKC54eXouYXNwZW5zLmFyYm9ydGVyLnYxLk9yZGVyYm9va1JlcXVlc3QaJi54eXouYXNwZW5zLmFyYm9ydGVyLnYxLk9yZGVyYm9va0VudHJ5IgAwARJfCghXaXRoZHJhdxInLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuV2l0aGRyYXdSZXF1ZXN0GigueHl6LmFzcGVucy5hcmJvcnRlci52MS5XaXRoZHJhd1Jlc3BvbnNlIgBCAkgBYgZwcm90bzM");
-
-/**
- * @generated from message xyz.aspens.arborter.v1.Empty
- */
-export type Empty = Message<"xyz.aspens.arborter.v1.Empty"> & {
-};
-
-/**
- * Describes the message xyz.aspens.arborter.v1.Empty.
- * Use `create(EmptySchema)` to create a new message.
- */
-export const EmptySchema: GenMessage<Empty> = /*@__PURE__*/
-  messageDesc(file_arborter, 0);
+  fileDesc("Cg5hcmJvcnRlci5wcm90bxIWeHl6LmFzcGVucy5hcmJvcnRlci52MSJlCg9XaXRoZHJhd1JlcXVlc3QSDwoHbmV0d29yaxgBIAEoCRINCgV0b2tlbhgCIAEoCRIPCgdhY2NvdW50GAMgASgJEg4KBmFtb3VudBgEIAEoCRIRCglzaWduYXR1cmUYBSABKAwidAoQV2l0aGRyYXdSZXNwb25zZRIPCgdhY2NvdW50GAEgASgJEg0KBXRva2VuGAIgASgJEg4KBmFtb3VudBgDIAEoCRINCgVub25jZRgEIAEoBBIOCgZleHBpcnkYBSABKAQSEQoJc2lnbmF0dXJlGAYgASgMImIKEkNhbmNlbE9yZGVyUmVxdWVzdBI0CgVvcmRlchgBIAEoCzIlLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuT3JkZXJUb0NhbmNlbBIWCg5zaWduYXR1cmVfaGFzaBgCIAEoDCItChNDYW5jZWxPcmRlclJlc3BvbnNlEhYKDm9yZGVyX2NhbmNlbGVkGAEgASgIIpkBChBPcmRlcmJvb2tSZXF1ZXN0EhEKCW1hcmtldF9pZBgBIAEoCRIjChZoaXN0b3JpY2FsX29wZW5fb3JkZXJzGAIgASgISACIAQESHQoQZmlsdGVyX2J5X3RyYWRlchgDIAEoCUgBiAEBQhkKF19oaXN0b3JpY2FsX29wZW5fb3JkZXJzQhMKEV9maWx0ZXJfYnlfdHJhZGVyIpkBCgxUcmFkZVJlcXVlc3QSEQoJbWFya2V0X2lkGAEgASgJEiUKGGhpc3RvcmljYWxfY2xvc2VkX3RyYWRlcxgCIAEoCEgAiAEBEh0KEGZpbHRlcl9ieV90cmFkZXIYAyABKAlIAYgBAUIbChlfaGlzdG9yaWNhbF9jbG9zZWRfdHJhZGVzQhMKEV9maWx0ZXJfYnlfdHJhZGVyIlgKEFNlbmRPcmRlclJlcXVlc3QSLAoFb3JkZXIYASABKAsyHS54eXouYXNwZW5zLmFyYm9ydGVyLnYxLk9yZGVyEhYKDnNpZ25hdHVyZV9oYXNoGAIgASgMIuwCCgVPcmRlchIqCgRzaWRlGAEgASgOMhwueHl6LmFzcGVucy5hcmJvcnRlci52MS5TaWRlEhAKCHF1YW50aXR5GAIgASgJEhIKBXByaWNlGAMgASgJSACIAQESEQoJbWFya2V0X2lkGAQgASgJEhwKFGJhc2VfYWNjb3VudF9hZGRyZXNzGAUgASgJEh0KFXF1b3RlX2FjY291bnRfYWRkcmVzcxgGIAEoCRI9Cg5leGVjdXRpb25fdHlwZRgHIAEoDjIlLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuRXhlY3V0aW9uVHlwZRIaChJtYXRjaGluZ19vcmRlcl9pZHMYCCADKAwSEQoJcG9zdF9vbmx5GAkgASgIEg4KBmhpZGRlbhgKIAEoCBIZCgxxdW90ZV9idWRnZXQYCyABKAlIAYgBARINCgVub25jZRgMIAEoBEIICgZfcHJpY2VCDwoNX3F1b3RlX2J1ZGdldCK5AgoFVHJhZGUSEQoJdGltZXN0YW1wGAEgASgEEg0KBXByaWNlGAIgASgJEgsKA3F0eRgDIAEoCRIaChJtYWtlcl9iYXNlX2FkZHJlc3MYBCABKAkSGwoTbWFrZXJfcXVvdGVfYWRkcmVzcxgFIAEoCRIaChJ0YWtlcl9iYXNlX2FkZHJlc3MYBiABKAkSGwoTdGFrZXJfcXVvdGVfYWRkcmVzcxgHIAEoCRIzCghidXllcl9pcxgIIAEoDjIhLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuVHJhZGVSb2xlEjQKCXNlbGxlcl9pcxgJIAEoDjIhLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuVHJhZGVSb2xlEhEKCW9yZGVyX2hpdBgKIAEoDBIRCgltYXJrZXRfaWQYCyABKAkiqAEKEVNlbmRPcmRlclJlc3BvbnNlEhUKDW9yZGVyX2luX2Jvb2sYASABKAgSMQoFb3JkZXIYAiABKAsyHS54eXouYXNwZW5zLmFyYm9ydGVyLnYxLk9yZGVySACIAQESLQoGdHJhZGVzGAMgAygLMh0ueHl6LmFzcGVucy5hcmJvcnRlci52MS5UcmFkZRIQCghvcmRlcl9pZBgEIAEoDEIICgZfb3JkZXIiYAoNT3JkZXJUb0NhbmNlbBIRCgltYXJrZXRfaWQYASABKAkSKgoEc2lkZRgCIAEoDjIcLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuU2lkZRIQCghvcmRlcl9pZBgDIAEoDCKUAgoOT3JkZXJib29rRW50cnkSEQoJdGltZXN0YW1wGAEgASgEEhAKCG9yZGVyX2lkGAIgASgMEg0KBXByaWNlGAMgASgJEhAKCHF1YW50aXR5GAQgASgJEioKBHNpZGUYBSABKA4yHC54eXouYXNwZW5zLmFyYm9ydGVyLnYxLlNpZGUSGgoSbWFrZXJfYmFzZV9hZGRyZXNzGAYgASgJEhsKE21ha2VyX3F1b3RlX2FkZHJlc3MYByABKAkSEQoJbWFya2V0X2lkGAggASgJEjEKBXN0YXRlGAkgASgOMiIueHl6LmFzcGVucy5hcmJvcnRlci52MS5PcmRlclN0YXRlEhEKCXBvc3Rfb25seRgKIAEoCCo4CgRTaWRlEhQKEFNJREVfVU5TUEVDSUZJRUQQABIMCghTSURFX0JJRBABEgwKCFNJREVfQVNLEAIqUQoNRXhlY3V0aW9uVHlwZRIeChpFWEVDVVRJT05fVFlQRV9VTlNQRUNJRklFRBAAEiAKHEVYRUNVVElPTl9UWVBFX0RJU0NSRVRJT05BUlkQASp3CgpPcmRlclN0YXRlEhsKF09SREVSX1NUQVRFX1VOU1BFQ0lGSUVEEAASGQoVT1JERVJfU1RBVEVfQ09ORklSTUVEEAISFwoTT1JERVJfU1RBVEVfTUFUQ0hFRBADEhgKFE9SREVSX1NUQVRFX0NBTkNFTEVEEAQqPQoJVHJhZGVSb2xlEhoKFlRSQURFX1JPTEVfVU5TUEVDSUZJRUQQABIJCgVNQUtFUhABEgkKBVRBS0VSEAIy9gMKD0FyYm9ydGVyU2VydmljZRJiCglTZW5kT3JkZXISKC54eXouYXNwZW5zLmFyYm9ydGVyLnYxLlNlbmRPcmRlclJlcXVlc3QaKS54eXouYXNwZW5zLmFyYm9ydGVyLnYxLlNlbmRPcmRlclJlc3BvbnNlIgASaAoLQ2FuY2VsT3JkZXISKi54eXouYXNwZW5zLmFyYm9ydGVyLnYxLkNhbmNlbE9yZGVyUmVxdWVzdBorLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuQ2FuY2VsT3JkZXJSZXNwb25zZSIAElEKBlRyYWRlcxIkLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuVHJhZGVSZXF1ZXN0Gh0ueHl6LmFzcGVucy5hcmJvcnRlci52MS5UcmFkZSIAMAESYQoJT3JkZXJib29rEigueHl6LmFzcGVucy5hcmJvcnRlci52MS5PcmRlcmJvb2tSZXF1ZXN0GiYueHl6LmFzcGVucy5hcmJvcnRlci52MS5PcmRlcmJvb2tFbnRyeSIAMAESXwoIV2l0aGRyYXcSJy54eXouYXNwZW5zLmFyYm9ydGVyLnYxLldpdGhkcmF3UmVxdWVzdBooLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuV2l0aGRyYXdSZXNwb25zZSIAQgJIAWIGcHJvdG8z");
 
 /**
  * rpc: Withdraw 
@@ -62,7 +49,14 @@ export type WithdrawRequest = Message<"xyz.aspens.arborter.v1.WithdrawRequest"> 
 
   /**
    * Signature by `account`'s key over the canonical request bytes
-   * ("network|token|account|amount"): Secp256k1 on EVM, Ed25519 on Solana.
+   *   "<network>|<token>|<account>|<amount>"
+   * — EIP-191 personal-sign (secp256k1, 65 bytes) on EVM, raw Ed25519 (64
+   * bytes) on Solana; the curve follows `network`'s architecture. The server
+   * rebuilds those bytes from the request it receives: each string field is
+   * TRIMMED of surrounding whitespace and `amount` is re-serialized from the
+   * parsed u128, so a signature over "0x64", "00100" or " 100" never
+   * verifies — sign exactly the canonical decimal you send. `account` is NOT
+   * case-canonicalized before recovery: sign with, and send, one spelling.
    *
    * @generated from field: bytes signature = 5;
    */
@@ -74,14 +68,20 @@ export type WithdrawRequest = Message<"xyz.aspens.arborter.v1.WithdrawRequest"> 
  * Use `create(WithdrawRequestSchema)` to create a new message.
  */
 export const WithdrawRequestSchema: GenMessage<WithdrawRequest> = /*@__PURE__*/
-  messageDesc(file_arborter, 1);
+  messageDesc(file_arborter, 0);
 
 /**
  * @generated from message xyz.aspens.arborter.v1.WithdrawResponse
  */
 export type WithdrawResponse = Message<"xyz.aspens.arborter.v1.WithdrawResponse"> & {
   /**
-   * The voucher fields the holder submits to MidribV3.withdraw(...).
+   * The voucher fields the holder submits to MidribV3.withdraw(...), exactly
+   * as the TEE signed them. `account` and `token` echo the request; `amount`
+   * is in token base units as a decimal u128 string — the same denomination
+   * as `WithdrawRequest.amount`. The on-chain verifier recovers the signer
+   * from THESE values, so a holder that rebuilds the struct from its own
+   * locals must match them byte-for-byte or the submission reverts with no
+   * diagnostic. Submitting the echo verbatim is the safe path.
    *
    * @generated from field: string account = 1;
    */
@@ -98,17 +98,25 @@ export type WithdrawResponse = Message<"xyz.aspens.arborter.v1.WithdrawResponse"
   amount: string;
 
   /**
+   * Replay protection: unique per voucher on the instance.
+   *
    * @generated from field: uint64 nonce = 4;
    */
   nonce: bigint;
 
   /**
+   * Voucher deadline. THE UNIT DEPENDS ON THE CHAIN: on EVM it is a unix
+   * timestamp in seconds (issue time + 300 s); on Solana it is an absolute
+   * SLOT number (slot at issue + 600). One `uint64`, two clocks — interpret
+   * it by `WithdrawRequest.network`'s architecture.
+   *
    * @generated from field: uint64 expiry = 5;
    */
   expiry: bigint;
 
   /**
-   * The TEE (instance-owner) EIP-712 signature over the voucher.
+   * The TEE (instance-owner) signature over the voucher: EIP-712 on EVM,
+   * Ed25519 on Solana.
    *
    * @generated from field: bytes signature = 6;
    */
@@ -120,7 +128,7 @@ export type WithdrawResponse = Message<"xyz.aspens.arborter.v1.WithdrawResponse"
  * Use `create(WithdrawResponseSchema)` to create a new message.
  */
 export const WithdrawResponseSchema: GenMessage<WithdrawResponse> = /*@__PURE__*/
-  messageDesc(file_arborter, 2);
+  messageDesc(file_arborter, 1);
 
 /**
  * @generated from message xyz.aspens.arborter.v1.CancelOrderRequest
@@ -132,6 +140,17 @@ export type CancelOrderRequest = Message<"xyz.aspens.arborter.v1.CancelOrderRequ
   order?: OrderToCancel;
 
   /**
+   * Signature over the protobuf serialization of `order` — the encoded
+   * `OrderToCancel` bytes exactly as sent, every field included. Curve and
+   * expected signer follow the order's COLLATERAL side: a BID committed
+   * quote, so the signature is checked on the quote chain's curve and must
+   * come from the resting order's `quote_account_address`; an ASK committed
+   * base, so it is checked on the base chain's curve and must come from its
+   * `base_account_address`. EVM chains verify EIP-191 personal-sign (the
+   * full 65-byte r||s||v); Solana verifies raw Ed25519 (64 bytes). Any other
+   * signer, or any signed field that differs from the resting order's, is
+   * rejected as an invalid signature — it never cancels a different order.
+   *
    * @generated from field: bytes signature_hash = 2;
    */
   signatureHash: Uint8Array;
@@ -142,32 +161,22 @@ export type CancelOrderRequest = Message<"xyz.aspens.arborter.v1.CancelOrderRequ
  * Use `create(CancelOrderRequestSchema)` to create a new message.
  */
 export const CancelOrderRequestSchema: GenMessage<CancelOrderRequest> = /*@__PURE__*/
-  messageDesc(file_arborter, 3);
+  messageDesc(file_arborter, 2);
 
 /**
  * @generated from message xyz.aspens.arborter.v1.CancelOrderResponse
  */
 export type CancelOrderResponse = Message<"xyz.aspens.arborter.v1.CancelOrderResponse"> & {
   /**
-   * Whether the order was found and canceled
+   * Always true when this message is returned. A cancel that finds the
+   * resting order cancels it and answers here; a cancel that does not —
+   * already filled, already canceled, never existed, or a replay of an
+   * earlier cancel — fails the RPC with NOT_FOUND instead. Distinguish
+   * "canceled now" from "already gone" by the status code, not by this flag.
    *
    * @generated from field: bool order_canceled = 1;
    */
   orderCanceled: boolean;
-
-  /**
-   * Transaction hashes associated with this cancellation
-   *
-   * @generated from field: repeated xyz.aspens.arborter.v1.TransactionHash transaction_hashes = 2;
-   */
-  transactionHashes: TransactionHash[];
-
-  /**
-   * Current state of the orderbook after this operation
-   *
-   * @generated from field: repeated xyz.aspens.arborter.v1.OrderbookEntry current_orderbook = 3;
-   */
-  currentOrderbook: OrderbookEntry[];
 };
 
 /**
@@ -175,37 +184,31 @@ export type CancelOrderResponse = Message<"xyz.aspens.arborter.v1.CancelOrderRes
  * Use `create(CancelOrderResponseSchema)` to create a new message.
  */
 export const CancelOrderResponseSchema: GenMessage<CancelOrderResponse> = /*@__PURE__*/
-  messageDesc(file_arborter, 4);
+  messageDesc(file_arborter, 3);
 
 /**
  * @generated from message xyz.aspens.arborter.v1.OrderbookRequest
  */
 export type OrderbookRequest = Message<"xyz.aspens.arborter.v1.OrderbookRequest"> & {
   /**
-   * Used to keep the client alive
-   *
-   * @generated from field: bool continue_stream = 1;
-   */
-  continueStream: boolean;
-
-  /**
    * The market id to stream orders for
    *
-   * @generated from field: string market_id = 2;
+   * @generated from field: string market_id = 1;
    */
   marketId: string;
 
   /**
-   * If true, returns existing open orders when stream starts, then continues streaming
+   * If true, returns existing open orders when the stream starts, then
+   * continues streaming live updates
    *
-   * @generated from field: optional bool historical_open_orders = 3;
+   * @generated from field: optional bool historical_open_orders = 2;
    */
   historicalOpenOrders?: boolean;
 
   /**
    * If this is sent too, then we filter by a specific trader
    *
-   * @generated from field: optional string filter_by_trader = 4;
+   * @generated from field: optional string filter_by_trader = 3;
    */
   filterByTrader?: string;
 };
@@ -215,37 +218,31 @@ export type OrderbookRequest = Message<"xyz.aspens.arborter.v1.OrderbookRequest"
  * Use `create(OrderbookRequestSchema)` to create a new message.
  */
 export const OrderbookRequestSchema: GenMessage<OrderbookRequest> = /*@__PURE__*/
-  messageDesc(file_arborter, 5);
+  messageDesc(file_arborter, 4);
 
 /**
  * @generated from message xyz.aspens.arborter.v1.TradeRequest
  */
 export type TradeRequest = Message<"xyz.aspens.arborter.v1.TradeRequest"> & {
   /**
-   * Used to keep the client alive
+   * The market id to stream trades for
    *
-   * @generated from field: bool continue_stream = 1;
-   */
-  continueStream: boolean;
-
-  /**
-   * The market id to stream orders for
-   *
-   * @generated from field: string market_id = 2;
+   * @generated from field: string market_id = 1;
    */
   marketId: string;
 
   /**
-   * If true, returns existing closed when stream starts, then continues streaming
+   * If true, returns existing closed trades when the stream starts, then
+   * continues streaming live fills
    *
-   * @generated from field: optional bool historical_closed_trades = 3;
+   * @generated from field: optional bool historical_closed_trades = 2;
    */
   historicalClosedTrades?: boolean;
 
   /**
    * If this is sent too, then we filter by a specific trader
    *
-   * @generated from field: optional string filter_by_trader = 4;
+   * @generated from field: optional string filter_by_trader = 3;
    */
   filterByTrader?: string;
 };
@@ -255,7 +252,7 @@ export type TradeRequest = Message<"xyz.aspens.arborter.v1.TradeRequest"> & {
  * Use `create(TradeRequestSchema)` to create a new message.
  */
 export const TradeRequestSchema: GenMessage<TradeRequest> = /*@__PURE__*/
-  messageDesc(file_arborter, 6);
+  messageDesc(file_arborter, 5);
 
 /**
  * @generated from message xyz.aspens.arborter.v1.SendOrderRequest
@@ -269,10 +266,11 @@ export type SendOrderRequest = Message<"xyz.aspens.arborter.v1.SendOrderRequest"
   order?: Order;
 
   /**
-   * Valid signature over the encoded `Order` (EIP-191 on EVM, Ed25519 on
-   * Solana). This is the ONLY thing that authenticates order entry, and it now
-   * covers every input the arborter needs — which is what let the sibling
-   * `OrderAuthorization` message go away entirely.
+   * Valid signature over the encoded `Order` — its protobuf serialization,
+   * byte for byte as sent — (EIP-191 personal-sign on EVM, full 65 bytes;
+   * raw Ed25519 on Solana). This is the ONLY thing that authenticates order
+   * entry, and it now covers every input the arborter needs — which is what
+   * let the sibling `OrderAuthorization` message go away entirely.
    *
    * NOTE: `authorization` (field 3) and its `OrderAuthorization` message were
    * removed. It ended up holding exactly two things, and both were wrong to
@@ -295,7 +293,7 @@ export type SendOrderRequest = Message<"xyz.aspens.arborter.v1.SendOrderRequest"
  * Use `create(SendOrderRequestSchema)` to create a new message.
  */
 export const SendOrderRequestSchema: GenMessage<SendOrderRequest> = /*@__PURE__*/
-  messageDesc(file_arborter, 7);
+  messageDesc(file_arborter, 6);
 
 /**
  * @generated from message xyz.aspens.arborter.v1.Order
@@ -402,8 +400,7 @@ export type Order = Message<"xyz.aspens.arborter.v1.Order"> & {
   /**
    * Post-only: if true, the order MUST rest on the book. If it would
    * cross any opposing confirmed order at submission time the request
-   * is rejected with FAILED_PRECONDITION and no on-chain lock is
-   * performed. Limit orders only — incompatible with market (no price)
+   * is rejected with FAILED_PRECONDITION and nothing is reserved. Limit orders only — incompatible with market (no price)
    * and with DISCRETIONARY execution_type. Defaults to false, which
    * preserves legacy take-or-rest behavior.
    *
@@ -414,9 +411,8 @@ export type Order = Message<"xyz.aspens.arborter.v1.Order"> & {
   /**
    * Hidden ("invisible") order: matched, settled, and canceled exactly
    * like a visible order (normal price-time priority), but never exposed
-   * publicly — excluded from the Orderbook stream (live + historical),
-   * from the current_orderbook embedded in Send/CancelOrderResponse,
-   * and therefore from all client-derived depth. Appears in NO stream,
+   * publicly — excluded from the Orderbook stream (live + historical) and
+   * therefore from all client-derived depth. Appears in NO stream,
    * not even to its owner: track via SendOrderResponse.order_id. When a
    * hidden order fills, the trade prints publicly with the hidden side's
    * identity fields (ids + addresses) redacted to empty/zero.
@@ -458,6 +454,11 @@ export type Order = Message<"xyz.aspens.arborter.v1.Order"> & {
    * any value works, and the caller may reuse one deliberately — a repeat
    * derives the same id and is refused as a replay.
    *
+   * Over the FCE direct-action transport both shipped clients sign
+   * `nonce = 0` for every order, so two otherwise-identical orders from one
+   * wallet collide there and the second is refused; vary a field, or use the
+   * gRPC path where the SDK stamps a fresh nonce.
+   *
    * It lives HERE, inside the signed `Order`, and that is the whole point. The
    * arborter derives the canonical order id itself from this message and stops
    * trusting a caller-supplied one, which is only possible if every input to
@@ -479,7 +480,7 @@ export type Order = Message<"xyz.aspens.arborter.v1.Order"> & {
  * Use `create(OrderSchema)` to create a new message.
  */
 export const OrderSchema: GenMessage<Order> = /*@__PURE__*/
-  messageDesc(file_arborter, 8);
+  messageDesc(file_arborter, 7);
 
 /**
  * @generated from message xyz.aspens.arborter.v1.Trade
@@ -513,20 +514,6 @@ export type Trade = Message<"xyz.aspens.arborter.v1.Trade"> & {
   qty: string;
 
   /**
-   * Maker's internal trader id. Safely ignore.
-   *
-   * @generated from field: string maker_id = 4;
-   */
-  makerId: string;
-
-  /**
-   * Taker's internal trader id. Safely ignore.
-   *
-   * @generated from field: string taker_id = 5;
-   */
-  takerId: string;
-
-  /**
    * The maker's base chain wallet address.
    *
    * All four wallet addresses on this message are CANONICALIZED by the server:
@@ -539,7 +526,7 @@ export type Trade = Message<"xyz.aspens.arborter.v1.Trade"> & {
    * see the comments there. Clients comparing any of these four fields
    * against a locally-held EVM address must lowercase their own side first.
    *
-   * @generated from field: string maker_base_address = 6;
+   * @generated from field: string maker_base_address = 4;
    */
   makerBaseAddress: string;
 
@@ -547,7 +534,7 @@ export type Trade = Message<"xyz.aspens.arborter.v1.Trade"> & {
    * The maker's quote chain wallet address (canonicalized; see
    * `maker_base_address`)
    *
-   * @generated from field: string maker_quote_address = 7;
+   * @generated from field: string maker_quote_address = 5;
    */
   makerQuoteAddress: string;
 
@@ -555,7 +542,7 @@ export type Trade = Message<"xyz.aspens.arborter.v1.Trade"> & {
    * The taker's base chain wallet address (canonicalized; see
    * `maker_base_address`)
    *
-   * @generated from field: string taker_base_address = 8;
+   * @generated from field: string taker_base_address = 6;
    */
   takerBaseAddress: string;
 
@@ -563,21 +550,21 @@ export type Trade = Message<"xyz.aspens.arborter.v1.Trade"> & {
    * The taker's quote chain wallet address (canonicalized; see
    * `maker_base_address`)
    *
-   * @generated from field: string taker_quote_address = 9;
+   * @generated from field: string taker_quote_address = 7;
    */
   takerQuoteAddress: string;
 
   /**
    * Who is the buyer in this trade (MAKER or TAKER)
    *
-   * @generated from field: xyz.aspens.arborter.v1.TradeRole buyer_is = 10;
+   * @generated from field: xyz.aspens.arborter.v1.TradeRole buyer_is = 8;
    */
   buyerIs: TradeRole;
 
   /**
    * Who is the seller in this trade (MAKER or TAKER)
    *
-   * @generated from field: xyz.aspens.arborter.v1.TradeRole seller_is = 11;
+   * @generated from field: xyz.aspens.arborter.v1.TradeRole seller_is = 9;
    */
   sellerIs: TradeRole;
 
@@ -587,7 +574,7 @@ export type Trade = Message<"xyz.aspens.arborter.v1.Trade"> & {
    * `SendOrderResponse.order_id`. Server-derived — the order's owner never
    * chose it, only received it back.
    *
-   * @generated from field: bytes order_hit = 12;
+   * @generated from field: bytes order_hit = 10;
    */
   orderHit: Uint8Array;
 
@@ -596,17 +583,14 @@ export type Trade = Message<"xyz.aspens.arborter.v1.Trade"> & {
    * `base_chain::base_token::quote_chain::quote_token`, the same identity
    * `TradeRequest.market_id` and `OrderbookEntry.market_id` use.
    *
-   * REQUIRED for the live Trades stream to be scoped. Without it, a live
-   * trade carries no market identity, so a per-market subscription can only
-   * filter on the four trader-address fields — meaning a subscriber to one
-   * market would receive fills from every other market as long as the
-   * addresses matched. The engine's trade already carries this; it simply
-   * was not on the wire, which is why the live half of `Trades` has no
-   * producer today.
+   * Set on every `Trade`, including those embedded in `SendOrderResponse`,
+   * and it is what scopes the live half of `Trades`: the server tags each
+   * fill it publishes with this value and filters per-market subscribers on
+   * it. Without it a live subscription could only filter on the four
+   * address fields, which would have leaked a trader's fills from every
+   * other market it was active in.
    *
-   * Set on every `Trade`, including those embedded in `SendOrderResponse`.
-   *
-   * @generated from field: string market_id = 13;
+   * @generated from field: string market_id = 11;
    */
   marketId: string;
 };
@@ -616,35 +600,7 @@ export type Trade = Message<"xyz.aspens.arborter.v1.Trade"> & {
  * Use `create(TradeSchema)` to create a new message.
  */
 export const TradeSchema: GenMessage<Trade> = /*@__PURE__*/
-  messageDesc(file_arborter, 9);
-
-/**
- * Transaction hash information 
- *
- * @generated from message xyz.aspens.arborter.v1.TransactionHash
- */
-export type TransactionHash = Message<"xyz.aspens.arborter.v1.TransactionHash"> & {
-  /**
-   * Type of transaction hash
-   *
-   * @generated from field: string hash_type = 1;
-   */
-  hashType: string;
-
-  /**
-   * The transaction hash value
-   *
-   * @generated from field: string hash_value = 2;
-   */
-  hashValue: string;
-};
-
-/**
- * Describes the message xyz.aspens.arborter.v1.TransactionHash.
- * Use `create(TransactionHashSchema)` to create a new message.
- */
-export const TransactionHashSchema: GenMessage<TransactionHash> = /*@__PURE__*/
-  messageDesc(file_arborter, 10);
+  messageDesc(file_arborter, 8);
 
 /**
  * rpc: SendOrder 
@@ -661,38 +617,27 @@ export type SendOrderResponse = Message<"xyz.aspens.arborter.v1.SendOrderRespons
 
   /**
    * If the order lands in the book, what remains unfilled from the order.
+   * Echoes the signed addresses byte-verbatim; see `Order.base_account_address`.
    *
    * @generated from field: optional xyz.aspens.arborter.v1.Order order = 2;
    */
   order?: Order;
 
   /**
-   * Which other orders, if any, this order was matched with.
+   * The fills executed at entry, if any. This is the only place a caller
+   * learns its immediate fills; the Trades stream carries them too, but
+   * only to a subscriber that was already listening.
    *
    * @generated from field: repeated xyz.aspens.arborter.v1.Trade trades = 3;
    */
   trades: Trade[];
 
   /**
-   * Transaction hashes associated with this order
-   *
-   * @generated from field: repeated xyz.aspens.arborter.v1.TransactionHash transaction_hashes = 4;
-   */
-  transactionHashes: TransactionHash[];
-
-  /**
-   * Current state of the orderbook after this operation
-   *
-   * @generated from field: repeated xyz.aspens.arborter.v1.OrderbookEntry current_orderbook = 5;
-   */
-  currentOrderbook: OrderbookEntry[];
-
-  /**
    * The order's canonical identifier: the full 32-byte order id, shown as
    * `0x`-prefixed hex. Always server-derived from the signed order — the
    * caller cannot choose or influence it, only learn it from this response.
    *
-   * @generated from field: bytes order_id = 6;
+   * @generated from field: bytes order_id = 4;
    */
   orderId: Uint8Array;
 };
@@ -702,7 +647,7 @@ export type SendOrderResponse = Message<"xyz.aspens.arborter.v1.SendOrderRespons
  * Use `create(SendOrderResponseSchema)` to create a new message.
  */
 export const SendOrderResponseSchema: GenMessage<SendOrderResponse> = /*@__PURE__*/
-  messageDesc(file_arborter, 11);
+  messageDesc(file_arborter, 9);
 
 /**
  * rpc: CancelOrder 
@@ -718,26 +663,28 @@ export type OrderToCancel = Message<"xyz.aspens.arborter.v1.OrderToCancel"> & {
   marketId: string;
 
   /**
-   * 'BID' or 'ASK'
+   * The side the order rests on. Required even with the full 32-byte id:
+   * bids and asks are separate trees, and the side also selects which
+   * wallet must sign (see `CancelOrderRequest.signature_hash`).
    *
    * @generated from field: xyz.aspens.arborter.v1.Side side = 2;
    */
   side: Side;
 
   /**
-   * the token address
+   * NOTE: a `token_address` field used to sit between `side` and `order_id`.
+   * The server never read it — it was fully determined by `market_id` and
+   * `side` — yet it was inside the signed bytes, so every caller had to
+   * resolve it exactly as the server would have (BID → quote-chain token,
+   * ASK → base-chain token) or its cancel silently matched nothing. A value
+   * derived once and used directly does not belong in a signed message.
    *
-   * @generated from field: string token_address = 3;
-   */
-  tokenAddress: string;
-
-  /**
    * The order's canonical identifier: the full 32-byte order id, shown as
    * `0x`-prefixed hex, exactly as returned in `SendOrderResponse.order_id`.
    * Server-derived at order entry — the caller only echoes it back here to
    * identify which order to cancel, never chooses it.
    *
-   * @generated from field: bytes order_id = 4;
+   * @generated from field: bytes order_id = 3;
    */
   orderId: Uint8Array;
 };
@@ -747,7 +694,7 @@ export type OrderToCancel = Message<"xyz.aspens.arborter.v1.OrderToCancel"> & {
  * Use `create(OrderToCancelSchema)` to create a new message.
  */
 export const OrderToCancelSchema: GenMessage<OrderToCancel> = /*@__PURE__*/
-  messageDesc(file_arborter, 12);
+  messageDesc(file_arborter, 10);
 
 /**
  * rpc: Orderbook 
@@ -772,14 +719,16 @@ export type OrderbookEntry = Message<"xyz.aspens.arborter.v1.OrderbookEntry"> & 
   orderId: Uint8Array;
 
   /**
-   * price of the order - in non-decimal form
+   * Resting price in pair-decimal units — the order's own `Order.price`
+   * string verbatim. A MARKET order (no price) publishes "0" here.
    *
    * @generated from field: string price = 3;
    */
   price: string;
 
   /**
-   * quantity of the order - in non-decimal form
+   * Resting (unfilled) quantity in BASE units at pair decimals — the same
+   * units as `Order.quantity`, verbatim.
    *
    * @generated from field: string quantity = 4;
    */
@@ -811,14 +760,15 @@ export type OrderbookEntry = Message<"xyz.aspens.arborter.v1.OrderbookEntry"> & 
   makerQuoteAddress: string;
 
   /**
-   * The market ID this order belongs to
+   * The market this order rests on. The server's per-market stream filter
+   * keys on it; a request-scoped subscriber may ignore it.
    *
    * @generated from field: string market_id = 8;
    */
   marketId: string;
 
   /**
-   * The actual state of the order (Pending, Confirmed, Matched, Canceled, Settled)
+   * The order's lifecycle state; see `OrderState`.
    *
    * @generated from field: xyz.aspens.arborter.v1.OrderState state = 9;
    */
@@ -838,7 +788,7 @@ export type OrderbookEntry = Message<"xyz.aspens.arborter.v1.OrderbookEntry"> & 
  * Use `create(OrderbookEntrySchema)` to create a new message.
  */
 export const OrderbookEntrySchema: GenMessage<OrderbookEntry> = /*@__PURE__*/
-  messageDesc(file_arborter, 13);
+  messageDesc(file_arborter, 11);
 
 /**
  * @generated from enum xyz.aspens.arborter.v1.Side
@@ -903,7 +853,12 @@ export const ExecutionTypeSchema: GenEnum<ExecutionType> = /*@__PURE__*/
   enumDesc(file_arborter, 1);
 
 /**
- * The actual state of an order in the matching engine
+ * The state of an order as published on `OrderbookEntry.state`. Only the
+ * three values below are ever emitted. There is no pending state: an order
+ * is matchable from the moment it is accepted, because the optimistic ledger
+ * reserves its budget in the same single-writer turn that books it. There is
+ * no settled state either: settlement is netted batches off the order
+ * lifecycle, not an order transition.
  *
  * @generated from enum xyz.aspens.arborter.v1.OrderState
  */
@@ -914,39 +869,26 @@ export enum OrderState {
   UNSPECIFIED = 0,
 
   /**
-   * Order submitted, funds locked on-chain, shows in orderbook but NOT matchable
-   *
-   * @generated from enum value: ORDER_STATE_PENDING = 1;
-   */
-  PENDING = 1,
-
-  /**
-   * OrderOpen blockchain event received, order is now matchable
+   * Resting in the book and matchable. Clients computing top-of-book should
+   * count only this state.
    *
    * @generated from enum value: ORDER_STATE_CONFIRMED = 2;
    */
   CONFIRMED = 2,
 
   /**
-   * Order matched by matching engine, trade recorded
+   * Fully matched by the engine; the trade(s) are recorded.
    *
    * @generated from enum value: ORDER_STATE_MATCHED = 3;
    */
   MATCHED = 3,
 
   /**
-   * Order canceled
+   * Canceled by its owner.
    *
    * @generated from enum value: ORDER_STATE_CANCELED = 4;
    */
   CANCELED = 4,
-
-  /**
-   * On-chain settlement completed successfully
-   *
-   * @generated from enum value: ORDER_STATE_SETTLED = 5;
-   */
-  SETTLED = 5,
 }
 
 /**
