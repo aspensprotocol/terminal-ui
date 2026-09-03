@@ -27,10 +27,13 @@ export class EvmWalletAdapter implements WalletAdapter {
     ];
   }
 
-  // The adapter signs AS `address`: wagmi resolves the connector client
-  // for that account and refuses (ConnectorAccountNotFound) when the
-  // connected wallet does not hold it — a loud failure instead of a
-  // signature from whatever account the wallet currently has selected.
+  // The adapter signs AS `address`: wagmi checks it against the ACTIVE
+  // connector's accounts and refuses (ConnectorAccountNotFound) when that
+  // connector does not hold it — a loud failure instead of a signature
+  // from whatever account the wallet currently has selected. It looks at
+  // the active connector only; that is sufficient because the wallet sync
+  // keeps at most one EVM wallet in the store at a time, so the only EVM
+  // address a caller can pass is the active connector's own.
   createSigningAdapter(address: string): SigningAdapter {
     const account = address as `0x${string}`;
     return {
