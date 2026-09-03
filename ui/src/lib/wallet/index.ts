@@ -9,7 +9,9 @@ export {
   type SideLegs,
 } from "./ecosystem";
 export {
+  cancelSigningWallet,
   pickWalletForEcosystem,
   settlementWallets,
+  type CancelTarget,
   type SettlementWallets,
 } from "./selection";

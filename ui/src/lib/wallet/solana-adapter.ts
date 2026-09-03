@@ -57,12 +57,24 @@ export class SolanaWalletAdapter implements WalletAdapter {
     ];
   }
 
-  createSigningAdapter(_address: string): SigningAdapter {
+  // The wallet-adapter context holds exactly one connected key; refuse to
+  // sign for any other `address` rather than produce a signature the venue
+  // will reject as the wrong signer.
+  createSigningAdapter(address: string): SigningAdapter {
+    const assertHolds = () => {
+      const connected = walletContext?.publicKey?.toBase58();
+      if (connected !== address) {
+        throw new Error(
+          `Solana wallet ${connected ?? "(none)"} is connected, but ${address} must sign`,
+        );
+      }
+    };
     return {
       async signMessage(hexMessage: string): Promise<string> {
         if (!walletContext?.signMessage) {
           throw new Error("Solana wallet does not support message signing");
         }
+        assertHolds();
         const messageBytes = hexToBytes(hexMessage);
         const signatureBytes = await walletContext.signMessage(messageBytes);
         return bytesToHex(signatureBytes);
@@ -75,6 +87,7 @@ export class SolanaWalletAdapter implements WalletAdapter {
         if (!walletContext?.signMessage) {
           throw new Error("Solana wallet does not support message signing");
         }
+        assertHolds();
         return walletContext.signMessage(bytes);
       },
     };

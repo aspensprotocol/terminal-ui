@@ -27,10 +27,19 @@ export class EvmWalletAdapter implements WalletAdapter {
     ];
   }
 
-  createSigningAdapter(_address: string): SigningAdapter {
+  // The adapter signs AS `address`: wagmi checks it against the ACTIVE
+  // connector's accounts and refuses (ConnectorAccountNotFound) when that
+  // connector does not hold it — a loud failure instead of a signature
+  // from whatever account the wallet currently has selected. It looks at
+  // the active connector only; that is sufficient because the wallet sync
+  // keeps at most one EVM wallet in the store at a time, so the only EVM
+  // address a caller can pass is the active connector's own.
+  createSigningAdapter(address: string): SigningAdapter {
+    const account = address as `0x${string}`;
     return {
       async signMessage(hexMessage: string): Promise<string> {
         const signature = await signMessage(getWagmiConfig(), {
+          account,
           message: { raw: hexMessage as `0x${string}` },
         });
         return signature;
@@ -39,12 +48,12 @@ export class EvmWalletAdapter implements WalletAdapter {
       // eth_signTypedData_v4 under the hood. The arborter recovers the
       // user's address from the 65-byte ECDSA sig over the EIP-712 digest.
       async signTypedData(typedData: TypedDataDefinition): Promise<string> {
-        return signTypedData(
-          getWagmiConfig(),
+        return signTypedData(getWagmiConfig(), {
           // wagmi's type is stricter than viem's TypedDataDefinition; the
           // runtime shape is identical.
-          typedData as Parameters<typeof signTypedData>[1],
-        );
+          ...(typedData as Parameters<typeof signTypedData>[1]),
+          account,
+        });
       },
     };
   }
