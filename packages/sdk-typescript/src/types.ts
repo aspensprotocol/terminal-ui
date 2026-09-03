@@ -58,6 +58,17 @@ export interface ApiOrder {
   filled_size: string;
   created_at: string;
   updated_at: string;
+  /**
+   * The order's per-chain account addresses as the venue holds them —
+   * base-chain wallet and quote-chain wallet — in the server's canonical
+   * form (EVM lowercased hex, base58 byte-exact). A cancel must be signed
+   * by the wallet on the order's LOCK leg: the quote wallet for a buy, the
+   * base wallet for a sell. Absent on reads that do not carry them (the
+   * FCE state read), in which case a caller can only fall back to the lock
+   * leg's ecosystem.
+   */
+  base_account_address?: string;
+  quote_account_address?: string;
 }
 
 export interface ApiTrade {

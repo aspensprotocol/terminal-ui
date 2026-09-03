@@ -431,6 +431,11 @@ class RestClient {
     return {
       id: bytesToHex(response.orderId),
       user_address: params.userAddress,
+      // The two per-chain accounts exactly as they were signed — a locally
+      // tracked (hidden) order is cancelled by the same rule as one read
+      // back from the book: its lock-leg wallet signs.
+      base_account_address: params.baseAccountAddress,
+      quote_account_address: params.quoteAccountAddress,
       market_id: params.marketId,
       price: priceDecimal,
       size: sizeDecimal,
@@ -751,6 +756,8 @@ export class ExchangeClient {
       return entries.map((entry) => ({
         id: bytesToHex(entry.orderId),
         user_address: entry.makerBaseAddress || entry.makerQuoteAddress,
+        base_account_address: entry.makerBaseAddress,
+        quote_account_address: entry.makerQuoteAddress,
         market_id: marketId,
         price: entry.price,
         size: entry.quantity,

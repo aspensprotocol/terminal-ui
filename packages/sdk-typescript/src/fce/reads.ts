@@ -91,6 +91,10 @@ export function fceOpenOrdersToEnhanced(
     const displaySize = toDisplayValueCapped(o.quantity, pairDecimals);
     return {
       id: String(o.orderId),
+      // The FCE state read carries no per-leg addresses, so
+      // `base_account_address` / `quote_account_address` stay unset here;
+      // a cancel on this path resolves its signer by the lock leg's
+      // ecosystem instead.
       user_address: userAddress,
       market_id: o.marketId || marketId,
       price: o.price,

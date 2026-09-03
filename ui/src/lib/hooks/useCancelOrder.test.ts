@@ -46,7 +46,7 @@ function makeDeps(
   const recordCancelledOrder = mock(() => {});
   const removeHiddenOrder = mock(() => {});
   return {
-    createSigningAdapter: () => ({
+    createSigningAdapter: (_order: Order) => ({
       signMessage: async () => "0x00",
     }),
     signCancel: async () => new Uint8Array([1, 2, 3]),
@@ -56,6 +56,47 @@ function makeDeps(
     ...overrides,
   };
 }
+
+describe("submitCancelOrder signer selection", () => {
+  test("resolves the signing adapter FROM THE ORDER, before signing", async () => {
+    const order = makeOrder({
+      side: "buy",
+      base_account_address: "0xbase",
+      quote_account_address: "0xquote",
+    });
+    const seen: Order[] = [];
+    const signCancel = mock(async () => new Uint8Array([9]));
+    const deps = makeDeps({
+      createSigningAdapter: (o: Order) => {
+        seen.push(o);
+        return { signMessage: async () => "0x00" };
+      },
+      signCancel,
+    });
+
+    await submitCancelOrder(order, "0xactive", "order-1", deps);
+
+    expect(seen).toEqual([order]);
+    expect(signCancel).toHaveBeenCalledTimes(1);
+  });
+
+  test("a signer-resolution failure propagates and nothing is submitted or recorded", async () => {
+    const order = makeOrder({ side: "buy", quote_account_address: "0xquote" });
+    const submitCancel = mock(async () => ({ order_id: "order-1" }));
+    const deps = makeDeps({
+      createSigningAdapter: () => {
+        throw new Error("wallet 0xquote is not connected");
+      },
+      submitCancel,
+    });
+
+    await expect(
+      submitCancelOrder(order, "0xactive", "order-1", deps),
+    ).rejects.toThrow("0xquote");
+    expect(submitCancel).not.toHaveBeenCalled();
+    expect(deps.recordCancelledOrder).not.toHaveBeenCalled();
+  });
+});
 
 describe("submitCancelOrder NOT_FOUND handling", () => {
   test("treats NOT_FOUND on a visible order as already-gone, not an error", async () => {

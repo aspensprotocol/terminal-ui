@@ -1,18 +1,33 @@
 /**
- * Signing adapter for wallet integration
+ * Signing adapters for wallet integration.
  *
- * Uses the wallet registry to create the correct signing adapter
- * for the currently active wallet's ecosystem.
+ * Uses the wallet registry to create the signing adapter for a wallet's
+ * ecosystem. Two entry points: one for the ACTIVE wallet (order placement
+ * makes the giving-leg wallet active first, then signs), and one for a
+ * specific connected wallet (a cancel must be signed by the wallet that
+ * placed the order, whatever is active).
  */
 
 import { walletRegistry } from "./wallet";
 import { useExchangeStore } from "./store";
 import type { SigningAdapter } from "@aspens/terminal-sdk";
-import type { ChainEcosystem } from "./wallet/types";
+import type { ChainEcosystem, ConnectedWallet } from "./wallet/types";
+
+/**
+ * Create a signing adapter for one specific connected wallet.
+ */
+export function createSigningAdapterForWallet(
+  wallet: ConnectedWallet,
+): SigningAdapter {
+  const adapter = walletRegistry.getAdapter(wallet.ecosystem as ChainEcosystem);
+  if (!adapter) {
+    throw new Error(`No adapter registered for ecosystem: ${wallet.ecosystem}`);
+  }
+  return adapter.createSigningAdapter(wallet.address);
+}
 
 /**
  * Create a signing adapter for the currently active wallet.
- * Uses the wallet registry to determine the correct ecosystem adapter.
  */
 export function createActiveSigningAdapter(): SigningAdapter {
   const { activeWalletId, connectedWallets } = useExchangeStore.getState();
@@ -26,10 +41,5 @@ export function createActiveSigningAdapter(): SigningAdapter {
     throw new Error("Active wallet not found");
   }
 
-  const adapter = walletRegistry.getAdapter(wallet.ecosystem as ChainEcosystem);
-  if (!adapter) {
-    throw new Error(`No adapter registered for ecosystem: ${wallet.ecosystem}`);
-  }
-
-  return adapter.createSigningAdapter(wallet.address);
+  return createSigningAdapterForWallet(wallet);
 }

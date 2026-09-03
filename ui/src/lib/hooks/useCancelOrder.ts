@@ -2,8 +2,9 @@
  * Hook for cancelling a user's open order.
  *
  * Looks up the order by id from the exchange store, derives the side /
- * market from it, signs a `OrderToCancel` via the active wallet, and
- * submits via the SDK. The arborter verifies the envelope signature and
+ * market from it, signs a `OrderToCancel` with the wallet that PLACED the
+ * order (its lock-leg wallet — see `cancelSigningWallet`; the active
+ * wallet is irrelevant), and submits via the SDK. The arborter verifies the envelope signature and
  * closes the order's collateral lot, returning the reservation to the
  * account's available balance. That is an off-chain ledger move — no
  * transaction, no gas, nothing on the contract changes.
@@ -16,7 +17,8 @@ import {
   type SigningAdapter,
 } from "@aspens/terminal-sdk";
 import { useExchangeStore, type CancelledOrderEntry } from "@/lib/store";
-import { createActiveSigningAdapter } from "@/lib/signing-adapter";
+import { createSigningAdapterForWallet } from "@/lib/signing-adapter";
+import { cancelSigningWallet } from "@/lib/wallet";
 import { useExchangeClient } from "./useExchangeClient";
 import type { Order } from "@/lib/types/exchange";
 
@@ -28,7 +30,9 @@ import type { Order } from "@/lib/types/exchange";
  * already-resolved `order` rather than the hook itself.
  */
 export interface CancelSubmissionDeps {
-  createSigningAdapter: () => SigningAdapter;
+  /** The adapter for the wallet that may cancel THIS order; throws when
+   * that wallet is not connected. */
+  createSigningAdapter: (order: Order) => SigningAdapter;
   signCancel: (
     data: CancelSigningData,
     adapter: SigningAdapter,
@@ -55,7 +59,7 @@ export async function submitCancelOrder(
   deps: CancelSubmissionDeps,
 ): Promise<void> {
   try {
-    const signingAdapter = deps.createSigningAdapter();
+    const signingAdapter = deps.createSigningAdapter(order);
     const signature = await deps.signCancel(
       {
         marketId: order.market_id,
@@ -150,7 +154,18 @@ export function useCancelOrder() {
       setCancellingOrders((prev) => new Set(prev).add(orderId));
       try {
         await submitCancelOrder(order, userAddress, orderId, {
-          createSigningAdapter: createActiveSigningAdapter,
+          createSigningAdapter: (o) => {
+            const { connectedWallets, activeWalletId, markets } =
+              useExchangeStore.getState();
+            return createSigningAdapterForWallet(
+              cancelSigningWallet(
+                o,
+                markets[o.market_id],
+                connectedWallets,
+                activeWalletId,
+              ),
+            );
+          },
           signCancel: signCancelOrder,
           submitCancel: (params) => client.cancelOrder(params),
           recordCancelledOrder: (entry) =>
