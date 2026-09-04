@@ -173,7 +173,8 @@ export interface Candle {
   volume: number;
 }
 
-// WebSocket / streaming types — kept for the legacy subscription path.
+// Subscription message shapes. The SDK has no WebSocket transport and nothing
+// sends or receives these; the client's `on*` hooks poll gRPC streams.
 
 export type SubscriptionChannel =
   | "trades"

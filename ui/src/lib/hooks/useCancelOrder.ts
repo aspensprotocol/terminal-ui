@@ -99,9 +99,9 @@ export async function submitCancelOrder(
   } catch (err) {
     // The arborter answers NOT_FOUND for a cancel of any order that is no
     // longer live in its book — a replayed cancel, or one racing a fill
-    // that just completed. Since matching moved inside the arborter's
-    // single-writer actor (2026-08), that is the deliberate wire answer,
-    // not a hidden-order special case. From the user's perspective the row
+    // that just completed. Matching runs inside the arborter's
+    // single-writer actor, so that is the deliberate wire answer for every
+    // order, not a hidden-order special case. From the user's perspective the row
     // should just disappear: it is the same outcome a successful cancel
     // would have produced locally. Any other error still propagates.
     const message = err instanceof Error ? err.message : String(err);
@@ -122,7 +122,7 @@ export async function submitCancelOrder(
       });
       // Only hidden orders live in the hidden-orders slice, so this stays
       // hidden-gated — it's the local-tracking cleanup, not the NOT_FOUND
-      // decision above (which now applies to every order).
+      // decision above (which applies to every order).
       if (order.hidden) {
         deps.removeHiddenOrder(orderId);
       }

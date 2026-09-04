@@ -1,9 +1,8 @@
 /**
  * The caller's own copy of the canonical order id, and the budget it commits.
  *
- * Nothing here goes on the wire. `OrderAuthorization` — and
- * `SendOrderRequest.authorization` with it — was deleted: the arborter derives
- * the order id itself from the signed `Order` and a caller cannot choose one.
+ * Nothing here goes on the wire: the arborter derives the order id itself from
+ * the signed `Order`, and no request field lets a caller choose one.
  * What this module produces is the client's copy, for recognising a fill it has
  * not yet seen an id for, and (on the FCE transport) for the `orderId` key the
  * ext-proxy adapter's JSON still declares.

@@ -23,8 +23,8 @@ interface SolanaProviderProps {
 // `@solana/wallet-standard-wallet-adapter-react` (transitive dep of
 // `@solana/wallet-adapter-react`). Passing them explicitly via
 // `new PhantomWalletAdapter()` registers a *legacy* adapter that talks
-// to the deprecated `window.solana` injection, which Phantom no longer
-// exposes — the modal closes on click but no extension popup fires and
+// to the deprecated `window.solana` injection, which Phantom does not
+// expose — the modal closes on click but no extension popup fires and
 // no error surfaces. Auto-discovery picks up the same wallet through
 // the live wallet-standard channel and connects normally.
 export function SolanaProvider({ children }: SolanaProviderProps) {

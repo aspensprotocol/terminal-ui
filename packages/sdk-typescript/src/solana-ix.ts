@@ -423,9 +423,9 @@ function encodeWithdrawVoucherArgs(
  * The 13 accounts below are bound POSITIONALLY by Anchor and mirror the
  * program's `WithdrawVoucher` struct field order. A dropped entry does not
  * surface as "too few accounts": every later account shifts up one slot and
- * the program reinterprets whatever now sits there. That is exactly how
- * `withdraw_epoch` (index 7) was once omitted from the Rust SDK while its
- * whole suite stayed green. `solana-ix.test.ts` pins this list; update both
+ * the program reinterprets whatever now sits there — an omitted
+ * `withdraw_epoch` (index 7), say, leaves a whole test suite green.
+ * `solana-ix.test.ts` pins this list; update both
  * together, and regenerate from the built IDL, never from memory:
  *
  *   cd arborter/chains/solana

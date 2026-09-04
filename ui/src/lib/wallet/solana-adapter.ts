@@ -79,9 +79,8 @@ export class SolanaWalletAdapter implements WalletAdapter {
         const signatureBytes = await walletContext.signMessage(messageBytes);
         return bytesToHex(signatureBytes);
       },
-      // Required for the Solana gasless path. The arborter rebuilds the
-      // borsh payload and verifies the signature via the Ed25519SigVerify
-      // precompile — signing the raw bytes directly avoids the hex
+      // Optional `SigningAdapter.signBytes`; nothing in the SDK's order or
+      // cancel path calls it. Signs the raw bytes directly, avoiding the hex
       // round-trip that can mask layout bugs.
       async signBytes(bytes: Uint8Array): Promise<Uint8Array> {
         if (!walletContext?.signMessage) {

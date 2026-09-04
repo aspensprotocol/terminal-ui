@@ -107,15 +107,16 @@ export function MarketHeader() {
                 <span className="text-muted-foreground/60">
                   {selectedMarket.quote_ticker}
                 </span>
-                {/* Tick / Lot were removed: the config protocol (GetConfig
+                {/* No Tick / Lot stats: the config protocol (GetConfig
                     `Market`) carries no tick_size/lot_size/orderbook_decimals,
-                    so they only ever rendered "0". Restore once the venue
-                    surfaces them — see tech-debt CONFIG-MARKET-NO-TICKLOT-1. */}
+                    so there is nothing to render but "0". Add them once the
+                    venue surfaces them — see tech-debt
+                    CONFIG-MARKET-NO-TICKLOT-1. */}
               </div>
             )}
 
             {/* Right-aligned attestation link; sits on the same row as the
-                market dropdown and the Price / Tick / Lot stats. */}
+                market dropdown and the Price stat. */}
             <button
               type="button"
               onClick={() => setAttestationOpen(true)}

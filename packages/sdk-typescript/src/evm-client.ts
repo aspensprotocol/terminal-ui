@@ -1,16 +1,16 @@
 /**
  * Chain-correct viem clients for EVM reads.
  *
- * The deposit/withdraw flow used to read through wagmi (`readContract(config,
- * …)`) with no `chainId`. wagmi then falls back to the FIRST chain in its
- * config — `mainnet` — so an allowance query for a Coston2 token was sent to
- * Ethereum via viem's stock public RPC (eth.merkle.io) and failed. Scoping the
- * read by hand was not enough either: wagmi's transport for Coston2 pointed at
- * `http://localhost:8545`, a local-dev anvil no deployed browser can reach.
+ * Reads do not go through wagmi. A wagmi `readContract(config, …)` with no
+ * `chainId` falls back to the FIRST chain in its config — `mainnet` — so an
+ * allowance query for a Coston2 token goes to Ethereum via viem's stock public
+ * RPC (eth.merkle.io) and fails; and even a chain-scoped read dials whatever
+ * transport the static connector config lists, not the endpoint this
+ * deployment can reach.
  *
- * Reads therefore do not go through wagmi at all. They use a client built from
- * the arborter config's chain plus the deployment's RPC map — the same
- * resolution the balances panel uses. Writes stay on wagmi, because they must
+ * Reads instead use a client built from the arborter config's chain plus the
+ * deployment's RPC map — the same resolution the balances panel uses. Writes
+ * stay on wagmi, because they must
  * go through the user's wallet, and are guarded by
  * {@link walletChainMismatch} so a wallet on the wrong network cannot silently
  * broadcast to it.

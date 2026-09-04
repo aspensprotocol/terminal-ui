@@ -4,10 +4,8 @@
  * Mirrors the Rust SDK's `aspens::orders::derive_order_id`. Under the optimistic
  * shadow ledger, order entry never touches the chain: the arborter authenticates
  * via the outer envelope signature and derives BOTH the order id and the
- * collateral it reserves from the signed `Order` — `OrderAuthorization`, which
- * used to carry a caller-chosen id, is deleted. The legacy gasless on-chain-lock
- * signing (EVM EIP-712 `GaslessCrossChainOrder`, Solana `OpenForSignedPayload`)
- * was removed with the on-chain order machinery.
+ * collateral it reserves from the signed `Order`; no request field carries a
+ * caller-chosen id.
  *
  * This is the raw hash. `./order-commitment.ts` is what feeds it — it resolves
  * the chains, token strings and native-unit amounts an order hashes over.
@@ -24,7 +22,7 @@ import { sha256 } from "@noble/hashes/sha256";
 /**
  * Derive the canonical 32-byte order id. Both client and arborter run this
  * recipe independently and must agree byte-for-byte — and a mismatch is SILENT.
- * The arborter no longer validates a supplied id (there is no field to supply
+ * The arborter does not validate a supplied id (there is no field to supply
  * one in); it simply derives its own, so a client that drifts tracks an order
  * under an id the server never used.
  *

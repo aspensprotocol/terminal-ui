@@ -89,7 +89,7 @@ just build-sdk   # Build the SDK package
 just fmt         # Format code
 just lint        # Lint code
 just typecheck   # TypeScript type checking
-just ci          # Full CI pipeline (install, build, fmt, lint, typecheck)
+just ci          # Full CI pipeline (install, build-sdk, fmt, lint, typecheck, test)
 ```
 
 ### Type Generation

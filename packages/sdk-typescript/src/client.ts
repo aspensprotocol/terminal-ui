@@ -131,7 +131,7 @@ export interface PlaceOrderParams {
    * The caller's own copy of the canonical order id, from
    * `buildOrderCommitment`. Required on the FCE transport, whose adapter JSON
    * still declares the key; ignored on gRPC, where the arborter derives the id
-   * itself and `OrderAuthorization` no longer exists to carry one.
+   * itself and no request field carries one.
    */
   orderId?: string;
   /**
@@ -149,8 +149,8 @@ export interface PlaceOrderParams {
    * orders; the SDK does not validate this, but arborter will reject
    * `post_only=true` paired with an absent price.
    *
-   * Defaults to false. Proto3 wire-skips the default, so existing
-   * signed-envelope digests stay byte-identical for legacy callers.
+   * Defaults to false. Proto3 wire-skips the default, so omitting it leaves
+   * the signed-envelope digest unchanged.
    */
   postOnly?: boolean;
   /**
@@ -235,11 +235,10 @@ class CacheManager {
 }
 
 class RestClient {
-  // No cache dependency: the only thing this client used to read from it was
-  // the market's pair decimals, to convert a decimal amount into the raw one
-  // the wire carries. That conversion is gone — the caller supplies the raw
-  // values it signed — and with it the chance of a cache miss silently
-  // rescaling an order to the 8-decimal default.
+  // No cache dependency: the caller supplies the raw amounts it signed, so
+  // nothing here converts a decimal amount with the market's pair decimals —
+  // and a cache miss cannot silently rescale an order to the 8-decimal
+  // default.
   constructor(
     private config: ExchangeClientConfig,
     private fce?: FceClient,
@@ -311,7 +310,7 @@ class RestClient {
    *
    * A market BID is likewise unsupported on this channel: the direct-action
    * payload has no `quoteBudget` field (the ext-proxy adapter's
-   * `types.PlaceOrderRequest` predates it), so the budget would be dropped in
+   * `types.PlaceOrderRequest` does not declare one), so the budget would be dropped in
    * transit and the arborter would refuse the order as unbounded. Fail here
    * with the reason instead.
    */
@@ -924,8 +923,8 @@ export class ExchangeClient {
       filled_size: string;
     }) => void,
   ): UnsubscribeFn {
-    // User order updates would require subscribing to orderbook changes
-    // For now, return no-op
+    // Not implemented — user order updates would require subscribing to
+    // orderbook changes. Returns a no-op unsubscribe.
     return () => {};
   }
 
@@ -933,8 +932,8 @@ export class ExchangeClient {
     userAddress: string,
     callback: (balance: EnhancedBalance) => void,
   ): UnsubscribeFn {
-    // Balance updates would require on-chain event subscription
-    // For now, return no-op
+    // Not implemented — balance updates would require an on-chain event
+    // subscription. Returns a no-op unsubscribe.
     return () => {};
   }
 
@@ -942,8 +941,8 @@ export class ExchangeClient {
     userAddress: string,
     callback: (trade: EnhancedTrade) => void,
   ): UnsubscribeFn {
-    // User fills would require subscribing to trades filtered by user
-    // For now, return no-op
+    // Not implemented — user fills would require subscribing to trades
+    // filtered by user. Returns a no-op unsubscribe.
     return () => {};
   }
 

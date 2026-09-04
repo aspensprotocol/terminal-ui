@@ -199,11 +199,10 @@ export const arborterService = {
     signatureHash: Uint8Array,
   ): Promise<SendOrderResponse> {
     try {
-      // Two fields, and that is the whole request: `SendOrderRequest.
-      // authorization` was deleted along with `OrderAuthorization`. The
-      // arborter derives the order id and the collateral it reserves from the
-      // signed `Order` itself, so there is nothing left for a caller to declare
-      // outside the signature.
+      // Two fields, and that is the whole request: the arborter derives the
+      // order id and the collateral it reserves from the signed `Order`
+      // itself, so there is nothing for a caller to declare outside the
+      // signature.
       const request: SendOrderRequest = create(SendOrderRequestSchema, {
         order,
         signatureHash,
@@ -267,7 +266,7 @@ export const arborterService = {
 
   /**
    * Request a TEE-signed withdrawal voucher. Under the
-   * optimistic shadow ledger the chain can no longer self-judge a
+   * optimistic shadow ledger the chain cannot self-judge a
    * withdrawal — the arborter places an off-chain hold and returns a
    * voucher the holder submits to `MidribV3.withdraw(voucher, signature)`.
    *

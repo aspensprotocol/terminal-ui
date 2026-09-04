@@ -331,8 +331,7 @@ export function TradePanel() {
         </div>
       </form>
 
-      {/* Transfer Dialog - controlled by "available balance" click.
-          Same entry point that used to open the faucet. */}
+      {/* Transfer Dialog - opened by clicking the available balance. */}
       <TransferDialog
         controlled
         open={faucetOpen}

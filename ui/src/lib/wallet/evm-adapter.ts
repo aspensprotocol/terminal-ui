@@ -44,9 +44,10 @@ export class EvmWalletAdapter implements WalletAdapter {
         });
         return signature;
       },
-      // Required for the EVM gasless path — wagmi's signTypedData calls
-      // eth_signTypedData_v4 under the hood. The arborter recovers the
-      // user's address from the 65-byte ECDSA sig over the EIP-712 digest.
+      // Optional `SigningAdapter.signTypedData`; nothing in the SDK's order or
+      // cancel path calls it. wagmi's signTypedData calls eth_signTypedData_v4
+      // under the hood and returns the 65-byte ECDSA sig over the EIP-712
+      // digest.
       async signTypedData(typedData: TypedDataDefinition): Promise<string> {
         return signTypedData(getWagmiConfig(), {
           // wagmi's type is stricter than viem's TypedDataDefinition; the

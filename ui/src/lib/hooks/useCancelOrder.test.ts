@@ -1,9 +1,9 @@
 /**
  * NOT_FOUND handling for order cancellation.
  *
- * The arborter now answers NOT_FOUND for a cancel of ANY order no longer
- * live in its book (replayed cancels, or ones racing a fill that just
- * completed) — not just hidden ones. `submitCancelOrder` is the plain,
+ * The arborter answers NOT_FOUND for a cancel of ANY order no longer live
+ * in its book (replayed cancels, or ones racing a fill that just
+ * completed), hidden or not. `submitCancelOrder` is the plain,
  * dependency-injected core extracted from `useCancelOrder` so this is
  * testable without rendering the hook: this repo has no hook-testing
  * convention (no `renderHook` usage anywhere in `ui/src`).
