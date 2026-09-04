@@ -5,8 +5,8 @@
  * exactly 65 bytes for Secp256k1 (EVM, `r||s||v`) and exactly 64 bytes
  * for Ed25519 (Solana, `r||s`). EVM wallets return 65 bytes and Solana
  * wallets return 64 bytes; both pass through unchanged. This regression
- * suite pins both paths so a future refactor can't silently corrupt one
- * of them (e.g. by re-introducing the old, incorrect 64-byte slice).
+ * suite pins both paths so a refactor can't silently corrupt one of them
+ * (e.g. by slicing the EVM signature to 64 bytes).
  */
 
 import { describe, expect, test } from "bun:test";

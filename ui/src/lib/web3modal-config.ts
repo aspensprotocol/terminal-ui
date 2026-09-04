@@ -22,11 +22,11 @@ const projectId =
 //
 // These entries exist so the CONNECTOR knows the chain (name, currency,
 // explorer, and a network to offer when adding it to a wallet). Deposit and
-// withdraw no longer read through wagmi's transports at all — they build a
-// client from the arborter config plus CHAIN_RPC_URLS; see the SDK's
-// evm-client.ts. This URL was `http://localhost:8545`, which no deployed
-// browser can reach, and the omission of HyperEVM below meant wagmi had no
-// entry for it whatsoever.
+// withdraw do not read through wagmi's transports — they build a client from
+// the arborter config plus CHAIN_RPC_URLS; see the SDK's evm-client.ts. Keep
+// the RPC URLs here publicly reachable all the same (a localhost URL is
+// useless to a deployed browser), and give every chain the venue trades on
+// an entry, or wagmi has nothing to accept the wallet's network against.
 const flareCoston2 = defineChain({
   id: 114,
   name: "Flare Coston2",
@@ -128,9 +128,7 @@ export function getWagmiConfig(): Config {
   return _wagmiConfig;
 }
 
-// NOTE: a `createDynamicChains` / `updateWagmiConfig` pair used to live here,
-// intended to rebuild this config from the arborter's chain list. Nothing ever
-// called it, and it could not have worked: it fed wagmi the `rpc_url` from
-// GetConfig, which the arborter masks, and hardcoded every chain's native
-// currency to ETH/18. Chain reads now bypass wagmi transports entirely
-// (see the SDK's evm-client.ts), so it has been removed rather than fixed.
+// This config is static on purpose. Rebuilding it from the arborter's chain
+// list would feed wagmi the `rpcs[].url` values from GetConfig, which the
+// arborter masks, and chain reads bypass wagmi transports anyway (see the
+// SDK's evm-client.ts).

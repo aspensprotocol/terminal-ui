@@ -11,8 +11,8 @@
  * The two hazards being pinned are both SILENT:
  *   - Anchor binds accounts POSITIONALLY, so a dropped or reordered entry
  *     makes the program reinterpret whatever sits at that index instead of
- *     erroring. `withdraw_epoch` (index 7) was once omitted from the Rust
- *     SDK while its whole suite stayed green.
+ *     erroring — an omitted `withdraw_epoch` (index 7), say, leaves a whole
+ *     suite green.
  *   - Borsh is positional and unframed, so a field written at the wrong
  *     width skews every field after it without any error.
  *

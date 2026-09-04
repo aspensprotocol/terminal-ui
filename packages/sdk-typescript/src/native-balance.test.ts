@@ -30,9 +30,9 @@ function fakeClient(opts: {
 
 describe("readEvmWalletBalance", () => {
   it("uses getBalance for the native sentinel, not balanceOf", async () => {
-    // The bug: balanceOf was called on 0xEeee…EEeE, which has no code, so the
-    // call reverted and the catch turned it into 0 — a wallet holding 94 FLR
-    // rendered as empty.
+    // The failure mode guarded: balanceOf on 0xEeee…EEeE (no code) reverts,
+    // and a catch that turns the revert into 0 renders a wallet holding 94 FLR
+    // as empty.
     const { client, calls } = fakeClient({ getBalance: 94872198523075000000n });
     const got = await readEvmWalletBalance(
       client as never,

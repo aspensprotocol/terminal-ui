@@ -14,10 +14,9 @@ export function useTrades(marketId: string | null) {
   useEffect(() => {
     if (!marketId) return;
 
-    // Subscribe to trade updates using SDK convenience method
-    // SDK now returns fully enhanced trades! 🎉
+    // Subscribe to trade updates; the SDK delivers fully enhanced trades, so
+    // each one goes straight into the store.
     const unsubscribe = client.onTrades(marketId, (enhancedTrade) => {
-      // SDK already enhanced the trade, just add it to store
       addTrade(enhancedTrade);
     });
 

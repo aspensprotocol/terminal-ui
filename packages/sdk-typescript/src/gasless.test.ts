@@ -5,9 +5,7 @@
  * `aspens/tests/client_parity.rs`. Both sides MUST produce the exact same
  * bytes for the same input — a drift in u64/u128 endianness or field order
  * would silently break order-id validation. If this breaks, align with the
- * Rust reference rather than updating the snapshot blindly. (The legacy
- * gasless lock-signing parity tests were removed with the on-chain order
- * machinery.)
+ * Rust reference rather than updating the snapshot blindly.
  */
 
 import { describe, expect, test } from "bun:test";

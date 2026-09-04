@@ -301,9 +301,9 @@ export function useTradeFormSubmit({
         // chance to produce a different number; the order is then refused for
         // a bad signature, which says nothing about an amount having moved.
         //
-        // `decimalToRaw` is string/BigInt arithmetic on purpose. The float
-        // route this replaced (`Math.round(x * 10 ** pairDecimals)`) cannot
-        // represent 10**18, so on an 18-decimal market a price of 1.1 became
+        // `decimalToRaw` is string/BigInt arithmetic on purpose: the float
+        // route (`Math.round(x * 10 ** pairDecimals)`) cannot represent
+        // 10**18, so on an 18-decimal market a price of 1.1 becomes
         // 1100000000000000128.
         //
         // A market order has no price: leave it undefined so the signed

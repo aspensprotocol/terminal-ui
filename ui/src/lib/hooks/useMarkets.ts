@@ -23,7 +23,7 @@ export function useMarkets() {
 
     async function fetchData() {
       try {
-        // getMarkets() and getTokens() now return from cache if available
+        // getMarkets() and getTokens() return from the SDK cache when it is warm
         const [marketsData, tokensData] = await Promise.all([
           client.getMarkets(),
           client.getTokens(),

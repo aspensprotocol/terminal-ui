@@ -11,8 +11,8 @@
  * would pass just as happily with the amounts re-derived a second time.
  *
  * The fixtures are chosen so float and string arithmetic genuinely DISAGREE —
- * `floatRaw` below is the derivation this change removed, and the first test
- * asserts it still disagrees. A fixture where both routes give the same answer
+ * `floatRaw` below is the derivation `decimalToRaw` exists to avoid, and the
+ * first test asserts it still disagrees. A fixture where both routes give the same answer
  * would prove nothing at all.
  */
 
@@ -34,8 +34,8 @@ const PRICE = "1.1";
 const SIZE = "1.15";
 
 /**
- * The float derivation that used to compute the SIGNED bytes, kept here as the
- * thing the tests measure against. `10 ** 18` is not exactly representable as a
+ * The float derivation `decimalToRaw` exists to avoid, kept here as the thing
+ * the tests measure against. `10 ** 18` is not exactly representable as a
  * double, so this lands on a neighbouring multiple of the local float spacing.
  */
 function floatRaw(decimal: string, decimals: number): string {

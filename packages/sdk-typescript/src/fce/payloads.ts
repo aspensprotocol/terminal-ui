@@ -2,21 +2,19 @@
  * u64 fields (`nonce`, `expiry`) cross this wire as QUOTED STRINGS, never bare
  * numbers.
  *
- * JSON.parse rounds any integer above 2^53, because JS numbers are doubles.
- * That silently broke cancel in production, back when the order handle was
- * itself a u64: the arborter held order 173852891691592598, the browser read
- * 173852891691592600, sent it back, and find_order missed — the order stayed
- * in the book with its collateral reserved. Keep these as strings end to end;
- * convert with BigInt only where arithmetic is genuinely needed, never via
- * Number().
+ * JSON.parse rounds any integer above 2^53, because JS numbers are doubles,
+ * and the loss is silent: a u64 such as 173852891691592598 reads back as
+ * 173852891691592600, and a value the arborter never issued sent back to it
+ * simply misses (for an order handle, the order stays in the book with its
+ * collateral reserved). Keep these as strings end to end; convert with BigInt
+ * only where arithmetic is genuinely needed, never via Number().
  *
  * Matches the Go side's types.U64String and proto3's JSON mapping for 64-bit
- * integers, and the u128 amounts that were already strings here.
+ * integers, and the u128 amounts, which are strings for the same reason.
  *
- * The order handle itself (`orderId` / `orderHit` below) is no longer a u64:
- * it is the full 32-byte canonical order id, carried as a `0x`-prefixed hex
- * string — not subject to the precision concern above, since a hex string
- * was never a JSON number in the first place.
+ * The order handle itself (`orderId` / `orderHit` below) is the full 32-byte
+ * canonical order id, carried as a `0x`-prefixed hex string — a hex string is
+ * never a JSON number, so the precision concern above does not apply to it.
  */
 /**
  * Direct-action request/response payloads — the JSON that rides in
@@ -65,11 +63,11 @@ export interface PlaceOrderRequest {
   /** SDK-derived canonical order id: 0x-prefixed 32-byte hex. */
   orderId: string;
   /**
-   * NOTE: `amountIn` was dropped along with `OrderAuthorization.amount_in`.
-   * The adapter's `types.PlaceOrderRequest` still declares the JSON key, but
-   * it only ever forwarded it into that deleted proto field, so omitting it
-   * costs nothing. There is no `quoteBudget` counterpart here yet, which is
-   * why `client.ts` refuses a market bid on the FCE transport.
+   * NOTE: `amountIn` is deliberately absent. The adapter's
+   * `types.PlaceOrderRequest` still declares the JSON key, but there is no
+   * proto field for it to feed, so omitting it costs nothing. There is no
+   * `quoteBudget` counterpart here, which is why `client.ts` refuses a market
+   * bid on the FCE transport.
    */
 }
 

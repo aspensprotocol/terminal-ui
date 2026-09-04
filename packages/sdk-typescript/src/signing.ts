@@ -19,23 +19,17 @@ import type { TypedDataDefinition } from "viem";
 /**
  * Interface for signing adapters (wallet implementations).
  *
- * Wallets always implement `signMessage` for the legacy EIP-191 envelope
- * signature. The gasless flow requires one of the chain-specific methods:
+ * Wallets implement `signMessage`, the envelope signature over the encoded
+ * `Order` / `OrderToCancel` bytes (EIP-191 on EVM, raw bytes on Solana). It is
+ * the only method the SDK calls (`signOrder` / `signCancelOrder` below).
  *
- *  - EVM gasless → `signTypedData` (EIP-712 typed data via wagmi / viem).
- *  - Solana gasless → `signBytes` (raw Ed25519 over borsh payload bytes,
- *    no hex round-trip).
- *
- * Both are optional so legacy adapters keep compiling; the gasless
- * orchestrator throws with a clear error if the required method is
- * missing for the active chain.
+ * `signTypedData` (EIP-712, EVM) and `signBytes` (raw Ed25519, Solana) are
+ * optional extras an adapter may expose; nothing in the SDK calls them.
  */
 export interface SigningAdapter {
   /**
    * Sign a hex-encoded message via EIP-191 / personal_sign (EVM) or
-   * raw `signMessage(bytes)` via @solana/wallet-adapter (Solana). The
-   * hex round-trip is legacy; for new code prefer `signTypedData` (EVM)
-   * or `signBytes` (Solana) via the gasless orchestrator.
+   * raw `signMessage(bytes)` via @solana/wallet-adapter (Solana).
    *
    * @param hexMessage The message to sign as a hex string (with 0x prefix)
    * @returns The signature as a hex string (with 0x prefix)
@@ -85,16 +79,14 @@ export interface OrderSigningData {
    * Post-only: arborter rejects the order if it would cross at
    * submission. The field IS signed-over (it's part of the encoded
    * Order proto), but proto3 wire-skips `false`, so omitting it (or
-   * passing false) produces the same digest a pre-feature client
-   * produced — existing signatures remain valid.
+   * passing false) leaves the digest unchanged.
    */
   postOnly?: boolean;
   /**
    * Hidden ("invisible") order: matched normally but excluded from the
    * public orderbook stream and response-embedded books; fills print
    * with this side's identity redacted. Signed-over like postOnly;
-   * proto3 wire-skips `false`, so omitting it keeps legacy digests
-   * byte-identical.
+   * proto3 wire-skips `false`, so omitting it leaves the digest unchanged.
    */
   hidden?: boolean;
   /**
@@ -112,9 +104,9 @@ export interface OrderSigningData {
    * REQUIRED for a market bid (side buy, no price): the arborter refuses one
    * without it. REJECTED on every other cell, where the budget is derived from
    * the order itself. It lives inside `Order` precisely so the envelope
-   * signature covers it — the retired `OrderAuthorization.amount_in` sat in a
-   * sibling message and was never signed. Omitted here it is wire-skipped, so
-   * digests for the three derivable cells are unchanged.
+   * signature covers it; a budget declared in a sibling message would be
+   * unsigned. Omitted here it is wire-skipped, so digests for the three
+   * derivable cells are unaffected.
    */
   quoteBudget?: string;
   /**
@@ -122,10 +114,10 @@ export interface OrderSigningData {
    * otherwise identical orders get distinct ids. `uint64`.
    *
    * It rides INSIDE the signed `Order`, and that is the whole point: the
-   * arborter derives the order id itself from this message and no longer
-   * accepts one from a caller, which is only possible while every input to the
-   * derivation is signed. While the nonce sat outside the message the id
-   * depended on a value the server never saw.
+   * arborter derives the order id itself from this message and accepts none
+   * from a caller, which is only sound while every input to the derivation is
+   * signed — a nonce outside the message would make the id depend on a value
+   * the server never saw.
    *
    * Required, with no default, so that every call site has to state it. The
    * same value MUST also reach {@link import("./order-commitment.js").buildOrderCommitment}
@@ -161,10 +153,10 @@ export interface CancelSigningData {
  *   doesn't know how to hand off; fail loudly rather than ship a bogus
  *   signature that the arborter will silently reject.
  *
- * Historical note: this used to slice 65-byte EVM signatures down to 64
- * bytes (dropping the recovery byte). That was wrong — arborter's
- * Secp256k1 check requires exactly 65 bytes, so a 64-byte signature was
- * rejected with FAILED_PRECONDITION ("invalid or missing signature").
+ * Do not slice a 65-byte EVM signature down to 64 bytes (dropping the
+ * recovery byte): arborter's Secp256k1 check requires exactly 65, and a
+ * 64-byte signature is rejected with FAILED_PRECONDITION ("invalid or
+ * missing signature").
  */
 export function normalizeWalletSignature(sig: Uint8Array): Uint8Array {
   if (sig.length === 65) return sig;

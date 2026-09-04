@@ -1,9 +1,8 @@
 /**
  * On-chain balance queries.
  *
- * Replaces the old `getBalances()` stub with real lookups across every
- * chain in the arborter `Configuration` that the user has a connected
- * wallet on. For each (chain, token, wallet) tuple we fetch:
+ * Lookups across every chain in the arborter `Configuration` that the user
+ * has a connected wallet on. For each (chain, token, wallet) tuple we fetch:
  *
  *   - deposited — balance held inside the trade contract (EVM:
  *     `MidribV3.tradeBalance`; Solana: the `deposited` field on the
@@ -148,10 +147,9 @@ export async function fetchChainBalanceSlices(opts: {
  *
  * The native asset is keyed in MidribV3 by a SENTINEL address
  * (`0xEeee…EEeE`) that has no code deployed at it. Calling ERC-20 `balanceOf`
- * on it always reverts, and the revert used to be swallowed into `0n` — so a
- * wallet holding 94 C2FLR showed as empty and the deposit dialog capped the
- * amount at zero. Native balances come from `getBalance`; only real tokens go
- * through `balanceOf`.
+ * on it always reverts, and a revert swallowed into `0n` makes a funded wallet
+ * show as empty and the deposit dialog cap the amount at zero. Native balances
+ * come from `getBalance`; only real tokens go through `balanceOf`.
  *
  * Failures still degrade to `0n`: one flaky token must not blank the panel.
  */

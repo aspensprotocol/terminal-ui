@@ -1,5 +1,5 @@
 /**
- * Core exchange types - now imported from SDK
+ * Core exchange types, re-exported from the SDK
  */
 
 // Re-export SDK types

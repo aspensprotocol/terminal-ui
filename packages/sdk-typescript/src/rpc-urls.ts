@@ -10,16 +10,16 @@
  * value only when it is genuinely usable.
  *
  * When neither yields a usable endpoint this returns `null` so the caller can
- * SKIP the chain and say so. That is the point of the module: the previous
- * behaviour passed the mask straight to viem, every read threw, and each throw
- * was swallowed into `0n` — producing a balances panel of zeros that looked
- * exactly like "you have no deposits".
+ * SKIP the chain and say so. That is the point of the module: a mask passed
+ * straight to viem makes every read throw, and a throw swallowed into `0n`
+ * produces a balances panel of zeros that looks exactly like "you have no
+ * deposits".
  *
  * Long term the arborter should publish a non-secret `public_rpc_url` per chain
  * so this map is unnecessary; see the RPC-MASK-1 tech-debt item.
  */
 
-/** The fixed mask the arborter substitutes for a whole unparseable `rpc_url`. */
+/** The fixed mask the arborter substitutes for a whole `url` it cannot parse. */
 export const MASKED_RPC_URL = "********";
 
 /** Minimal shape of one `chain.rpcs[n]` entry needed to pick an endpoint. */
@@ -29,9 +29,8 @@ export interface RpcEndpointLike {
 }
 
 /**
- * Minimal shape needed to resolve an endpoint — matches `Configuration.chains[n]`
- * post `Chain.rpcs` (the single-`rpc_url`-string field is gone; every chain now
- * carries a priority-ordered, per-endpoint-auth `rpcs` list).
+ * Minimal shape needed to resolve an endpoint — matches `Configuration.chains[n]`:
+ * every chain carries a priority-ordered, per-endpoint-auth `rpcs` list.
  */
 export interface RpcResolvableChain {
   network: string;
@@ -57,12 +56,13 @@ export type RpcUrlMap = Record<string, string>;
 /**
  * Whether `url` is something we can actually dial. Rejects:
  *   - blanks,
- *   - the legacy whole-string arborter mask (any all-asterisk run, so a
- *     future mask of a different length still fails closed),
- *   - the CURRENT partial mask (I-1): the arborter sentinel-writes the
- *     literal substring `***` into every masked query value, userinfo, and
- *     non-empty path segment, so any url containing that substring anywhere
- *     is treated as masked. Same check as infra's `redacted()`
+ *   - the whole-string arborter mask, substituted for a url it cannot parse
+ *     (any all-asterisk run, so a mask of a different length still fails
+ *     closed),
+ *   - the partial mask: the arborter sentinel-writes the literal substring
+ *     `***` into every masked query value, userinfo, and non-empty path
+ *     segment of a parseable url, so any url containing that substring
+ *     anywhere is treated as masked. Same check as infra's `redacted()`
  *     (`infra/deployer/internal/venue/resources.go`) — a url that happens to
  *     contain a genuine, never-masked `***` is a false positive this accepts
  *     on purpose: failing closed (treat as unusable) beats dialing a masked

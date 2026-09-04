@@ -27,7 +27,7 @@ const geistMono = Geist_Mono({
  * and only the data calls fail.
  *
  * Cost is nil here — this is a live trading terminal whose every view is
- * request-scoped, so there was no meaningful static shell to keep.
+ * request-scoped, so there is no meaningful static shell to keep.
  */
 export const dynamic = "force-dynamic";
 

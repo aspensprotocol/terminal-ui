@@ -38,10 +38,10 @@ describe("isUsableRpcUrl", () => {
     expect(isUsableRpcUrl("http://localhost:8545")).toBe(true);
   });
 
-  // I-1: the arborter's mask now also sentinel-writes "***" into every
-  // masked query value, userinfo, and non-empty path segment (not just the
-  // whole-string legacy mask) — the detector must recognize all three
-  // shapes, the same substring check infra's `redacted()` uses.
+  // The arborter sentinel-writes "***" into every masked query value,
+  // userinfo, and non-empty path segment of a parseable url (the whole-string
+  // mask is only for an unparseable one) — the detector must recognize all
+  // three shapes, the same substring check infra's `redacted()` uses.
   it("rejects the current partial mask in every position it can appear", () => {
     expect(isUsableRpcUrl("https://rpc.example/v2?key=***")).toBe(false);
     expect(isUsableRpcUrl("https://***:***@rpc.example/v2")).toBe(false);
@@ -106,9 +106,9 @@ describe("resolveRpcUrl", () => {
   });
 
   it("returns null when the config url is masked and no override exists", () => {
-    // The regression this module exists for: a masked url used to reach viem
-    // verbatim, every read threw, and each throw was caught into 0n — the
-    // balances panel showed zeros indistinguishable from 'no deposits'.
+    // The regression this module exists for: a masked url reaching viem
+    // verbatim makes every read throw, and each throw caught into 0n gives a
+    // balances panel of zeros indistinguishable from 'no deposits'.
     const c = chain("flare-coston2", MASKED_RPC_URL);
     expect(resolveRpcUrl(c, undefined)).toBeNull();
   });

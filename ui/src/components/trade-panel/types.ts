@@ -1,16 +1,13 @@
 /**
  * Shared types for the trade-panel and its hooks.
  *
- * Hoisted out of `TradePanel.tsx` / `useTradeFormSubmit.ts` /
- * `usePriceSelection.ts` / `useOrderEstimate.ts` (which each kept their
- * own copies) so adding a form field is a one-line change in one file
- * instead of a mechanical sweep — see how `postOnly` got added across
- * three matching `TradeFormData` declarations before this refactor.
- *
- * Inline `"buy" | "sell"` / `"limit" | "market"` literals in the leaf
- * sub-components (`SideSelector`, `OrderTypeSelector`, etc.) have also
- * been replaced with imports from here so the canonical definition is
- * here only.
+ * The single definition: `TradePanel.tsx`, `useTradeFormSubmit.ts`,
+ * `usePriceSelection.ts` and `useOrderEstimate.ts` import `TradeFormData`
+ * from here rather than keeping copies, so adding a form field is a
+ * one-line change in one file instead of a sweep across duplicate
+ * declarations. The leaf sub-components (`SideSelector`,
+ * `OrderTypeSelector`, etc.) likewise import `OrderSide` / `OrderType`
+ * instead of inlining `"buy" | "sell"` / `"limit" | "market"` literals.
  */
 
 export type OrderSide = "buy" | "sell";

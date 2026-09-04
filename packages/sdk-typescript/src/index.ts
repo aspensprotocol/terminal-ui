@@ -112,8 +112,7 @@ export {
 
 // The caller's own copy of the canonical order id and the budget it commits.
 // Nothing here goes on the wire: the arborter derives both from the signed
-// `Order`, and `OrderAuthorization` — the message that used to carry an id —
-// was deleted.
+// `Order`, and no request field carries a caller-chosen id.
 export {
   buildOrderCommitment,
   clientNonce,

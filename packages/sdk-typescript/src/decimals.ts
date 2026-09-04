@@ -107,8 +107,7 @@ const DECIMAL_PATTERN = /^([+-])?(\d*)(?:\.(\d*))?(?:[eE]([+-]?\d+))?$/;
  *
  * Throws on anything that isn't a decimal number — a malformed amount must
  * stop the submission, not become a silent zero (`parseFloat("abc")` is `NaN`,
- * and `Math.round(NaN)` used to reach `BigInt()` as a thrown RangeError with
- * no useful text).
+ * and `BigInt(Math.round(NaN))` throws only a RangeError with no useful text).
  */
 export function decimalToRaw(decimal: string, decimals: number): string {
   if (!Number.isInteger(decimals) || decimals < 0) {

@@ -65,21 +65,24 @@ Two layers:
 - **Server-side** (read at request time, changeable without a rebuild):
 - **Client-side** (prefixed `NEXT_PUBLIC_`, baked into the bundle at build time).
 
-| Variable                               | Layer  | Default                | Purpose                                                                                               |
-| -------------------------------------- | ------ | ---------------------- | ----------------------------------------------------------------------------------------------------- |
-| `ARBORTER_GRPC_URL`                    | server | `http://envoy:8811`    | Target for the Next.js `/api/*` rewrite. The browser always hits `/api`; Next.js proxies to this URL. |
-| `NEXT_PUBLIC_GRPC_URL`                 | client | `/api` (rewrite above) | Override to bypass the server-side rewrite (e.g. static hosting). Usually leave unset.                |
-| `NEXT_PUBLIC_SOLANA_RPC_URL`           | client | devnet                 | Solana RPC used by the wallet-adapter context                                                         |
-| `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` | client | fallback               | WalletConnect / Reown project id                                                                      |
+| Variable                               | Layer  | Default                | Purpose                                                                                                  |
+| -------------------------------------- | ------ | ---------------------- | -------------------------------------------------------------------------------------------------------- |
+| `NEXT_PUBLIC_GRPC_URL`                 | client | `/api` (rewrite below) | Override to bypass the server-side rewrite (local dev, static hosting). Usually leave unset.             |
+| `NEXT_PUBLIC_SOLANA_RPC_URL`           | client | devnet                 | Solana RPC used by the wallet-adapter context                                                            |
+| `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` | client | fallback               | WalletConnect / Reown project id                                                                         |
+| `CHAIN_RPC_URLS`                       | server | unset                  | JSON map of chain `network` -> public RPC URL for browser balance reads; chains without one are skipped. |
+| `EXT_PROXY_URL`                        | server | unset                  | When set, routes actions, reads and config through the Flare FCE ext-proxy instead of arborter gRPC.     |
+| `DIRECT_API_KEY`                       | server | unset                  | API key the server-side `/fce-proxy` relay injects; never reaches the browser.                           |
 
-Splitting `ARBORTER_GRPC_URL` into a server-side env lets one container
-image redeploy against any environment — the gRPC endpoint isn't baked
-into the bundle.
+The browser always hits the same-origin `/api/*` path, which
+`ui/next.config.ts` rewrites to the in-swarm `http://envoy:8811`. That
+upstream is hardcoded — no env var is read at build or run time — so a
+stray `.env.local` cannot bake a dev URL into the published image.
 
-Additional vars (`NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_WS_URL`,
-`NEXT_PUBLIC_ORGANIZATION_ID`, `NEXT_PUBLIC_AUTH_PROXY_CONFIG_ID`) are
-consumed by optional integrations (embedded-wallet auth, REST shim) —
-see `ui/.env.example` for the full list.
+The `Dockerfile` also accepts `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_WS_URL`,
+`NEXT_PUBLIC_ORGANIZATION_ID` and `NEXT_PUBLIC_AUTH_PROXY_CONFIG_ID` as
+build args; nothing in the app reads them. See `ui/.env.example` for the
+documented defaults.
 
 ## Architecture
 
@@ -122,7 +125,7 @@ just fmt                      # bun run format
 just lint                     # bun run lint
 just typecheck                # bun run typecheck
 just clean                    # bun run clean
-just ci                       # install + build-sdk + fmt + lint + typecheck
+just ci                       # install + build-sdk + fmt + lint + typecheck + test
 ```
 
 ## License
