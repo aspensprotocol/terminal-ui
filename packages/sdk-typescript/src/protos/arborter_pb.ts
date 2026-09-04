@@ -402,8 +402,8 @@ export type Order = Message<"xyz.aspens.arborter.v1.Order"> & {
    * cross any opposing confirmed order at submission time the request
    * is rejected with FAILED_PRECONDITION and nothing is reserved. Limit
    * orders only — incompatible with market (no price) and with
-   * DISCRETIONARY execution_type. Defaults to false, which preserves
-   * legacy take-or-rest behavior.
+   * DISCRETIONARY execution_type. Defaults to false: the order takes what
+   * it crosses and rests the remainder.
    *
    * @generated from field: bool post_only = 9;
    */
@@ -417,8 +417,8 @@ export type Order = Message<"xyz.aspens.arborter.v1.Order"> & {
    * not even to its owner: track via SendOrderResponse.order_id. When a
    * hidden order fills, the trade prints publicly with the hidden side's
    * identity fields (ids + addresses) redacted to empty/zero.
-   * Defaults to false (wire-skipped), so pre-feature signed envelopes
-   * are byte-identical.
+   * Defaults to false and is skipped on the wire when false, so an
+   * envelope that omits it signs identically to one that sets it false.
    *
    * @generated from field: bool hidden = 10;
    */
@@ -441,9 +441,8 @@ export type Order = Message<"xyz.aspens.arborter.v1.Order"> & {
    * REJECTED on every other order, where the budget is derived and a
    * caller-supplied figure could only disagree with it.
    *
-   * It lives in `Order` rather than beside it precisely so `signature_hash`
-   * covers it: this number authorises spending, and the retired
-   * `OrderAuthorization.amount_in` was unsigned.
+   * It lives in `Order` rather than beside it so `signature_hash` covers
+   * it: a number that authorises spending must be signed.
    *
    * @generated from field: optional string quote_budget = 11;
    */
@@ -673,13 +672,6 @@ export type OrderToCancel = Message<"xyz.aspens.arborter.v1.OrderToCancel"> & {
   side: Side;
 
   /**
-   * NOTE: a `token_address` field used to sit between `side` and `order_id`.
-   * The server never read it — it was fully determined by `market_id` and
-   * `side` — yet it was inside the signed bytes, so every caller had to
-   * resolve it exactly as the server would have (BID → quote-chain token,
-   * ASK → base-chain token) or its cancel silently matched nothing. A value
-   * derived once and used directly does not belong in a signed message.
-   *
    * The order's canonical identifier: the full 32-byte order id, shown as
    * `0x`-prefixed hex, exactly as returned in `SendOrderResponse.order_id`.
    * Server-derived at order entry — the caller only echoes it back here to
