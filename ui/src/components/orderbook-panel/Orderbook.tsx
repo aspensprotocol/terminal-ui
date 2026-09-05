@@ -7,6 +7,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { OrderbookRow } from "./OrderbookRow";
 import { TradeRow } from "./TradeRow";
 import { SpreadIndicator } from "./SpreadIndicator";
+import { CompositeBook, COMPOSITE_TAB_LABEL } from "./CompositeBook";
 
 export function Orderbook() {
   const selectedMarketId = useExchangeStore((state) => state.selectedMarketId);
@@ -47,6 +48,9 @@ export function Orderbook() {
           </TabsTrigger>
           <TabsTrigger value="trades" className="flex-1 rounded-none">
             Trades
+          </TabsTrigger>
+          <TabsTrigger value="composite" className="flex-1 rounded-none">
+            {COMPOSITE_TAB_LABEL}
           </TabsTrigger>
         </TabsList>
         <TabsContent
@@ -142,12 +146,18 @@ export function Orderbook() {
             )}
           </div>
         </TabsContent>
+        <TabsContent
+          value="composite"
+          className="overflow-hidden flex flex-col mt-0 flex-1 min-h-0 data-[state=active]:animate-in data-[state=active]:fade-in-0 data-[state=active]:slide-in-from-bottom-1 data-[state=active]:duration-200"
+        >
+          <CompositeBook />
+        </TabsContent>
       </Tabs>
     </Card>
   );
 }
 
-function OrderbookHeader({ columns }: { columns: string[] }) {
+export function OrderbookHeader({ columns }: { columns: string[] }) {
   const isThree = columns.length === 3;
   return (
     <div
