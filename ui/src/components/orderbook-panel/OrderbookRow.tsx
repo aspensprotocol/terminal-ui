@@ -1,5 +1,7 @@
 "use client";
 
+import type { ReactNode } from "react";
+
 interface OrderbookRowProps {
   price: string;
   priceValue: number;
@@ -13,6 +15,12 @@ interface OrderbookRowProps {
    * per-row. Renders a small "PO" badge inline next to the price.
    */
   postOnly?: boolean;
+  /**
+   * Optional third cell, right-aligned. The composite view puts the row's
+   * chain marks and quote ticker here. When present the row uses the same
+   * three-column grid as the panel's three-column header, so cells line up.
+   */
+  trailing?: ReactNode;
   onClick: (price: number) => void;
 }
 
@@ -24,6 +32,7 @@ export function OrderbookRow({
   maxCumulative,
   type,
   postOnly,
+  trailing,
   onClick,
 }: OrderbookRowProps) {
   const depthPercentage = (cumulative / maxCumulative) * 100;
@@ -31,11 +40,15 @@ export function OrderbookRow({
   const colorClass = isBid ? "text-green-500" : "text-red-500";
   const bgClass = isBid ? "bg-green-500/10" : "bg-red-500/10";
   const hoverClass = isBid ? "hover:bg-green-500/20" : "hover:bg-red-500/20";
+  const layoutClass =
+    trailing !== undefined
+      ? "grid grid-cols-[1fr_0.8fr_1.2fr]"
+      : "flex justify-between";
 
   return (
     <div
       onClick={() => onClick(priceValue)}
-      className={`relative flex justify-between text-[11px] leading-tight ${hoverClass} px-3 py-0.5 cursor-pointer font-mono tabular-nums`}
+      className={`relative ${layoutClass} text-[11px] leading-tight ${hoverClass} px-3 py-0.5 cursor-pointer font-mono tabular-nums`}
     >
       {/* Depth background */}
       <div
@@ -58,6 +71,11 @@ export function OrderbookRow({
       <span className="relative z-10 text-muted-foreground text-right whitespace-nowrap">
         {size}
       </span>
+      {trailing !== undefined && (
+        <span className="relative z-10 flex items-center justify-end gap-1 whitespace-nowrap text-muted-foreground">
+          {trailing}
+        </span>
+      )}
     </div>
   );
 }
