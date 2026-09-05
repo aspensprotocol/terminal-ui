@@ -12,6 +12,7 @@
  */
 
 import { useMemo } from "react";
+import type { Market } from "@/lib/types/exchange";
 import { useExchangeStore, selectSelectedMarket } from "@/lib/store";
 import { useCompositeOrderbook } from "@/lib/hooks";
 import {
@@ -26,6 +27,13 @@ import { OrderbookHeader } from "./Orderbook";
 
 /** The tab's label. One place to change it. */
 export const COMPOSITE_TAB_LABEL = "Composite";
+
+/**
+ * Stable empty-array identity for the sub-two-member case, so a single
+ * market never gets a live `useCompositeOrderbook` subscription just to
+ * render its static empty-state text.
+ */
+const NO_MEMBERS: Market[] = [];
 
 export function CompositeBook() {
   const markets = useExchangeStore((s) => s.markets);
@@ -47,7 +55,7 @@ export function CompositeBook() {
     bidsWithCumulative,
     maxAskCumulative,
     maxBidCumulative,
-  } = useCompositeOrderbook(members);
+  } = useCompositeOrderbook(members.length < 2 ? NO_MEMBERS : members);
 
   if (!selectedMarket) return null;
 
@@ -116,7 +124,10 @@ export function CompositeBook() {
           </div>
         </div>
 
-        <SpreadIndicator spreadPercentage={spread.spreadPercentage} />
+        <SpreadIndicator
+          spreadPercentage={spread.spreadPercentage}
+          crossed={spread.spreadValue < 0}
+        />
 
         <div className="flex-1 flex flex-col justify-start overflow-hidden">
           <div>

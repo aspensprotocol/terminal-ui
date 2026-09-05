@@ -19,6 +19,7 @@ import type { Market, OrderbookLevel } from "@/lib/types/exchange";
  */
 const USD_STABLE_TICKERS: ReadonlySet<string> = new Set([
   "USDC",
+  "USDC.E",
   "USDT",
   "USDT0",
   "USDG",

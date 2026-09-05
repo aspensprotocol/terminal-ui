@@ -118,6 +118,14 @@ describe("unitClass", () => {
     expect(unitClass("WBTC")).toBe("WBTC");
     expect(unitClass("weth")).toBe("WETH");
   });
+
+  test("a bridged variant registered in markets.toml collapses too (USDC.e)", () => {
+    expect(unitClass("USDC.e")).toBe("USD");
+  });
+
+  test("an unlisted USD-looking ticker is its own class: the list is a boundary, not a prefix match", () => {
+    expect(unitClass("USDN")).toBe("USDN");
+  });
 });
 
 describe("compositeMembers", () => {
@@ -198,6 +206,39 @@ describe("mergeMemberBooks", () => {
 
   test("empty members merge to empty sides", () => {
     expect(mergeMemberBooks([])).toEqual({ bids: [], asks: [] });
+  });
+
+  test("equal priceValue across two members preserves the input member order", () => {
+    // Both members quote the same priceValue, so the comparator sees a tie
+    // on every pair and must fall back to input order. Member ids are
+    // picked apart alphabetically ("m-aaa" before "m-zzz", already the order
+    // compositeMembers would sort them into and the order they're passed
+    // here) so a reversed flat-map (iterating `books` back to front before
+    // tagging, or flat-mapping bids/asks in the wrong order) visibly swaps
+    // the pair, and so would a merge that used a non-stable sort for the
+    // tie-break instead of relying on Array.prototype.sort's guaranteed
+    // stability.
+    const memberA = market(
+      "m-aaa",
+      "WETH",
+      "USDC",
+      "ethereum-mainnet",
+      "base",
+      8,
+    );
+    const memberB = market(
+      "m-zzz",
+      "WETH",
+      "USDG",
+      "ethereum-mainnet",
+      "robinhood",
+      6,
+    );
+    const merged = mergeMemberBooks([
+      { market: memberA, bids: [], asks: [level("150000000000", 1500, 1)] },
+      { market: memberB, bids: [], asks: [level("1500000000", 1500, 1)] },
+    ]);
+    expect(merged.asks.map((l) => l.marketId)).toEqual(["m-aaa", "m-zzz"]);
   });
 });
 

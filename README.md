@@ -138,7 +138,9 @@ mark and ticker of the quote leg its price rests on. Clicking a row selects
 that row's market and price. Membership and the merge live in
 `ui/src/lib/composite.ts`; the tab label is `COMPOSITE_TAB_LABEL` in
 `ui/src/components/orderbook-panel/CompositeBook.tsx`. The venue itself has
-no notion of a composite: an order still targets exactly one market.
+no notion of a composite: an order still targets exactly one market. Members
+are independent books, so a negative spread across them is a normal state,
+not an error — it shows as "Crossed" instead of a bare negative percentage.
 
 ## License
 

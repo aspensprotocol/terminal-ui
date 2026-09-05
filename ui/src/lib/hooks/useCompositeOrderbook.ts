@@ -7,7 +7,16 @@
  * the Composite tab is showing (Radix unmounts inactive tab content), or
  * every member polls for the life of the page.
  *
- * `members` is an effect dependency: pass a memoized array.
+ * The subscription effect keys on the member ID LIST, not on the `members`
+ * array's identity: the caller's array is a new object whenever the
+ * selection moves between members (its market object changes), even though
+ * the SET of member ids does not. Keying the effect on `members` itself
+ * would tear down and rebuild every poller — and clear the merged book via
+ * `clearCompositeBooks` — on every cross-member click, contradicting the
+ * store's guarantee that such a click keeps the merged view intact. Passing
+ * a memoized `members` array is still good practice for the merge memo
+ * below (it needs the market objects), but is no longer required for
+ * subscription stability.
  */
 
 import { useEffect, useMemo } from "react";
@@ -27,18 +36,29 @@ export function useCompositeOrderbook(members: Market[]) {
   const clearCompositeBooks = useExchangeStore((s) => s.clearCompositeBooks);
   const compositeBooks = useExchangeStore((s) => s.compositeBooks);
 
+  // The effect only needs each member's id. Derive a stable string key so
+  // the memoized id array below (and therefore the effect) only changes
+  // identity when the SET of ids actually changes, not when `members`'
+  // market objects are replaced (e.g. a click that moves the selection
+  // between existing members).
+  const memberKey = members.map((m) => m.id).join(" ");
+  const memberIds = useMemo(
+    () => (memberKey === "" ? [] : memberKey.split(" ")),
+    [memberKey],
+  );
+
   useEffect(() => {
-    if (members.length === 0) return;
-    const unsubscribes = members.map((m) =>
-      client.onOrderbook(m.id, ({ bids, asks }) =>
-        setCompositeBook(m.id, bids, asks),
+    if (memberIds.length === 0) return;
+    const unsubscribes = memberIds.map((id) =>
+      client.onOrderbook(id, ({ bids, asks }) =>
+        setCompositeBook(id, bids, asks),
       ),
     );
     return () => {
       for (const unsubscribe of unsubscribes) unsubscribe();
       clearCompositeBooks();
     };
-  }, [members, client, setCompositeBook, clearCompositeBooks]);
+  }, [memberIds, client, setCompositeBook, clearCompositeBooks]);
 
   const { bids, asks } = useMemo(
     () =>
