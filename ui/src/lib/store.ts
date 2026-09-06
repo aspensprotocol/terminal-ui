@@ -125,6 +125,17 @@ interface ExchangeState {
   // UI Data
   selectedMarketId: string | null;
   orderbook: Orderbook | null;
+  /**
+   * Per-member books for the composite orderbook view, keyed by market id.
+   * Written by `useCompositeOrderbook` while the Composite tab is mounted
+   * and cleared when it unmounts. Deliberately NOT reset by `selectMarket`:
+   * every member shares the selected market's composite, so a click that
+   * moves the selection between members keeps the merged view intact.
+   */
+  compositeBooks: Record<
+    string,
+    { bids: OrderbookLevel[]; asks: OrderbookLevel[] }
+  >;
   recentTrades: Trade[]; // Keep as array for chronological ordering
   selectedPrice: number | null;
 
@@ -178,6 +189,12 @@ interface ExchangeState {
     asks: OrderbookLevel[],
   ) => void;
   addTrade: (trade: Trade) => void;
+  setCompositeBook: (
+    marketId: string,
+    bids: OrderbookLevel[],
+    asks: OrderbookLevel[],
+  ) => void;
+  clearCompositeBooks: () => void;
 
   // Actions - User Data
   setUser: (address: string) => void;
@@ -224,6 +241,10 @@ const initialState = {
   // UI Data
   selectedMarketId: null,
   orderbook: null,
+  compositeBooks: {} as Record<
+    string,
+    { bids: OrderbookLevel[]; asks: OrderbookLevel[] }
+  >,
   recentTrades: [],
   selectedPrice: null,
 
@@ -326,6 +347,16 @@ export const useExchangeStore = create<ExchangeState>()(
           if (market && market.quote_ticker === "USDC") {
             state.latestPrices[market.base_ticker] = trade.priceValue;
           }
+        }),
+
+      setCompositeBook: (marketId, bids, asks) =>
+        set((state) => {
+          state.compositeBooks[marketId] = { bids, asks };
+        }),
+
+      clearCompositeBooks: () =>
+        set((state) => {
+          state.compositeBooks = {};
         }),
 
       // ========================================================================

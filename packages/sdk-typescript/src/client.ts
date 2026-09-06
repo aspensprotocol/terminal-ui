@@ -463,6 +463,14 @@ export class ExchangeClient {
   private fce?: FceClient;
   private pollingIntervals: Map<string, ReturnType<typeof setInterval>> =
     new Map();
+  /**
+   * Monotonic suffix that makes every subscription's interval key unique.
+   * Two subscriptions to the same market (the single-market book and the
+   * composite view polling the same member) must each hold their own
+   * interval; keyed on the market id alone, the second would overwrite the
+   * first's map entry and leak that interval until page unload.
+   */
+  private subscriptionSeq = 0;
   private isConnected = false;
 
   constructor(configOrUrl: ExchangeClientConfig | string) {
@@ -822,7 +830,7 @@ export class ExchangeClient {
     marketId: string,
     callback: (trade: EnhancedTrade) => void,
   ): UnsubscribeFn {
-    const key = `trades:${marketId}`;
+    const key = `trades:${marketId}#${++this.subscriptionSeq}`;
     let lastTradeTimestamp = 0n;
 
     const poll = async () => {
@@ -876,7 +884,7 @@ export class ExchangeClient {
       asks: EnhancedOrderbookLevel[];
     }) => void,
   ): UnsubscribeFn {
-    const key = `orderbook:${marketId}`;
+    const key = `orderbook:${marketId}#${++this.subscriptionSeq}`;
 
     const poll = async () => {
       try {
