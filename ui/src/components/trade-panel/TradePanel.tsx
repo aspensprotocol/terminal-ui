@@ -31,7 +31,7 @@ export function TradePanel() {
   const selectedMarketId = useExchangeStore((state) => state.selectedMarketId);
   const isAuthenticated = useExchangeStore((state) => state.isAuthenticated);
   const connectedWallets = useExchangeStore((state) => state.connectedWallets);
-  const { connectEvm, connectSolana } = useWalletConnect();
+  const { openPicker } = useWalletConnect();
   const [faucetOpen, setFaucetOpen] = useState(false);
   const lastMarketIdRef = useRef<string | null>(null);
 
@@ -163,8 +163,7 @@ export function TradePanel() {
   const missingEcosystem =
     requiredEcosystem && !hasMatchingWallet ? requiredEcosystem : null;
   const handleConnectMissing = () => {
-    if (missingEcosystem === "solana") connectSolana();
-    else if (missingEcosystem === "evm") connectEvm();
+    if (missingEcosystem) openPicker(missingEcosystem);
   };
 
   // Form submission handler
