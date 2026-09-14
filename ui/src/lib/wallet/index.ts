@@ -15,3 +15,11 @@ export {
   type CancelTarget,
   type SettlementWallets,
 } from "./selection";
+export {
+  mergeWalletProviders,
+  type EvmConnectorLike,
+  type SolanaReadyState,
+  type SolanaWalletLike,
+  type WalletProviderRow,
+} from "./providers";
+export { useWalletPickerStore } from "./picker-store";
