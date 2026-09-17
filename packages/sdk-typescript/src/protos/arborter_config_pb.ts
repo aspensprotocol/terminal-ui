@@ -1102,10 +1102,13 @@ export const GetSignerRecoveryRequestSchema: GenMessage<GetSignerRecoveryRequest
  */
 export type GetSignerRecoveryResponse = Message<"xyz.aspens.arborter_config.v1.GetSignerRecoveryResponse"> & {
   /**
-   * The key set's manifest hash, lower hex of sha256 over the sorted
-   * "{name}:{curve}:{pubkey_hex}" lines joined with "\n" — byte for byte the
-   * value the signer appliance prints on its APPLIANCE-STATUS console line, so
-   * the deployer can compare the two without either side re-deriving it.
+   * The key set's manifest hash, lower hex of sha256 over the
+   * "{name}:{curve}:{pubkey_hex}" lines in NAME order, joined with "\n" — the
+   * keys are sorted by NAME and then formatted, never the other way round:
+   * sorting the formatted lines gives a different answer whenever one name is
+   * a prefix of another ("evm" beside "evm-tx"). Byte for byte the value the
+   * signer appliance prints on its APPLIANCE-STATUS console line, so the
+   * deployer can compare the two without either side re-deriving it.
    *
    * @generated from field: string key_set_id = 1;
    */
