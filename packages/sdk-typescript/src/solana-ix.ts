@@ -163,6 +163,26 @@ export function deriveWithdrawEpochPda(
   return pda;
 }
 
+/**
+ * Derive the instance's Termination PDA — seeds: `b"terminated" || instance`
+ * (`Termination::SEED`, arborter `chains/solana/programs/midrib/src/state.rs:289`).
+ *
+ * `terminate` (operator admin only) creates it; while it holds no data the
+ * instance is live. `deposit` and `withdraw_voucher` take it as their LAST
+ * account, read-only, and refuse with `Terminated` once it holds data — so it
+ * must be passed even though it normally does not exist yet.
+ */
+export function deriveTerminationPda(
+  instance: PublicKey,
+  programId: PublicKey,
+): PublicKey {
+  const [pda] = PublicKey.findProgramAddressSync(
+    [new TextEncoder().encode("terminated"), instance.toBuffer()],
+    programId,
+  );
+  return pda;
+}
+
 /** Compute Anchor's 8-byte discriminator for an instruction method. */
 export function anchorIxDiscriminator(method: string): Uint8Array {
   const h = sha256(new TextEncoder().encode(`global:${method}`));
@@ -218,6 +238,11 @@ export interface DepositIxOpts {
  * Midrib `deposit` instruction. User-signed — the user's Ed25519 key
  * must sign the resulting transaction. Initialises UserBalance /
  * instance_vault PDAs on first call via the program's init_if_needed.
+ *
+ * The 11 accounts mirror the program's `Deposit` struct field order
+ * (arborter `chains/solana/programs/midrib/src/instructions/deposit.rs`),
+ * bound POSITIONALLY. The last is the Termination PDA (`deposit.rs:75-76`):
+ * the program refuses the deposit once the instance is terminated.
  */
 export function depositIx(opts: DepositIxOpts): TransactionInstruction {
   const userAta = deriveAssociatedTokenAccount(opts.user, opts.mint);
@@ -246,6 +271,12 @@ export function depositIx(opts: DepositIxOpts): TransactionInstruction {
       { pubkey: SPL_TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
       { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
       { pubkey: SYSVAR_RENT_PUBKEY, isSigner: false, isWritable: false },
+      // Termination PDA — read-only, must be EMPTY (instance not terminated).
+      {
+        pubkey: deriveTerminationPda(opts.instance, opts.programId),
+        isSigner: false,
+        isWritable: false,
+      },
     ],
     // Cast to `Buffer` — the runtime is a Uint8Array and web3.js reads
     // it bytewise; the Node-typed constructor signature is just strict.
@@ -420,8 +451,10 @@ function encodeWithdrawVoucherArgs(
  * `payer` signs and pays; `account` (the withdrawer) does NOT sign — the
  * TEE's voucher is the authorization.
  *
- * The 13 accounts below are bound POSITIONALLY by Anchor and mirror the
- * program's `WithdrawVoucher` struct field order. A dropped entry does not
+ * The 14 accounts below are bound POSITIONALLY by Anchor and mirror the
+ * program's `WithdrawVoucher` struct field order. The last is the
+ * Termination PDA (`withdraw_voucher.rs:151-152`): the program honors no
+ * voucher once the instance is terminated. A dropped entry does not
  * surface as "too few accounts": every later account shifts up one slot and
  * the program reinterprets whatever now sits there — an omitted
  * `withdraw_epoch` (index 7), say, leaves a whole test suite green.
@@ -469,6 +502,12 @@ export function withdrawVoucherIx(
       },
       { pubkey: SPL_TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
       { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+      // Termination PDA — read-only, must be EMPTY (instance not terminated).
+      {
+        pubkey: deriveTerminationPda(instance, programId),
+        isSigner: false,
+        isWritable: false,
+      },
     ],
     data: encodeWithdrawVoucherArgs(
       opts.amount,
