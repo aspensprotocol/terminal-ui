@@ -1590,8 +1590,12 @@ export const ConfigService: GenService<{
   },
   /**
    * rpc service to set an instance's operator fee (recipient + bps). The
-   * arborter submits the on-chain setOperatorFee/set_operator_fee as the
-   * instance's operator_admin (the arborter signer, while unrotated).
+   * arborter submits the on-chain setOperatorFee/set_operator_fee signed by
+   * its own (TEE) key, which the contracts accept only from the instance's
+   * operator_admin. Instances refuse an operator_admin equal to the signer
+   * (OPERATOR_ADMIN_IS_SIGNER), so this call fails on-chain on every instance
+   * created by the current factory and program; the operator admin signs the
+   * contract call directly instead.
    *
    * @generated from rpc xyz.aspens.arborter_config.v1.ConfigService.SetOperatorFee
    */
@@ -1601,8 +1605,9 @@ export const ConfigService: GenService<{
     output: typeof SetOperatorFeeResponseSchema;
   },
   /**
-   * rpc service to rotate an instance's operator_admin key. After rotation the
-   * new admin (not the arborter) gates operator-fee changes.
+   * rpc service to rotate an instance's operator_admin key. Signed by the
+   * arborter's key like SetOperatorFee, and so refused on-chain for the same
+   * reason; the current operator admin rotates by calling the contract.
    *
    * @generated from rpc xyz.aspens.arborter_config.v1.ConfigService.SetOperatorAdmin
    */
