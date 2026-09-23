@@ -20,6 +20,10 @@
  *     the instruction immediately before it. Native SOL (the WSOL mint)
  *     can optionally append a `CloseAccount` to unwrap.
  *
+ * Both Solana instructions carry the instance's Termination PDA as their
+ * last account (the SDK builders append it); the program refuses either
+ * once the instance is terminated, as MidribV3 reverts TERMINATED on EVM.
+ *
  * Dispatches on the chain's `architecture` field; errors surface via
  * sonner.
  */
@@ -31,7 +35,14 @@ import {
   switchChain,
   writeContract,
 } from "wagmi/actions";
-import { parseAbi, type Address, type Hex } from "viem";
+import {
+  BaseError,
+  ContractFunctionRevertedError,
+  parseAbi,
+  type Address,
+  type Hex,
+  type PublicClient,
+} from "viem";
 import {
   Connection,
   PublicKey,
@@ -115,7 +126,69 @@ const MIDRIB_ABI = parseAbi([
   "function deposit(address _token, uint160 _amount)",
   "function depositNative() payable",
   "function withdraw(WithdrawalVoucher _v, bytes _signature)",
+  "function terminatedAt() view returns (uint256)",
+  "function TERMINATION_DELAY() view returns (uint256)",
+  // Custom errors the deposit / withdraw paths can revert with. Listing them
+  // lets viem decode a revert into its name and arguments instead of raw
+  // bytes. A terminated instance refuses both calls with TERMINATED.
+  "error TERMINATED()",
+  "error ZERO_AMOUNT()",
+  "error MINIMUM_ORDER_AMOUNT(uint160 amount)",
+  "error INVALID_SIGNER()",
+  "error WITHDRAW_VOUCHER_EXPIRED()",
+  "error WITHDRAW_NONCE_ALREADY_USED()",
+  "error WITHDRAW_RATE_LIMITED(uint256 cap, uint256 attempted)",
 ]);
+
+/** The name of the MidribV3 custom error `err` carries, if any. */
+function midribErrorName(err: unknown): string | undefined {
+  if (!(err instanceof BaseError)) return undefined;
+  const reverted = err.walk((e) => e instanceof ContractFunctionRevertedError);
+  return reverted instanceof ContractFunctionRevertedError
+    ? reverted.data?.errorName
+    : undefined;
+}
+
+/**
+ * A user-facing explanation for a MidribV3 call that reverted TERMINATED.
+ *
+ * Termination is the operator admin's emergency stop: from then on the
+ * instance takes no deposits and honors no vouchers, and each account's
+ * on-chain balance becomes reclaimable through `withdrawTerminated` once
+ * `TERMINATION_DELAY` (24h) has passed since `terminatedAt`. This UI does
+ * not submit `withdrawTerminated`; the message names the ready-at time so
+ * the user knows when that exit opens.
+ */
+async function describeTerminated(
+  client: () => PublicClient,
+  midrib: Address,
+): Promise<string> {
+  const base =
+    "This trading contract has been terminated by the operator — it no " +
+    "longer accepts deposits or withdrawal vouchers.";
+  try {
+    const pub = client();
+    const [at, delay] = await Promise.all([
+      pub.readContract({
+        address: midrib,
+        abi: MIDRIB_ABI,
+        functionName: "terminatedAt",
+      }),
+      pub.readContract({
+        address: midrib,
+        abi: MIDRIB_ABI,
+        functionName: "TERMINATION_DELAY",
+      }),
+    ]);
+    const readyAt = new Date(Number((at + delay) * 1000n));
+    return (
+      `${base} On-chain balances become reclaimable with ` +
+      `withdrawTerminated from ${readyAt.toLocaleString()}.`
+    );
+  } catch {
+    return `${base} On-chain balances become reclaimable with withdrawTerminated 24h after termination.`;
+  }
+}
 
 export interface DepositParams {
   chainNetwork: string;
@@ -382,7 +455,15 @@ export function useDepositWithdraw(): UseDepositWithdrawResult {
       } catch (err) {
         console.error("[useDepositWithdraw] deposit failed:", err);
         toast.error("Deposit failed", {
-          description: err instanceof Error ? err.message : String(err),
+          description:
+            midribErrorName(err) === "TERMINATED"
+              ? await describeTerminated(
+                  () => publicClientFor(chain, rpcUrls),
+                  midrib as Address,
+                )
+              : err instanceof Error
+                ? err.message
+                : String(err),
         });
         throw err;
       } finally {
@@ -577,7 +658,15 @@ export function useDepositWithdraw(): UseDepositWithdrawResult {
       } catch (err) {
         console.error("[useDepositWithdraw] withdraw failed:", err);
         toast.error("Withdraw failed", {
-          description: err instanceof Error ? err.message : String(err),
+          description:
+            midribErrorName(err) === "TERMINATED"
+              ? await describeTerminated(
+                  () => publicClientFor(chain, rpcUrls),
+                  midrib as Address,
+                )
+              : err instanceof Error
+                ? err.message
+                : String(err),
         });
         throw err;
       } finally {
