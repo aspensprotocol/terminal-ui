@@ -34,7 +34,9 @@ import {
   anchorIxDiscriminator,
   buildWithdrawVoucherIxs,
   closeAccountIx,
+  depositIx,
   deriveAssociatedTokenAccount,
+  deriveTerminationPda,
   deriveWithdrawEpochPda,
   deriveWithdrawNoncePda,
   ed25519VerifyIx,
@@ -54,6 +56,13 @@ const PAYER = new PublicKey("9XpBj9TnV1dp4ChxaBBbAHNDijLJgHQDrY7Jb3j7gkSQ");
 const SIGNER_PK = new PublicKey("52ySymibdVbxrV5QFkGy1KhkTU8aC8bTBh2ZwTr7xx1s");
 /** The Rust vector's `derive_associated_token_account(account, mint)`. */
 const USER_ATA = new PublicKey("9VE3rfingUVmGRCrrKZrc4oYbKJcCpaHqywyj2T3nQ2t");
+/**
+ * The instance's Termination PDA (`[b"terminated", instance]`). Derived
+ * INDEPENDENTLY of this module, with the Solana CLI:
+ *   solana find-program-derived-address <PROGRAM_ID> \
+ *     string:terminated pubkey:<INSTANCE>
+ */
+const TERMINATION_PDA = "ALYd9jj2DVhQWbRPZGgGUxdhw4aAPGrJcsdXTQv5YEFh";
 
 const AMOUNT = 123_456_789_012_345n;
 const NONCE = 7_842_913_005n;
@@ -183,6 +192,8 @@ describe("withdraw_voucher account list", () => {
         false,
       ],
       ["system_program", "11111111111111111111111111111111", false, false],
+      // The program refuses once this PDA holds data (instance terminated).
+      ["termination", TERMINATION_PDA, false, false],
     ];
 
     expect(ix.keys.length).toBe(expected.length);
@@ -209,7 +220,90 @@ describe("withdraw_voucher account list", () => {
   });
 });
 
+describe("deposit account list", () => {
+  function deposit() {
+    return depositIx({
+      programId: PROGRAM_ID,
+      instance: INSTANCE,
+      user: ACCOUNT,
+      mint: MINT,
+      amount: AMOUNT,
+    });
+  }
+
+  /**
+   * Pins order, length, pubkey, and flags against the program's `Deposit`
+   * accounts struct (`arborter/chains/solana/programs/midrib/src/
+   * instructions/deposit.rs`, field order top to bottom; confirmed against
+   * `anchor idl build`). The PDAs are the same Rust-vector addresses the
+   * withdraw list uses (user = ACCOUNT), and the termination PDA is the
+   * CLI-derived one — so none of the expectations is a round trip through
+   * this module.
+   */
+  test("matches the program's Deposit struct, in order", () => {
+    const expected: [string, string, boolean, boolean][] = [
+      ["instance", INSTANCE.toBase58(), false, false],
+      ["mint", MINT.toBase58(), false, false],
+      [
+        "user_balance",
+        "77uTXH7SkekLMDdAFj7Uk4GJixodXo1XW7e4461u9Akb",
+        true,
+        false,
+      ],
+      ["user_token_account", USER_ATA.toBase58(), true, false],
+      [
+        "instance_vault",
+        "3ionPWz45V7Cf3cBX4UBAvkToK8Soj3GLutNte3yot3E",
+        true,
+        false,
+      ],
+      [
+        "vault_authority",
+        "8wbQ9mJZXamH1pFQYojqucoihsDDx66ybGGMA9UfyTni",
+        false,
+        false,
+      ],
+      ["user", ACCOUNT.toBase58(), true, true],
+      ["token_program", SPL_TOKEN_PROGRAM_ID.toBase58(), false, false],
+      ["system_program", "11111111111111111111111111111111", false, false],
+      ["rent", "SysvarRent111111111111111111111111111111111", false, false],
+      ["termination", TERMINATION_PDA, false, false],
+    ];
+    const ix = deposit();
+    expect(ix.keys.length).toBe(expected.length);
+    expect(
+      ix.keys.map(
+        (k) => `${k.pubkey.toBase58()} w=${k.isWritable} s=${k.isSigner}`,
+      ),
+    ).toEqual(expected.map(([, pk, w, s]) => `${pk} w=${w} s=${s}`));
+    expect(ix.programId.toBase58()).toBe(PROGRAM_ID.toBase58());
+  });
+
+  test('data is sha256("global:deposit")[..8] || u64 amount', () => {
+    expect(hex(new Uint8Array(deposit().data))).toBe(
+      hex(anchorIxDiscriminator("deposit")) + "79df0d8648700000",
+    );
+  });
+
+  test("no account is duplicated", () => {
+    const keys = deposit().keys.map((k) => k.pubkey.toBase58());
+    expect(new Set(keys).size).toBe(keys.length);
+  });
+});
+
 describe("PDA derivations", () => {
+  test("termination PDA matches the Solana CLI derivation", () => {
+    expect(deriveTerminationPda(INSTANCE, PROGRAM_ID).toBase58()).toBe(
+      TERMINATION_PDA,
+    );
+  });
+
+  test("termination PDA is instance-specific", () => {
+    expect(deriveTerminationPda(ACCOUNT, PROGRAM_ID).toBase58()).not.toBe(
+      TERMINATION_PDA,
+    );
+  });
+
   test("withdraw-nonce PDA matches the Rust vector", () => {
     expect(
       deriveWithdrawNoncePda(INSTANCE, ACCOUNT, NONCE, PROGRAM_ID).toBase58(),

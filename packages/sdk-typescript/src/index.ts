@@ -168,6 +168,7 @@ export {
   deriveAssociatedTokenAccount,
   deriveWithdrawNoncePda,
   deriveWithdrawEpochPda,
+  deriveTerminationPda,
   anchorIxDiscriminator,
   SPL_TOKEN_PROGRAM_ID,
   ATA_PROGRAM_ID,
