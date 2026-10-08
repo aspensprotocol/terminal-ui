@@ -65,14 +65,14 @@ Two layers:
 - **Server-side** (read at request time, changeable without a rebuild):
 - **Client-side** (prefixed `NEXT_PUBLIC_`, baked into the bundle at build time).
 
-| Variable                               | Layer  | Default                | Purpose                                                                                                  |
-| -------------------------------------- | ------ | ---------------------- | -------------------------------------------------------------------------------------------------------- |
-| `NEXT_PUBLIC_GRPC_URL`                 | client | `/api` (rewrite below) | Override to bypass the server-side rewrite (local dev, static hosting). Usually leave unset.             |
-| `NEXT_PUBLIC_SOLANA_RPC_URL`           | client | devnet                 | Solana RPC used by the wallet-adapter context                                                            |
-| `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` | client | fallback               | WalletConnect / Reown project id                                                                         |
-| `CHAIN_RPC_URLS`                       | server | unset                  | JSON map of chain `network` -> public RPC URL for browser balance reads; chains without one are skipped. |
-| `EXT_PROXY_URL`                        | server | unset                  | When set, routes actions, reads and config through the Flare FCE ext-proxy instead of arborter gRPC.     |
-| `DIRECT_API_KEY`                       | server | unset                  | API key the server-side `/fce-proxy` relay injects; never reaches the browser.                           |
+| Variable                               | Layer  | Default                | Purpose                                                                                                                              |
+| -------------------------------------- | ------ | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `NEXT_PUBLIC_GRPC_URL`                 | client | `/api` (rewrite below) | Override to bypass the server-side rewrite (local dev, static hosting). Usually leave unset.                                         |
+| `NEXT_PUBLIC_SOLANA_RPC_URL`           | client | devnet                 | Solana RPC used by the wallet-adapter context                                                                                        |
+| `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` | client | fallback               | WalletConnect / Reown project id                                                                                                     |
+| `CHAIN_RPC_URLS`                       | server | unset                  | JSON map of chain `network` -> public RPC URL for browser chain reads; overrides the SDK's built-in public list (`PUBLIC_RPC_URLS`). |
+| `EXT_PROXY_URL`                        | server | unset                  | When set, routes actions, reads and config through the Flare FCE ext-proxy instead of arborter gRPC.                                 |
+| `DIRECT_API_KEY`                       | server | unset                  | API key the server-side `/fce-proxy` relay injects; never reaches the browser.                                                       |
 
 The browser always hits the same-origin `/api/*` path, which
 `ui/next.config.ts` rewrites to the in-swarm `http://envoy:8811`. That

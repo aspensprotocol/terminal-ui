@@ -1,7 +1,10 @@
 import { type Config, createConfig, http } from "wagmi";
 import {
+  arbitrum,
   base,
   baseSepolia,
+  flare,
+  hyperEvm,
   mainnet,
   optimism,
   optimismSepolia,
@@ -9,6 +12,7 @@ import {
 } from "wagmi/chains";
 import { coinbaseWallet, injected, walletConnect } from "wagmi/connectors";
 import { defineChain } from "viem";
+import { PUBLIC_RPC_URLS } from "@aspens/terminal-sdk";
 
 // WalletConnect project ID - you should get your own at https://cloud.walletconnect.com
 const projectId =
@@ -23,10 +27,11 @@ const projectId =
 // These entries exist so the CONNECTOR knows the chain (name, currency,
 // explorer, and a network to offer when adding it to a wallet). Deposit and
 // withdraw do not read through wagmi's transports — they build a client from
-// the arborter config plus CHAIN_RPC_URLS; see the SDK's evm-client.ts. Keep
-// the RPC URLs here publicly reachable all the same (a localhost URL is
-// useless to a deployed browser), and give every chain the venue trades on
-// an entry, or wagmi has nothing to accept the wallet's network against.
+// the arborter config, CHAIN_RPC_URLS and the SDK's public list; see the
+// SDK's evm-client.ts. Keep the RPC URLs here publicly reachable all the same
+// (a localhost URL is useless to a deployed browser), and give every chain
+// the venue trades on an entry, or wagmi has nothing to accept the wallet's
+// network against.
 const flareCoston2 = defineChain({
   id: 114,
   name: "Flare Coston2",
@@ -56,7 +61,44 @@ const hyperEvmTestnet = defineChain({
   },
 });
 
-// Default chains that are always available
+// Robinhood Chain and Arc are not in wagmi/chains yet. Their RPC is the
+// SDK's public endpoint for the chain, so the two lists cannot drift.
+function publicRpc(chainId: number): string {
+  const url = PUBLIC_RPC_URLS.evm[chainId];
+  if (!url) throw new Error(`No public RPC for chain ${chainId}`);
+  return url;
+}
+
+const robinhood = defineChain({
+  id: 4663,
+  name: "Robinhood Chain",
+  nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+  rpcUrls: {
+    default: { http: [publicRpc(4663)] },
+  },
+  blockExplorers: {
+    default: {
+      name: "Blockscout",
+      url: "https://robinhoodchain.blockscout.com",
+    },
+  },
+});
+
+// Arc's gas token is USDC, 18 decimals as native (its ERC-20 face is 6).
+const arc = defineChain({
+  id: 5042,
+  name: "Arc",
+  nativeCurrency: { name: "USDC", symbol: "USDC", decimals: 18 },
+  rpcUrls: {
+    default: { http: [publicRpc(5042)] },
+  },
+  blockExplorers: {
+    default: { name: "Arc Explorer", url: "https://explorer.arc.io" },
+  },
+});
+
+// Default chains that are always available. The beta-1 mainnet venue trades
+// on Ethereum, Base, Arbitrum, HyperEVM, Robinhood, Arc and Flare.
 const defaultChains = [
   mainnet,
   sepolia,
@@ -64,6 +106,11 @@ const defaultChains = [
   baseSepolia,
   optimism,
   optimismSepolia,
+  arbitrum,
+  hyperEvm,
+  robinhood,
+  arc,
+  flare,
   flareCoston2,
   hyperEvmTestnet,
 ] as const;

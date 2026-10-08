@@ -6,7 +6,9 @@
  * The arborter masks every `rpc_url` in its `GetConfig` response, so the
  * `Configuration` the client receives carries `"********"` and nothing
  * chain-side can be read from it. This context carries the replacement map,
- * read from the server env at request time in `app/layout.tsx`.
+ * read from the server env at request time in `app/layout.tsx`. It overrides
+ * the SDK's static public list (`PUBLIC_RPC_URLS`), which covers a chain the
+ * map leaves out.
  *
  * Unlike `EXT_PROXY_URL` / `DIRECT_API_KEY` — which stay server-side behind
  * the /fce-proxy relay — these values ARE handed to the browser, because the

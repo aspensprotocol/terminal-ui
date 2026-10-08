@@ -47,7 +47,8 @@ export default function RootLayout({
   const fceEnabled = Boolean(process.env.EXT_PROXY_URL);
   // `CHAIN_RPC_URLS` DOES cross into the client tree, deliberately: the
   // browser reads token/trade-contract balances directly and the arborter
-  // masks `rpc_url` in GetConfig, so without this every balance is skipped.
+  // masks `rpc_url` in GetConfig. Unset, reads fall back to the SDK's static
+  // public list (`PUBLIC_RPC_URLS`); this map overrides it per chain.
   // Public endpoints only — see `lib/providers/rpc-context.tsx`.
   const rpcUrls = parseRpcUrlMap(process.env.CHAIN_RPC_URLS);
   return (
