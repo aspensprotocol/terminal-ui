@@ -110,7 +110,8 @@ function resolveSolanaRpcUrl(
   if (!url) {
     throw new Error(
       `No RPC endpoint configured for '${chain.network}'. The arborter masks ` +
-        `rpc_url in GetConfig — set CHAIN_RPC_URLS for this deployment.`,
+        `rpc_url in GetConfig and this chain has no public fallback — set ` +
+        `CHAIN_RPC_URLS for this deployment.`,
     );
   }
   return url;

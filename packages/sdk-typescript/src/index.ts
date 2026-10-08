@@ -140,11 +140,14 @@ export {
 } from "./evm-client.js";
 
 // RPC endpoint resolution. `GetConfig` masks every chain's `rpc_url`, so
-// browser-side chain reads need endpoints supplied by the host application.
+// browser-side chain reads use endpoints supplied by the host application,
+// falling back to a static list of public ones.
 export {
   MASKED_RPC_URL,
   isUsableRpcUrl,
   resolveRpcUrl,
+  publicRpcUrl,
+  PUBLIC_RPC_URLS,
   parseRpcUrlMap,
   type RpcUrlMap,
   type RpcResolvableChain,

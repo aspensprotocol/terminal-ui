@@ -9,7 +9,8 @@
  * deployment can reach.
  *
  * Reads instead use a client built from the arborter config's chain plus the
- * deployment's RPC map — the same resolution the balances panel uses. Writes
+ * deployment's RPC map and the static public list — the same resolution the
+ * balances panel uses. Writes
  * stay on wagmi, because they must
  * go through the user's wallet, and are guarded by
  * {@link walletChainMismatch} so a wallet on the wrong network cannot silently
@@ -53,8 +54,8 @@ export function publicClientFor(
   if (!url) {
     throw new Error(
       `No RPC endpoint for '${chain.network}' (chain ${chain.chainId}). ` +
-        `The arborter masks rpc_url in GetConfig — set CHAIN_RPC_URLS for ` +
-        `this deployment.`,
+        `The arborter masks rpc_url in GetConfig and this chain has no ` +
+        `public fallback — set CHAIN_RPC_URLS for this deployment.`,
     );
   }
   return createPublicClient({ transport: http(url) }) as PublicClient;

@@ -2,7 +2,9 @@ import { describe, expect, it } from "bun:test";
 import {
   MASKED_RPC_URL,
   isUsableRpcUrl,
+  PUBLIC_RPC_URLS,
   primaryEndpointUrl,
+  publicRpcUrl,
   resolveRpcUrl,
 } from "./rpc-urls.js";
 
@@ -143,6 +145,79 @@ describe("resolveRpcUrl", () => {
       ],
     };
     expect(resolveRpcUrl(c, undefined)).toBe("https://from-config.example/rpc");
+  });
+});
+
+describe("public endpoint fallback", () => {
+  /** A masked chain as GetConfig delivers it, with the fields the fallback reads. */
+  const masked = (network: string, chainId: number, architecture: string) => ({
+    network,
+    chainId,
+    architecture,
+    rpcs: [{ url: MASKED_RPC_URL, enabled: true }],
+  });
+
+  it("rescues a masked EVM chain by chainId", () => {
+    expect(resolveRpcUrl(masked("arc", 5042, "EVM"), undefined)).toBe(
+      "https://rpc.mainnet.arc.io",
+    );
+  });
+
+  // Keyed by chainId, not network: an operator-chosen name must not matter.
+  it("matches an EVM chain whatever its network is called", () => {
+    expect(resolveRpcUrl(masked("my-base", 8453, "EVM"), undefined)).toBe(
+      PUBLIC_RPC_URLS.evm[8453],
+    );
+  });
+
+  it("rescues a masked Solana chain by network", () => {
+    expect(
+      resolveRpcUrl(masked("solana-mainnet", 0, "Solana"), undefined),
+    ).toBe("https://solana-rpc.publicnode.com");
+  });
+
+  // A Solana chainId is nominal. One that happens to equal an EVM chain's id
+  // must not borrow that chain's endpoint.
+  it("never gives a Solana chain an EVM endpoint", () => {
+    expect(PUBLIC_RPC_URLS.evm[1]).toBeDefined();
+    expect(publicRpcUrl(masked("solana-localnet", 1, "Solana"))).toBeNull();
+  });
+
+  it("returns null for a chain on neither list", () => {
+    expect(
+      resolveRpcUrl(masked("unlisted", 31337, "EVM"), undefined),
+    ).toBeNull();
+  });
+
+  // Each tier gets a distinct url, so a wrong precedence cannot pass by
+  // returning a value that happens to coincide.
+  it("ranks override, then config, then the public list", () => {
+    const withConfig = {
+      network: "arc",
+      chainId: 5042,
+      architecture: "EVM",
+      rpcs: [{ url: "https://from-config.example/rpc", enabled: true }],
+    };
+    expect(
+      resolveRpcUrl(withConfig, { arc: "https://override.example/rpc" }),
+    ).toBe("https://override.example/rpc");
+    expect(resolveRpcUrl(withConfig, undefined)).toBe(
+      "https://from-config.example/rpc",
+    );
+    expect(resolveRpcUrl(masked("arc", 5042, "EVM"), undefined)).toBe(
+      "https://rpc.mainnet.arc.io",
+    );
+  });
+
+  it("lists only usable, keyless urls", () => {
+    for (const url of [
+      ...Object.values(PUBLIC_RPC_URLS.evm),
+      ...Object.values(PUBLIC_RPC_URLS.solana),
+    ]) {
+      expect(isUsableRpcUrl(url)).toBe(true);
+      expect(url.startsWith("https://")).toBe(true);
+      expect(url).not.toMatch(/[?@]/);
+    }
   });
 });
 

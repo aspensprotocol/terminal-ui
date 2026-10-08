@@ -97,10 +97,10 @@ export async function fetchOnChainBalances(opts: {
 /**
  * Same as `fetchOnChainBalances` but without the per-ticker aggregation.
  *
- * `rpcUrls` maps `chain.network` to an endpoint the browser can dial. It is
- * required in practice: the arborter masks `rpc_url` in `GetConfig`, so a
- * chain with no override has no reachable endpoint. Such chains are SKIPPED
- * with a console warning rather than contributing silent zeros — see
+ * `rpcUrls` maps `chain.network` to an endpoint the browser can dial. The
+ * arborter masks `rpc_url` in `GetConfig`, so a chain with no override falls
+ * back to the static public list (`PUBLIC_RPC_URLS`); a chain on neither is
+ * SKIPPED with a console warning rather than contributing silent zeros — see
  * `rpc-urls.ts`.
  */
 export async function fetchChainBalanceSlices(opts: {
@@ -135,7 +135,8 @@ export async function fetchChainBalanceSlices(opts: {
     console.warn(
       `[balances] no usable RPC endpoint for ${unreachable.join(", ")} — ` +
         `balances for these chains are OMITTED, not zero. The arborter masks ` +
-        `rpc_url in GetConfig; supply an endpoint per chain (CHAIN_RPC_URLS).`,
+        `rpc_url in GetConfig and these chains have no public fallback; supply an ` +
+        `endpoint per chain (CHAIN_RPC_URLS).`,
     );
   }
   const results = await Promise.all(tasks);

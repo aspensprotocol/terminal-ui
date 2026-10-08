@@ -23,10 +23,11 @@ const projectId =
 // These entries exist so the CONNECTOR knows the chain (name, currency,
 // explorer, and a network to offer when adding it to a wallet). Deposit and
 // withdraw do not read through wagmi's transports — they build a client from
-// the arborter config plus CHAIN_RPC_URLS; see the SDK's evm-client.ts. Keep
-// the RPC URLs here publicly reachable all the same (a localhost URL is
-// useless to a deployed browser), and give every chain the venue trades on
-// an entry, or wagmi has nothing to accept the wallet's network against.
+// the arborter config, CHAIN_RPC_URLS and the SDK's public list; see the
+// SDK's evm-client.ts. Keep the RPC URLs here publicly reachable all the same
+// (a localhost URL is useless to a deployed browser), and give every chain
+// the venue trades on an entry, or wagmi has nothing to accept the wallet's
+// network against.
 const flareCoston2 = defineChain({
   id: 114,
   name: "Flare Coston2",

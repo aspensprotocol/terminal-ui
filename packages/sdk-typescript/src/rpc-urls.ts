@@ -6,10 +6,11 @@
  * path segment for hosted providers like Alchemy/Infura — and `GetConfig` is
  * unauthenticated), so a browser client cannot dial the URL it receives in
  * `Configuration`. Callers supply their own map of `chain.network` -> endpoint
- * instead; `resolveRpcUrl` prefers that map and falls back to the config
- * value only when it is genuinely usable.
+ * instead; `resolveRpcUrl` prefers that map, falls back to the config value
+ * only when it is genuinely usable, and last to a static list of free public
+ * endpoints for the chains Aspens venues run on ({@link PUBLIC_RPC_URLS}).
  *
- * When neither yields a usable endpoint this returns `null` so the caller can
+ * When none of the three yields a usable endpoint this returns `null` so the caller can
  * SKIP the chain and say so. That is the point of the module: a mask passed
  * straight to viem makes every read throw, and a throw swallowed into `0n`
  * produces a balances panel of zeros that looks exactly like "you have no
@@ -31,10 +32,75 @@ export interface RpcEndpointLike {
 /**
  * Minimal shape needed to resolve an endpoint — matches `Configuration.chains[n]`:
  * every chain carries a priority-ordered, per-endpoint-auth `rpcs` list.
+ *
+ * `chainId` and `architecture` are optional because only the public-endpoint
+ * fallback reads them: EVM chains are looked up by `chainId`, Solana clusters
+ * (whose `chainId` is nominal) by `network`.
  */
 export interface RpcResolvableChain {
   network: string;
   rpcs: RpcEndpointLike[];
+  chainId?: number;
+  architecture?: string;
+}
+
+/**
+ * Free public endpoints, used when neither the host's map nor the config
+ * yields a usable url.
+ *
+ * Only for the browser's occasional reads — balances, allowances, receipts.
+ * These operators rate-limit and say they are not for production traffic;
+ * a deployment that reads heavily, or wants its own provider, sets
+ * `CHAIN_RPC_URLS`, which always wins.
+ *
+ * Each entry answered with its own chain id (genesis hash for Solana) AND an
+ * `Access-Control-Allow-Origin` that admits a browser origin, checked
+ * 2026-10-08. Left out on purpose: `api.mainnet-beta.solana.com` (403s
+ * browser origins), Arc testnet's `rpc.testnet.arc.network` (403), and any
+ * endpoint carrying a key.
+ */
+export const PUBLIC_RPC_URLS: {
+  /** EVM `chainId` -> endpoint. */
+  evm: Readonly<Record<number, string>>;
+  /** Solana chain `network` -> endpoint. */
+  solana: Readonly<Record<string, string>>;
+} = {
+  evm: {
+    // Mainnets
+    1: "https://ethereum-rpc.publicnode.com",
+    14: "https://flare-api.flare.network/ext/C/rpc",
+    999: "https://rpc.hyperliquid.xyz/evm",
+    4663: "https://rpc.mainnet.chain.robinhood.com",
+    5042: "https://rpc.mainnet.arc.io",
+    8453: "https://mainnet.base.org",
+    42161: "https://arb1.arbitrum.io/rpc",
+    // Testnets
+    114: "https://coston2-api.flare.network/ext/C/rpc",
+    998: "https://rpc.hyperliquid-testnet.xyz/evm",
+    46630: "https://rpc.testnet.chain.robinhood.com",
+    84532: "https://sepolia.base.org",
+    421614: "https://sepolia-rollup.arbitrum.io/rpc",
+    11155111: "https://ethereum-sepolia-rpc.publicnode.com",
+    11155420: "https://sepolia.optimism.io",
+  },
+  solana: {
+    "solana-mainnet": "https://solana-rpc.publicnode.com",
+    "solana-devnet": "https://api.devnet.solana.com",
+  },
+};
+
+/**
+ * The {@link PUBLIC_RPC_URLS} entry for `chain`, or `null` when it has none.
+ *
+ * A Solana chain is matched by `network` only, never by its nominal
+ * `chainId`, so it cannot pick up an EVM chain's endpoint.
+ */
+export function publicRpcUrl(chain: RpcResolvableChain): string | null {
+  const solana = PUBLIC_RPC_URLS.solana[chain.network];
+  if (solana) return solana;
+  if (chain.architecture?.toLowerCase() === "solana") return null;
+  if (!chain.chainId) return null;
+  return PUBLIC_RPC_URLS.evm[chain.chainId] ?? null;
 }
 
 /**
@@ -82,8 +148,9 @@ export function isUsableRpcUrl(url: string | undefined | null): boolean {
  * Endpoint for `chain`, or `null` when none is usable.
  *
  * Precedence: the caller's override for `chain.network`, then the config's
- * own first-enabled `rpcs` entry ([`primaryEndpointUrl`]). An unusable
- * override falls through to the config value rather than being dialed.
+ * own first-enabled `rpcs` entry ([`primaryEndpointUrl`]), then the static
+ * public endpoint ([`publicRpcUrl`]). An unusable override falls through
+ * rather than being dialed.
  */
 export function resolveRpcUrl(
   chain: RpcResolvableChain,
@@ -93,7 +160,7 @@ export function resolveRpcUrl(
   if (isUsableRpcUrl(override)) return override!.trim();
   const configUrl = primaryEndpointUrl(chain);
   if (isUsableRpcUrl(configUrl)) return configUrl.trim();
-  return null;
+  return publicRpcUrl(chain);
 }
 
 /**
