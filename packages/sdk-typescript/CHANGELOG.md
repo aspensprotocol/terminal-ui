@@ -1,5 +1,44 @@
 # Changelog — @aspensprotocol/sdk-ts
 
+## 0.3.0
+
+### Added
+
+- **MidribV3 without React.** `MIDRIB_V3_ABI` and `ERC20_APPROVAL_ABI`; the
+  write-call builders `evmApproveCall`, `evmDepositCall`,
+  `evmDepositNativeCall` and `evmWithdrawCall(voucher)`, whose results go
+  straight into viem / wagmi `writeContract` or `encodeFunctionData`;
+  `withdrawRequestMessage({ network, token, account, amount })`, the canonical
+  `"<network>|<token>|<account>|<amount>"` text a withdrawal request is signed
+  over; and `midribRevertName(err)`, the custom-error name of a reverted call.
+- **EVM settlement evidence.** `decodeMidribLog` decodes MidribV3's
+  `NetSettled`, `TokenDeposited` and `Withdrawn` logs (topic0s exported as
+  `NET_SETTLED_TOPIC`, `TOKEN_DEPOSITED_TOPIC`, `WITHDRAWN_TOPIC`).
+  `readMidribEvents(client, { contract, account, fromBlock, toBlock,
+chunkSize? })` fetches all three for one account, filtered on the indexed
+  account topic, in 2000-block chunks by default, in chain order.
+  `readTradeBalance(client, contract, holder, token)`.
+- **Solana settlement evidence.** `decodeMidribEventData` and
+  `parseMidribLogs(logs, programId)` decode the program's Anchor `NetSettled`
+  and `Withdrawn` events from `Program data:` lines, accepting only lines the
+  midrib program itself logged. `readMidribSolanaEvents(connection, { programId,
+instance, user, mint, until?, before? })` walks the UserBalance account's
+  signatures and returns the account's events oldest first, with the newest
+  signature for the next read and any transactions whose logs were truncated.
+  `decodeUserBalance` / `readUserBalance` return `deposited` and `locked`;
+  `deriveUserBalancePda` is now exported.
+- **Fee rates and the fee formula.** `readEvmFeeRates(client, contract)` reads
+  MidribV3 `maintenanceBps()` / `operatorBps()`; `decodeTradingInstanceFees` /
+  `readSolanaFeeRates(connection, { programId, instance })` read
+  `maintenance_bps` / `operator_bps` from the Solana `TradingInstance`
+  account. `feeForVolume(gross, maintenanceBps, operatorBps)` computes the
+  contracts' fee, `floor(G × m / 10000) + floor(G × o / 10000)`, flooring the
+  two rates separately as the contracts do.
+
+### Changed
+
+- The balances reads use `readTradeBalance`; results are unchanged.
+
 ## 0.2.0
 
 ### Added
