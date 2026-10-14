@@ -20,11 +20,11 @@ import { describe, expect, test } from "bun:test";
 import { toBinary } from "@bufbuild/protobuf";
 import { ExchangeClient, type PlaceOrderParams } from "./client.js";
 import { decimalToRaw } from "./decimals.js";
-import { arborterService } from "./grpc-transport.js";
+import { createRouterTransport } from "@connectrpc/connect";
 import {
+  ArborterService,
   OrderSchema,
   type Order,
-  type SendOrderResponse,
 } from "./protos/arborter_pb.js";
 import { createOrderMessage, type OrderSigningData } from "./signing.js";
 
@@ -50,24 +50,24 @@ const SIGNATURE = new Uint8Array(65).fill(7);
 const ORDER_ID = new Uint8Array(32).fill(9);
 
 /**
- * Swap in a capturing `sendOrder` for one call. `arborterService` is a plain
- * object literal shared by every importer, so replacing the property
- * intercepts exactly what `ExchangeClient` would have put on the wire.
+ * Place the order through a client whose transport is an in-memory router:
+ * the `Order` it captures is the decoded request exactly as `ExchangeClient`
+ * serialized it for the wire.
  */
 async function captureWireOrder(params: PlaceOrderParams): Promise<Order> {
-  const original = arborterService.sendOrder;
   let captured: Order | undefined;
-  arborterService.sendOrder = async (order: Order) => {
-    captured = order;
-    return { orderId: ORDER_ID, orderInBook: true } as SendOrderResponse;
-  };
-  try {
-    await new ExchangeClient({ grpcUrl: "http://localhost:0" }).placeOrder(
-      params,
-    );
-  } finally {
-    arborterService.sendOrder = original;
-  }
+  const grpcTransport = createRouterTransport(({ service }) => {
+    service(ArborterService, {
+      sendOrder(request) {
+        captured = request.order;
+        return { orderId: ORDER_ID, orderInBook: true };
+      },
+    });
+  });
+  await new ExchangeClient({
+    grpcUrl: "http://localhost:0",
+    grpcTransport,
+  }).placeOrder(params);
   if (!captured) throw new Error("sendOrder was never called");
   return captured;
 }

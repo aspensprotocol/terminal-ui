@@ -8,15 +8,16 @@ import type {
   Candle,
   Side,
   OrderType,
+  VenueTrade,
 } from "./types.js";
 
 import { generateCandles, STUB_MARKETS, STUB_TOKENS } from "./stub-data.js";
 import {
-  setGrpcBaseUrl,
-  resetTransport,
-  configService,
-  arborterService,
+  createGrpcServices,
+  createGrpcTransport,
   create,
+  type GrpcServices,
+  type Transport,
   OrderToCancelSchema,
   type Order,
   type OrderToCancel,
@@ -34,8 +35,21 @@ import {
 import {
   Side as ProtoSide,
   WithdrawResponseSchema,
+  type OrderbookEntry,
+  type Trade,
   type WithdrawResponse,
 } from "./protos/arborter_pb.js";
+import {
+  streamOrderbook,
+  streamTrades,
+  subscribeOrderbook,
+  subscribeTrades,
+  type OrderbookStreamEvent,
+  type StreamOptions,
+  type StreamParams,
+  type SubscribeOptions,
+  type TradeStreamEvent,
+} from "./streams.js";
 import { createOrderMessage, hexToBytes } from "./signing.js";
 import { fetchOnChainBalances, type WalletBinding } from "./balances.js";
 import { toDisplayValue, toDisplayValueCapped } from "./decimals.js";
@@ -52,7 +66,22 @@ import {
 } from "./fce/index.js";
 
 export interface ExchangeClientConfig {
+  /** Base URL of the arborter's gRPC-Web endpoint. */
   grpcUrl: string;
+  /**
+   * The transport every gRPC call of this client goes over. When given,
+   * `grpcUrl` is not used for gRPC; when omitted, the client builds its own
+   * gRPC-Web transport to `grpcUrl`. Either way the transport is this
+   * client's alone — two clients never share or redirect one another's.
+   */
+  grpcTransport?: Transport;
+  /**
+   * Serve built-in stub markets and tokens when the configuration cannot be
+   * fetched or lists none. For demos and offline UI work only: off, a
+   * configuration failure throws, so nothing can be priced or signed against
+   * markets the venue never had.
+   */
+  allowStubData?: boolean;
   /**
    * Action transport. `"grpc"` (default) talks to arborter through Envoy.
    * `"fce"` routes write actions (place / cancel / withdraw) through the Flare
@@ -169,6 +198,21 @@ export interface PlaceOrderParams {
   matchingOrderIds?: string[];
 }
 
+/**
+ * What {@link ExchangeClient.placeOrder} returns: the order as sent, plus what
+ * the venue answered.
+ */
+export interface PlacedOrder extends EnhancedOrder {
+  /** `SendOrderResponse.order_in_book`: the order rests on the book. */
+  orderInBook: boolean;
+  /**
+   * The fills the order made on arrival, from `SendOrderResponse.trades` —
+   * exact, and not redacted for the caller's own side. Empty when nothing
+   * matched, and always empty over FCE, whose response carries no trades.
+   */
+  trades: VenueTrade[];
+}
+
 export interface CancelOrderParams {
   userAddress: string;
   orderId: string;
@@ -241,6 +285,7 @@ class RestClient {
   // default.
   constructor(
     private config: ExchangeClientConfig,
+    private grpc: GrpcServices,
     private fce?: FceClient,
   ) {}
 
@@ -249,7 +294,7 @@ class RestClient {
    * go on the wire untouched — see `PlaceOrderParams.sizeRaw` for why this
    * method derives nothing.
    */
-  async placeOrder(params: PlaceOrderParams): Promise<EnhancedOrder> {
+  async placeOrder(params: PlaceOrderParams): Promise<PlacedOrder> {
     // A market order has no price, and the signed message says so by leaving
     // the optional field unset. A price supplied alongside `orderType:
     // "market"` means the caller built the two messages from different ideas
@@ -284,7 +329,10 @@ class RestClient {
       matchingOrderIds: params.matchingOrderIds,
     });
 
-    const response = await arborterService.sendOrder(order, params.signature);
+    const response = await this.grpc.arborter.sendOrder(
+      order,
+      params.signature,
+    );
 
     // Convert response to EnhancedOrder
     return this.responseToEnhancedOrder(response, params);
@@ -314,9 +362,7 @@ class RestClient {
    * transit and the arborter would refuse the order as unbounded. Fail here
    * with the reason instead.
    */
-  private async placeOrderFce(
-    params: PlaceOrderParams,
-  ): Promise<EnhancedOrder> {
+  private async placeOrderFce(params: PlaceOrderParams): Promise<PlacedOrder> {
     if (params.hidden) {
       throw new Error(
         "FCE transport does not support hidden orders (the adapter reconstructs hidden=false, breaking signature parity)",
@@ -358,11 +404,13 @@ class RestClient {
     }
 
     // Shim the direct-action response into the gRPC response shape the
-    // enhancer expects (it reads only orderId + orderInBook).
+    // enhancer expects (it reads only orderId, orderInBook and trades; the
+    // direct-action response has no trades).
     const shim = {
       orderId: hexToBytes(out.data.orderId),
       orderInBook: out.data.orderInBook,
-    } as SendOrderResponse;
+      trades: [],
+    } as unknown as SendOrderResponse;
     return this.responseToEnhancedOrder(shim, params);
   }
 
@@ -389,7 +437,7 @@ class RestClient {
       orderId: hexToBytes(params.orderId),
     });
 
-    const response = await arborterService.cancelOrder(
+    const response = await this.grpc.arborter.cancelOrder(
       orderToCancel,
       params.signature,
     );
@@ -409,7 +457,7 @@ class RestClient {
   private responseToEnhancedOrder(
     response: SendOrderResponse,
     params: PlaceOrderParams,
-  ): EnhancedOrder {
+  ): PlacedOrder {
     const priceDecimal = toDisplayValue(
       params.priceRaw ?? "0",
       params.pairDecimals,
@@ -451,7 +499,12 @@ class RestClient {
       priceDisplay,
       sizeDisplay,
       filledDisplay: "0",
-      trades: [],
+      orderInBook: response.orderInBook,
+      trades: toEnhancedTrades(
+        response.trades ?? [],
+        params.marketId,
+        params.pairDecimals,
+      ),
     };
   }
 }
@@ -461,6 +514,12 @@ export class ExchangeClient {
   public readonly rest: RestClient;
   private config: ExchangeClientConfig;
   private fce?: FceClient;
+  /**
+   * This client's own transport and the gRPC calls bound to it. Exposed so a
+   * caller can reach the raw service clients (`grpc.arborterClient`,
+   * `grpc.configClient`) over the same connection settings.
+   */
+  public readonly grpc: GrpcServices;
   private pollingIntervals: Map<string, ReturnType<typeof setInterval>> =
     new Map();
   /**
@@ -481,13 +540,13 @@ export class ExchangeClient {
     }
     this.cache = new CacheManager();
     this.fce = buildFceClient(this.config);
-    this.rest = new RestClient(this.config, this.fce);
-
-    // Set the gRPC base URL. Config discovery routes over FCE when an ext-proxy
-    // is configured (see `fetchConfiguration`); reads/polling still use gRPC, so
-    // this is set regardless and is simply unused on the FCE-only path.
-    setGrpcBaseUrl(this.config.grpcUrl);
-    resetTransport();
+    // Config discovery routes over FCE when an ext-proxy is configured (see
+    // `fetchConfiguration`); reads and streams still use gRPC, so the
+    // transport is built regardless and is simply unused on the FCE-only path.
+    this.grpc = createGrpcServices(
+      this.config.grpcTransport ?? createGrpcTransport(this.config.grpcUrl),
+    );
+    this.rest = new RestClient(this.config, this.grpc, this.fce);
   }
 
   // ============================================================================
@@ -504,9 +563,10 @@ export class ExchangeClient {
    * — so a client could place writes through the proxy but could not learn what
    * to write. Mirrors `AspensClient::fetch_config` in the Rust SDK.
    *
-   * Returns `null` on failure so the existing stub-data fallbacks are unchanged.
+   * Throws when the configuration cannot be fetched, and when the server
+   * answers without one.
    */
-  private async fetchConfiguration(): Promise<Configuration | null> {
+  private async fetchConfiguration(): Promise<Configuration> {
     if (this.fce) {
       const cached = this.cache.getConfig();
       // Each /direct action costs a submit plus a poll cycle, and getMarkets +
@@ -522,58 +582,68 @@ export class ExchangeClient {
       }
       return decodeConfigEnvelope(out.data);
     }
-    const response = await configService.getConfig();
-    return response.config ?? null;
+    const response = await this.grpc.config.getConfig();
+    if (!response.config) {
+      throw new Error("GetConfig returned no configuration");
+    }
+    return response.config;
   }
 
   /**
    * Get all available markets from the arborter (FCE or gRPC).
-   * Falls back to stub data if the backend is unavailable.
+   *
+   * Throws when the configuration cannot be fetched. A venue that lists no
+   * markets yields `[]`. Only with `allowStubData` set do either of those
+   * fall back to the built-in stub markets.
    */
   async getMarkets(): Promise<Market[]> {
+    let config: Configuration;
     try {
-      const config = await this.fetchConfiguration();
-      if (config && config.markets.length > 0) {
-        this.cache.setConfig(config);
-        const markets = toMarkets(config);
-        this.cache.setMarkets(markets);
-        return markets;
-      }
+      config = await this.fetchConfiguration();
     } catch (error) {
-      console.warn(
-        "[SDK] Failed to get markets from backend, using stub data:",
-        error,
-      );
+      if (!this.config.allowStubData) throw error;
+      console.warn("[SDK] Failed to get markets, using stub data:", error);
+      return this.stubMarkets();
     }
+    if (config.markets.length === 0 && this.config.allowStubData) {
+      return this.stubMarkets();
+    }
+    this.cache.setConfig(config);
+    const markets = toMarkets(config);
+    this.cache.setMarkets(markets);
+    return markets;
+  }
 
-    // Fall back to stub data
-    console.log("[SDK] Using stub market data");
+  /**
+   * Get all available tokens from the arborter (FCE or gRPC).
+   *
+   * Throws when the configuration cannot be fetched; falls back to stub
+   * tokens only with `allowStubData` set, as {@link getMarkets} does.
+   */
+  async getTokens(): Promise<Token[]> {
+    let config: Configuration;
+    try {
+      config = await this.fetchConfiguration();
+    } catch (error) {
+      if (!this.config.allowStubData) throw error;
+      console.warn("[SDK] Failed to get tokens, using stub data:", error);
+      return this.stubTokens();
+    }
+    if (config.chains.length === 0 && this.config.allowStubData) {
+      return this.stubTokens();
+    }
+    this.cache.setConfig(config);
+    const tokens = toTokens(config);
+    this.cache.setTokens(tokens);
+    return tokens;
+  }
+
+  private stubMarkets(): Market[] {
     this.cache.setMarkets(STUB_MARKETS);
     return STUB_MARKETS;
   }
 
-  /**
-   * Get all available tokens from gRPC backend
-   * Falls back to stub data if backend is unavailable
-   */
-  async getTokens(): Promise<Token[]> {
-    try {
-      const config = await this.fetchConfiguration();
-      if (config && config.chains.length > 0) {
-        this.cache.setConfig(config);
-        const tokens = toTokens(config);
-        this.cache.setTokens(tokens);
-        return tokens;
-      }
-    } catch (error) {
-      console.warn(
-        "[SDK] Failed to get tokens from backend, using stub data:",
-        error,
-      );
-    }
-
-    // Fall back to stub data
-    console.log("[SDK] Using stub token data");
+  private stubTokens(): Token[] {
     this.cache.setTokens(STUB_TOKENS);
     return STUB_TOKENS;
   }
@@ -587,7 +657,7 @@ export class ExchangeClient {
    */
   async getAttestation(nonce?: Uint8Array): Promise<AttestationReport | null> {
     try {
-      const response = await configService.getAttestation(nonce);
+      const response = await this.grpc.config.getAttestation(nonce);
       return response.report ?? null;
     } catch (error) {
       console.warn("[SDK] Failed to fetch attestation:", error);
@@ -614,7 +684,7 @@ export class ExchangeClient {
   async getInstanceSignerPubkey(network: string): Promise<string> {
     if (!this.fce) {
       try {
-        const resp = await configService.getSignerPublicKey(network);
+        const resp = await this.grpc.config.getSignerPublicKey(network);
         const key = resp.chainKeys[network]?.publicKey?.trim();
         if (key) return key;
         console.warn(
@@ -681,7 +751,7 @@ export class ExchangeClient {
         signature: hexBytesToBytes(v.signature),
       });
     }
-    return arborterService.requestWithdrawVoucher(params);
+    return this.grpc.arborter.requestWithdrawVoucher(params);
   }
 
   /**
@@ -753,7 +823,7 @@ export class ExchangeClient {
           pairDecimals,
         );
       }
-      const entries = await arborterService.getOrderbook(
+      const entries = await this.grpc.arborter.getOrderbook(
         marketId,
         true, // historicalOpenOrders
         userAddress, // filterByTrader
@@ -809,7 +879,7 @@ export class ExchangeClient {
         }
         return fceTradesToEnhanced(out.data, marketId, pairDecimals);
       }
-      const trades = await arborterService.getTrades(
+      const trades = await this.grpc.arborter.getTrades(
         marketId,
         true, // historicalClosedTrades
         userAddress, // filterByTrader
@@ -820,6 +890,51 @@ export class ExchangeClient {
       console.error("[SDK] Failed to get trades:", error);
       return [];
     }
+  }
+
+  // ============================================================================
+  // RAW STREAMS - over this client's transport
+  // ============================================================================
+
+  /** {@link streamTrades} over this client's transport. */
+  streamTrades(
+    params: StreamParams,
+    opts: Omit<StreamOptions, "transport" | "client"> = {},
+  ): AsyncIterable<Trade> {
+    return streamTrades(params, { ...opts, client: this.grpc.arborterClient });
+  }
+
+  /** {@link streamOrderbook} over this client's transport. */
+  streamOrderbook(
+    params: StreamParams,
+    opts: Omit<StreamOptions, "transport" | "client"> = {},
+  ): AsyncIterable<OrderbookEntry> {
+    return streamOrderbook(params, {
+      ...opts,
+      client: this.grpc.arborterClient,
+    });
+  }
+
+  /** {@link subscribeTrades} over this client's transport. */
+  subscribeTrades(
+    params: Omit<StreamParams, "historical">,
+    opts: Omit<SubscribeOptions, "transport" | "client"> = {},
+  ): AsyncGenerator<TradeStreamEvent> {
+    return subscribeTrades(params, {
+      ...opts,
+      client: this.grpc.arborterClient,
+    });
+  }
+
+  /** {@link subscribeOrderbook} over this client's transport. */
+  subscribeOrderbook(
+    params: Omit<StreamParams, "historical">,
+    opts: Omit<SubscribeOptions, "transport" | "client"> = {},
+  ): AsyncGenerator<OrderbookStreamEvent> {
+    return subscribeOrderbook(params, {
+      ...opts,
+      client: this.grpc.arborterClient,
+    });
   }
 
   // ============================================================================
@@ -844,7 +959,7 @@ export class ExchangeClient {
               ? fceTradesToEnhanced(out.data, marketId, pairDecimals)
               : [];
         } else {
-          const trades = await arborterService.getTrades(marketId, true);
+          const trades = await this.grpc.arborter.getTrades(marketId, true);
           enhancedTrades = toEnhancedTrades(trades, marketId, pairDecimals);
         }
 
@@ -897,7 +1012,7 @@ export class ExchangeClient {
           callback(fceBookToEnhanced(out.data, pairDecimals));
           return;
         }
-        const entries = await arborterService.getOrderbook(marketId, true);
+        const entries = await this.grpc.arborter.getOrderbook(marketId, true);
         const { bids, asks } = toEnhancedOrderbook(entries, pairDecimals);
         callback({ bids, asks });
       } catch (error) {
@@ -958,7 +1073,7 @@ export class ExchangeClient {
   // TRADING METHODS - Implemented with gRPC
   // ============================================================================
 
-  async placeOrder(params: PlaceOrderParams): Promise<EnhancedOrder> {
+  async placeOrder(params: PlaceOrderParams): Promise<PlacedOrder> {
     return this.rest.placeOrder(params);
   }
 

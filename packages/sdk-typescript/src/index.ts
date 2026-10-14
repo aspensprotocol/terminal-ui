@@ -12,6 +12,7 @@ export type {
   ApiCandle,
   // Enhanced types
   EnhancedTrade,
+  VenueTrade,
   EnhancedOrder,
   EnhancedBalance,
   EnhancedOrderbookLevel,
@@ -31,12 +32,48 @@ export {
   type ExchangeClientConfig,
   type CandlesParams,
   type PlaceOrderParams,
+  type PlacedOrder,
   type CancelOrderParams,
   type CancelAllOrdersParams,
 } from "./client.js";
 
-// Re-export gRPC transport utilities
-export { setGrpcBaseUrl, resetTransport } from "./grpc-transport.js";
+// gRPC transports and the raw service clients. `setGrpcBaseUrl` /
+// `resetTransport` configure the module-wide default transport, which the free
+// stream functions use when given none; an `ExchangeClient` always owns its own.
+export {
+  setGrpcBaseUrl,
+  resetTransport,
+  getDefaultTransport,
+  createGrpcTransport,
+  createArborterClient,
+  createConfigClient,
+  createGrpcServices,
+  ArborterService,
+  ConfigService,
+  type ArborterClient,
+  type ConfigClient,
+  type GrpcServices,
+  type Transport,
+  type Trade,
+  type OrderbookEntry,
+} from "./grpc-transport.js";
+
+// Server streams as async iterables: raw single calls, and reconnecting
+// subscriptions that report their connection state as events.
+export {
+  streamTrades,
+  streamOrderbook,
+  subscribeTrades,
+  subscribeOrderbook,
+  backoffDelay,
+  type StreamParams,
+  type StreamOptions,
+  type SubscribeOptions,
+  type BackoffOptions,
+  type StreamEvent,
+  type TradeStreamEvent,
+  type OrderbookStreamEvent,
+} from "./streams.js";
 
 // FCE (Flare Confidential Extension) direct-action transport. Opt in via
 // `new ExchangeClient({ grpcUrl, transport: "fce", fce: { proxyUrl, apiKey } })`;
@@ -85,6 +122,7 @@ export {
   toEnhancedOrderbook,
   toEnhancedTrade,
   toEnhancedTrades,
+  tradeKey,
   toMarkets,
   toTokens,
 } from "./adapters/index.js";
@@ -106,6 +144,8 @@ export {
 // Order-id derivation foundation (pure, framework-agnostic).
 export {
   deriveOrderId,
+  encodeOrderIdPreimage,
+  type OrderIdInputs,
   MIDRIB_EIP712_NAME,
   MIDRIB_EIP712_VERSION,
 } from "./gasless.js";
@@ -115,10 +155,22 @@ export {
 // `Order`, and no request field carries a caller-chosen id.
 export {
   buildOrderCommitment,
+  orderIdPreimage,
   clientNonce,
   type BuildOrderCommitmentOpts,
   type OrderCommitment,
 } from "./order-commitment.js";
+
+// Order terms exchanged out of band (the `aspens-otc:v1:` block), and the
+// check that a stated order id is the one those terms derive.
+export {
+  verifyOrderId,
+  encodeTermsBlock,
+  decodeTermsBlock,
+  TERMS_BLOCK_PREFIX,
+  type OrderTerms,
+  type OrderIdVerification,
+} from "./order-terms.js";
 
 // On-chain balance queries (shared by the balances panel + deposit UI).
 export {
