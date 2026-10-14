@@ -19,7 +19,7 @@ import Link from "next/link";
 
 export function MarketHeader() {
   const [attestationOpen, setAttestationOpen] = useState(false);
-  const { markets, isLoading } = useMarkets();
+  const { markets, isLoading, error } = useMarkets();
   const selectedMarketId = useExchangeStore((state) => state.selectedMarketId);
   const selectMarket = useExchangeStore((state) => state.selectMarket);
   const selectedMarket = useExchangeStore(selectSelectedMarket);
@@ -64,6 +64,10 @@ export function MarketHeader() {
             {/* Market Selector */}
             {isLoading ? (
               <div className="text-muted-foreground">Loading...</div>
+            ) : error && markets.length === 0 ? (
+              <div className="text-destructive" title={error}>
+                Markets unavailable
+              </div>
             ) : markets.length === 0 ? (
               <div className="text-muted-foreground">No markets</div>
             ) : (
