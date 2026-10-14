@@ -45,7 +45,6 @@ function level(
     sizeDisplay: displaySize,
     total: totalValue.toString(),
     displayTotal: totalValue.toFixed(pairDecimals),
-    postOnly: false,
   };
 }
 

@@ -57,7 +57,6 @@ function toEnhancedOrderbookLevel(
     sizeDisplay: displaySize,
     total: totalRaw,
     displayTotal,
-    postOnly: entry.postOnly,
   };
 }
 
