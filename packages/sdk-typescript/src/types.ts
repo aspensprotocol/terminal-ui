@@ -109,6 +109,36 @@ export interface EnhancedTrade extends ApiTrade {
   sizeDisplay: string;
 }
 
+/**
+ * A trade as the venue printed it, with every field of the `Trade` message
+ * kept raw beside the display values. Produced from gRPC trades; the FCE read
+ * path carries less and yields plain {@link EnhancedTrade}s.
+ */
+export interface VenueTrade extends EnhancedTrade {
+  /** `Trade.market_id`. */
+  marketId: string;
+  /** `Trade.timestamp`: the taker order's timestamp, unix milliseconds. */
+  timestampMs: bigint;
+  /** `Trade.price`: the maker's price, in pair units. */
+  priceRaw: string;
+  /** `Trade.qty`: base quantity, in pair units. */
+  qtyRaw: string;
+  /** Which position bought: 1 = MAKER, 2 = TAKER (`TradeRole`). */
+  buyerIs: number;
+  /** Which position sold: 1 = MAKER, 2 = TAKER (`TradeRole`). */
+  sellerIs: number;
+  /**
+   * The maker's order id, `0x` + 64 hex, or `""` when the maker was hidden
+   * and the venue redacted it.
+   */
+  orderHit: string;
+  /** Maker/taker per-chain accounts; `""` where redacted for a hidden side. */
+  makerBaseAddress: string;
+  makerQuoteAddress: string;
+  takerBaseAddress: string;
+  takerQuoteAddress: string;
+}
+
 export interface EnhancedOrder extends ApiOrder {
   // Numeric values for calculations
   priceValue: number;

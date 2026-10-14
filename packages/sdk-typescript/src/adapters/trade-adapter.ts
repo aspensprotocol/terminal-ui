@@ -3,7 +3,7 @@
  */
 
 import type { Trade as ProtoTrade, TradeRole } from "../protos/arborter_pb.js";
-import type { EnhancedTrade, Side } from "../types.js";
+import type { Side, VenueTrade } from "../types.js";
 import { rawToDecimal } from "./orderbook-adapter.js";
 import { toDisplayValueCapped } from "../decimals.js";
 import { bytesToHex } from "../signing.js";
@@ -56,7 +56,7 @@ export function toEnhancedTrade(
   trade: ProtoTrade,
   marketId: string,
   pairDecimals: number,
-): EnhancedTrade {
+): VenueTrade {
   const priceValue = rawToDecimal(trade.price, pairDecimals);
   const sizeValue = rawToDecimal(trade.qty, pairDecimals);
 
@@ -91,7 +91,57 @@ export function toEnhancedTrade(
     sizeValue,
     priceDisplay: displayPrice,
     sizeDisplay: displaySize,
+    // The message's own market; the requested one only when an older server
+    // leaves the field unset.
+    marketId: trade.marketId || marketId,
+    timestampMs: trade.timestamp,
+    priceRaw: trade.price,
+    qtyRaw: trade.qty,
+    buyerIs: trade.buyerIs,
+    sellerIs: trade.sellerIs,
+    orderHit: orderHitHex(trade.orderHit),
+    makerBaseAddress: trade.makerBaseAddress,
+    makerQuoteAddress: trade.makerQuoteAddress,
+    takerBaseAddress: trade.takerBaseAddress,
+    takerQuoteAddress: trade.takerQuoteAddress,
   };
+}
+
+/** `0x`-hex of a maker order id, or `""` for the empty (redacted) one. */
+function orderHitHex(orderHit: Uint8Array): string {
+  return orderHit.length === 0 ? "" : bytesToHex(orderHit);
+}
+
+/**
+ * The identity of a print, for recognising it again in a replay.
+ *
+ * Trades carry no id, so a print is identified by everything it says: market,
+ * timestamp, price, qty, buyer role, the four addresses and the maker order
+ * id. Two genuinely distinct prints can still share every one of these; a
+ * consumer that must keep both counts occurrences of each key within one
+ * replay.
+ *
+ * Accepts the raw `Trade` message or a {@link VenueTrade}; both give the same
+ * key for the same print.
+ */
+export function tradeKey(trade: ProtoTrade | VenueTrade): string {
+  const raw = isProtoTrade(trade);
+  return JSON.stringify([
+    trade.marketId,
+    (raw ? trade.timestamp : trade.timestampMs).toString(),
+    raw ? trade.price : trade.priceRaw,
+    raw ? trade.qty : trade.qtyRaw,
+    trade.buyerIs,
+    trade.makerBaseAddress,
+    trade.makerQuoteAddress,
+    trade.takerBaseAddress,
+    trade.takerQuoteAddress,
+    raw ? orderHitHex(trade.orderHit) : trade.orderHit,
+  ]);
+}
+
+function isProtoTrade(trade: ProtoTrade | VenueTrade): trade is ProtoTrade {
+  return trade.orderHit instanceof Uint8Array;
 }
 
 /**
@@ -101,6 +151,6 @@ export function toEnhancedTrades(
   trades: ProtoTrade[],
   marketId: string,
   pairDecimals: number,
-): EnhancedTrade[] {
+): VenueTrade[] {
   return trades.map((trade) => toEnhancedTrade(trade, marketId, pairDecimals));
 }

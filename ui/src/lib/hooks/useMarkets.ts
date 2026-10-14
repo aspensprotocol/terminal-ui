@@ -2,7 +2,7 @@
  * Hook for fetching and managing market data
  */
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useExchangeStore } from "../store";
 import { useExchangeClient } from "./useExchangeClient";
 
@@ -13,6 +13,10 @@ export function useMarkets() {
   const setConfig = useExchangeStore((state) => state.setConfig);
   const marketsRecord = useExchangeStore((state) => state.markets);
   const tokensRecord = useExchangeStore((state) => state.tokens);
+  // The SDK throws when the venue configuration cannot be fetched (it no
+  // longer substitutes stub markets), so the failure is held here for the UI
+  // to show rather than leaving it on "Loading..." forever.
+  const [error, setError] = useState<string | null>(null);
 
   // Convert Records to arrays with useMemo to avoid recreating on every render
   const markets = useMemo(() => Object.values(marketsRecord), [marketsRecord]);
@@ -57,9 +61,13 @@ export function useMarkets() {
           // value the SDK just set on the same code path that
           // produced `marketsData`, so it's never stale here.
           setConfig(client.cache.getConfig());
+          setError(null);
         }
       } catch (error) {
         console.error("Failed to fetch markets:", error);
+        if (mounted) {
+          setError(error instanceof Error ? error.message : String(error));
+        }
       }
     }
 
@@ -74,6 +82,7 @@ export function useMarkets() {
   return {
     markets,
     tokens,
-    isLoading: markets.length === 0,
+    isLoading: markets.length === 0 && error === null,
+    error,
   };
 }

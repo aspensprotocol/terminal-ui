@@ -38,7 +38,11 @@
 
 import { PublicKey } from "@solana/web3.js";
 
-import { deriveOrderId } from "./gasless.js";
+import {
+  deriveOrderId,
+  encodeOrderIdPreimage,
+  type OrderIdInputs,
+} from "./gasless.js";
 import type { Configuration } from "./protos/arborter_config_pb.js";
 import type { Market } from "./types.js";
 
@@ -118,6 +122,36 @@ export interface BuildOrderCommitmentOpts {
 export function buildOrderCommitment(
   opts: BuildOrderCommitmentOpts,
 ): OrderCommitment {
+  const inputs = resolveOrderIdInputs(opts);
+  const orderIdBytes = deriveOrderId(inputs);
+
+  return {
+    orderId: `0x${Array.from(orderIdBytes, (b) => b.toString(16).padStart(2, "0")).join("")}`,
+    inputAmount: inputs.inputAmount,
+    nonce: opts.nonce,
+  };
+}
+
+/**
+ * The exact bytes {@link buildOrderCommitment}'s id is the SHA-256 of.
+ *
+ * Resolved through the same path as the id itself, so comparing two preimages
+ * pinpoints WHICH input two parties disagree on — the user bytes, a chain id, a
+ * token spelling or an amount — where comparing two digests only says that
+ * they differ.
+ */
+export function orderIdPreimage(opts: BuildOrderCommitmentOpts): Uint8Array {
+  return encodeOrderIdPreimage(resolveOrderIdInputs(opts));
+}
+
+// -- internals -----------------------------------------------------------
+
+/**
+ * Resolve an order into the eight values its id is hashed over. The single
+ * place the orientation, chain lookup, address decoding and amount scaling
+ * happen — both the id and its preimage come from here.
+ */
+function resolveOrderIdInputs(opts: BuildOrderCommitmentOpts): OrderIdInputs {
   const { market, config, side, nonce } = opts;
 
   if (nonce < 0n || nonce > U64_MAX) {
@@ -141,7 +175,7 @@ export function buildOrderCommitment(
 
   const amounts = orderAmounts(opts, market);
 
-  const orderIdBytes = deriveOrderId({
+  return {
     userPubkey: userAddressBytes(opts.userAddress, originChain.architecture),
     clientNonce: nonce,
     originChainId: BigInt(originChain.chainId),
@@ -151,16 +185,8 @@ export function buildOrderCommitment(
     outputToken: new TextEncoder().encode(outputToken),
     inputAmount: amounts.input,
     outputAmount: amounts.output,
-  });
-
-  return {
-    orderId: `0x${Array.from(orderIdBytes, (b) => b.toString(16).padStart(2, "0")).join("")}`,
-    inputAmount: amounts.input,
-    nonce,
   };
 }
-
-// -- internals -----------------------------------------------------------
 
 /**
  * `base_network::base_token::quote_network::quote_token`, the format the

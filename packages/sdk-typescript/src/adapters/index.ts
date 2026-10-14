@@ -4,6 +4,10 @@
 
 export { toEnhancedOrderbook } from "./orderbook-adapter.js";
 
-export { toEnhancedTrade, toEnhancedTrades } from "./trade-adapter.js";
+export {
+  toEnhancedTrade,
+  toEnhancedTrades,
+  tradeKey,
+} from "./trade-adapter.js";
 
 export { toMarkets, toTokens, getPairDecimals } from "./config-adapter.js";
