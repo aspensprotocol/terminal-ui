@@ -44,13 +44,13 @@ interface FillOrderIdInputProps {
 export function FillOrderIdInput({ value, onChange }: FillOrderIdInputProps) {
   const fceEnabled = useFceEnabled();
   const title = fceEnabled
-    ? "Unavailable on this deployment: dealroom fill-by-order-id is not supported over the FCE direct-action transport."
-    : "Fill only against this resting order id, at its maker's price, gated by your limit price above. IOC — anything left over never rests.";
+    ? "Not available on this deployment."
+    : "Fills only this order, at its price, within your limit. Anything unfilled is cancelled.";
 
   return (
     <div className="space-y-1.5" title={title}>
       <Label className="text-xs font-medium text-muted-foreground">
-        Fill order ID (optional)
+        Fill a specific order (optional)
       </Label>
       <Input
         type="text"
@@ -68,7 +68,7 @@ export function FillOrderIdInput({ value, onChange }: FillOrderIdInputProps) {
           );
           onChange(hex ? `0x${hex}` : "");
         }}
-        placeholder="0x-prefixed resting order id"
+        placeholder="Order ID (0x…)"
         className="font-mono h-9 text-sm border-border/40 focus:border-primary/50 focus:ring-1 focus:ring-primary/20 bg-muted/20 disabled:cursor-not-allowed disabled:opacity-50"
       />
     </div>

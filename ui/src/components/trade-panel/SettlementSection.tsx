@@ -184,12 +184,12 @@ export function SettlementSection({
             <div className="flex items-center gap-1.5 text-muted-foreground">
               <ChainLogo network={giveNetwork} />
               <span className="font-medium">
-                {side === "buy" ? "Pay" : "Sell"} on {giveNetwork}
+                {side === "buy" ? "Pay" : "Sell"} from {giveNetwork}
               </span>
-              <span className="ml-auto">signs this order</span>
+              <span className="ml-auto">your signing wallet</span>
             </div>
             <p className="font-mono break-all">
-              {signingWallet?.address ?? "no wallet connected for this chain"}
+              {signingWallet?.address ?? "No wallet connected"}
             </p>
           </div>
 
@@ -202,12 +202,10 @@ export function SettlementSection({
 
             {fceEnabled ? (
               <p className="font-mono break-all">
-                {receiveAddress ||
-                  `connect a ${receiveNetwork} wallet to receive`}
+                {receiveAddress || `Connect a ${receiveNetwork} wallet`}
                 <span className="block font-sans text-muted-foreground mt-0.5">
-                  Proceeds settle to this connected wallet. Choosing a different
-                  address isn&apos;t available on this deployment&apos;s
-                  transport.
+                  Funds go to your connected wallet. Other addresses aren&apos;t
+                  supported here.
                 </span>
               </p>
             ) : (
@@ -230,7 +228,7 @@ export function SettlementSection({
                       htmlFor="settle-different"
                       className="text-xs font-medium cursor-pointer"
                     >
-                      Settle to a different address
+                      Send to another address
                     </Label>
                   </div>
                 )}
@@ -256,8 +254,8 @@ export function SettlementSection({
                     />
                     {addressIsMandatory && (
                       <p className="text-muted-foreground">
-                        No {receiveNetwork} wallet is connected — enter the
-                        address your proceeds should settle to.
+                        No {receiveNetwork} wallet connected. Enter the address
+                        to receive funds.
                       </p>
                     )}
                     {overrideError !== null && (
@@ -288,14 +286,13 @@ export function SettlementSection({
                   htmlFor="settle-redirect-ack"
                   className="text-xs font-medium cursor-pointer"
                 >
-                  Settle proceeds to {shortenAddress(trimmedOverride)}
+                  Send funds to {shortenAddress(trimmedOverride)}
                 </Label>
               </div>
               <p className="text-muted-foreground">
-                Fills from this order are credited to that address. Nothing can
-                verify anyone holds its key — funds credited there are
-                withdrawable ONLY by that key&apos;s holder, and this order
-                won&apos;t appear under your own address in history filters.
+                Only the owner of this address can withdraw these funds, and we
+                can&apos;t check that it&apos;s right. This order won&apos;t
+                show under your address in history.
               </p>
             </div>
           )}
@@ -304,8 +301,7 @@ export function SettlementSection({
           {sameAddressDefault &&
             (sameAddressAlreadyAcked ? (
               <p className="text-muted-foreground">
-                Both legs settle to this wallet&apos;s address — the same
-                address on both chains.
+                You receive at the same address on both chains.
               </p>
             ) : (
               <div className="rounded-md border border-border/40 bg-background/40 px-3 py-2 space-y-1">
@@ -327,10 +323,8 @@ export function SettlementSection({
                   </Label>
                 </div>
                 <p className="text-muted-foreground">
-                  Both chains are EVM and this order settles BOTH legs to{" "}
-                  {shortenAddress(receiveAddress)} — the one connected wallet.
-                  Confirm it with your first order and it&apos;s remembered for
-                  this wallet.
+                  Both chains use {shortenAddress(receiveAddress)}, your
+                  connected wallet. Confirm once and we&apos;ll remember it.
                 </p>
               </div>
             ))}
