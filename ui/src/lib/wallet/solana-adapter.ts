@@ -1,4 +1,4 @@
-import type { SigningAdapter } from "@aspens/terminal-sdk";
+import type { SigningAdapter } from "@aspensprotocol/sdk-ts";
 import type { ConnectedWallet, WalletAdapter } from "./types";
 import type { WalletContextState } from "@solana/wallet-adapter-react";
 

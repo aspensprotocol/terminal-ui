@@ -10,7 +10,7 @@
 
 import { walletRegistry } from "./wallet";
 import { useExchangeStore } from "./store";
-import type { SigningAdapter } from "@aspens/terminal-sdk";
+import type { SigningAdapter } from "@aspensprotocol/sdk-ts";
 import type { ChainEcosystem, ConnectedWallet } from "./wallet/types";
 
 /**

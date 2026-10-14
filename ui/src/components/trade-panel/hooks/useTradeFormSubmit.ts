@@ -11,7 +11,7 @@ import {
   sameSettleAddress,
   signOrder,
   type OrderSigningData,
-} from "@aspens/terminal-sdk";
+} from "@aspensprotocol/sdk-ts";
 import { createActiveSigningAdapter } from "@/lib/signing-adapter";
 import { useFceEnabled } from "@/lib/providers/fce-context";
 import { settlementWallets, sideLegs } from "@/lib/wallet";

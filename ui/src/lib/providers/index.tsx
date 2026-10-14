@@ -7,7 +7,7 @@ import { LoadingScreen } from "@/components/LoadingScreen";
 import { useExchangeStore } from "@/lib/store";
 import { FceProvider } from "./fce-context";
 import { RpcUrlsProvider } from "./rpc-context";
-import type { RpcUrlMap } from "@aspens/terminal-sdk";
+import type { RpcUrlMap } from "@aspensprotocol/sdk-ts";
 
 export function Providers({
   children,

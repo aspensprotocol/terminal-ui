@@ -28,7 +28,7 @@ import {
   decimalToRaw,
   isWsolMint,
   type ChainBalanceSlice,
-} from "@aspens/terminal-sdk";
+} from "@aspensprotocol/sdk-ts";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,

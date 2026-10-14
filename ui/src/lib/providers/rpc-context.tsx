@@ -18,7 +18,7 @@
  */
 
 import { createContext, useContext } from "react";
-import type { RpcUrlMap } from "@aspens/terminal-sdk";
+import type { RpcUrlMap } from "@aspensprotocol/sdk-ts";
 
 const EMPTY: RpcUrlMap = {};
 

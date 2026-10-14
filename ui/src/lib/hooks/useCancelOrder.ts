@@ -15,7 +15,7 @@ import {
   signCancelOrder,
   type CancelSigningData,
   type SigningAdapter,
-} from "@aspens/terminal-sdk";
+} from "@aspensprotocol/sdk-ts";
 import { useExchangeStore, type CancelledOrderEntry } from "@/lib/store";
 import { createSigningAdapterForWallet } from "@/lib/signing-adapter";
 import { cancelSigningWallet } from "@/lib/wallet";

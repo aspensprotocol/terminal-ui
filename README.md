@@ -12,7 +12,7 @@ A full terminal UI for trading on an Aspens Market Stack.
 terminal-ui/
 ├── ui/                        # Next.js 16 trading interface (React 19, Tailwind 4)
 ├── packages/
-│   └── sdk-typescript/        # Internal gRPC-Web client for the arborter
+│   └── sdk-typescript/        # gRPC-Web client for the arborter (published)
 ├── Dockerfile                 # Multi-stage Bun build
 ├── justfile                   # Common dev commands
 └── LICENSE                    # GPL-3.0
@@ -101,8 +101,10 @@ Next.js 16 + React 19 + TypeScript + Tailwind CSS 4.
 
 ### TypeScript SDK (`packages/sdk-typescript/`)
 
-Internal gRPC-Web client for the arborter backend, with generated
-protobuf types. Consumed by the UI only; not published.
+gRPC-Web client for the arborter backend, with generated protobuf
+types. Published to GitHub Packages as `@aspensprotocol/sdk-ts` on an
+`sdk-v*` tag so other frontends can use it; see
+`packages/sdk-typescript/README.md` for installing and releasing.
 
 - **Transport**: `@connectrpc/connect` + `@connectrpc/connect-web`
 - **Protobuf runtime**: `@bufbuild/protobuf`

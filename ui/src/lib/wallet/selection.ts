@@ -10,7 +10,7 @@
  * own selection logic.
  */
 
-import type { EnhancedOrder, Market } from "@aspens/terminal-sdk";
+import type { EnhancedOrder, Market } from "@aspensprotocol/sdk-ts";
 import type { ChainEcosystem, ConnectedWallet } from "./types";
 import { sideLegs, type SideLegs } from "./ecosystem";
 

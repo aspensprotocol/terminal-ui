@@ -16,7 +16,7 @@ import type {
   SubscribeBarsCallback,
   SearchSymbolsCallback,
 } from "../../../public/vendor/trading-view/charting_library";
-import { toDisplayValue, type Candle } from "@aspens/terminal-sdk";
+import { toDisplayValue, type Candle } from "@aspensprotocol/sdk-ts";
 
 // ErrorCallback is not exported from TradingView types, so we define it here
 type ErrorCallback = (reason: string) => void;
@@ -308,7 +308,7 @@ export class ExchangeDatafeed implements IBasicDataFeed {
    * Handle enhanced trade from SDK (WebSocket)
    */
   private handleEnhancedTrade(
-    trade: import("@aspens/terminal-sdk").EnhancedTrade,
+    trade: import("@aspensprotocol/sdk-ts").EnhancedTrade,
   ): void {
     // SDK already enhanced the trade with display values!
     const price = trade.priceValue;

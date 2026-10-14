@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { UseFormSetValue } from "react-hook-form";
 import { useExchangeStore } from "@/lib/store";
-import { roundToTickSize } from "@aspens/terminal-sdk";
+import { roundToTickSize } from "@aspensprotocol/sdk-ts";
 import type { Market, Token } from "@/lib/types/exchange";
 import type { OrderType, TradeFormData } from "../types";
 

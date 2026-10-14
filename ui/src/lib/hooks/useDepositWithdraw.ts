@@ -64,7 +64,7 @@ import {
   ensureWalletChain,
   type RpcUrlMap,
   type RpcResolvableChain,
-} from "@aspens/terminal-sdk";
+} from "@aspensprotocol/sdk-ts";
 import { toast } from "sonner";
 
 import { getWagmiConfig } from "@/lib/web3modal-config";
