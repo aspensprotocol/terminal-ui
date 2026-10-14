@@ -116,7 +116,6 @@ export function CompositeBook() {
                 cumulative={ask.cumulative}
                 maxCumulative={maxAskCumulative}
                 type="ask"
-                postOnly={ask.postOnly}
                 trailing={trailingFor(ask)}
                 onClick={() => onPick(ask)}
               />
@@ -140,7 +139,6 @@ export function CompositeBook() {
                 cumulative={bid.cumulative}
                 maxCumulative={maxBidCumulative}
                 type="bid"
-                postOnly={bid.postOnly}
                 trailing={trailingFor(bid)}
                 onClick={() => onPick(bid)}
               />

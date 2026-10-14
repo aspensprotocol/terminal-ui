@@ -77,7 +77,6 @@ export function Orderbook() {
                     cumulative={ask.cumulative}
                     maxCumulative={maxAskCumulative}
                     type="ask"
-                    postOnly={ask.postOnly}
                     onClick={setSelectedPrice}
                   />
                 ))}
@@ -99,7 +98,6 @@ export function Orderbook() {
                     cumulative={bid.cumulative}
                     maxCumulative={maxBidCumulative}
                     type="bid"
-                    postOnly={bid.postOnly}
                     onClick={setSelectedPrice}
                   />
                 ))}
