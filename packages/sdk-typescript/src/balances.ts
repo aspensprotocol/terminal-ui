@@ -42,6 +42,7 @@ import type { Configuration } from "./protos/arborter_config_pb.js";
 import type { EnhancedBalance } from "./types.js";
 import { resolveRpcUrl, type RpcUrlMap } from "./rpc-urls.js";
 import { isNativeToken, isWsolMint } from "./native.js";
+import { readTradeBalance } from "./midrib-evm.js";
 
 /** SPL Token program id — well-known constant. */
 const SPL_TOKEN_PROGRAM_ID = new PublicKey(
@@ -54,9 +55,6 @@ const ATA_PROGRAM_ID = new PublicKey(
 
 const ERC20_ABI = parseAbi([
   "function balanceOf(address owner) view returns (uint256)",
-]);
-const MIDRIB_BALANCE_ABI = parseAbi([
-  "function tradeBalance(address holder, address token) view returns (uint256)",
 ]);
 
 /** A user wallet binding produced by the UI's multi-wallet manager. */
@@ -198,14 +196,7 @@ async function fetchEvmChainSlices(
     const [walletRaw, depositedRaw] = await Promise.all([
       readEvmWalletBalance(client, token.address, user),
       midrib
-        ? client
-            .readContract({
-              address: midrib,
-              abi: MIDRIB_BALANCE_ABI,
-              functionName: "tradeBalance",
-              args: [user, tokenAddr],
-            })
-            .catch(() => 0n)
+        ? readTradeBalance(client, midrib, user, tokenAddr).catch(() => 0n)
         : Promise.resolve(0n),
     ]);
 

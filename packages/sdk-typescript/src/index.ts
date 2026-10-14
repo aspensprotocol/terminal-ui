@@ -241,6 +241,24 @@ export {
   type WithdrawalVoucherFields,
 } from "./solana-ix.js";
 
+// MidribV3 (EVM) without a framework: the ABI, write-call parameters for
+// deposits and voucher withdrawals, the canonical withdrawal-request message,
+// and the balance and fee-rate reads.
+export {
+  MIDRIB_V3_ABI,
+  ERC20_APPROVAL_ABI,
+  withdrawRequestMessage,
+  evmApproveCall,
+  evmDepositCall,
+  evmDepositNativeCall,
+  evmWithdrawCall,
+  midribRevertName,
+  readTradeBalance,
+  readEvmFeeRates,
+  type EvmWithdrawalVoucher,
+  type FeeRates,
+} from "./midrib-evm.js";
+
 // Native-asset identities (EVM sentinel + WSOL mint) shared by the
 // deposit/withdraw UI.
 export {
