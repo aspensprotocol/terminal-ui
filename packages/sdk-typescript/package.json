@@ -1,6 +1,6 @@
 {
   "name": "@aspensprotocol/sdk-ts",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "TypeScript gRPC-Web client for the Aspens arborter: markets, orders, signing, balances",
   "license": "GPL-3.0-only",
   "repository": {
@@ -22,7 +22,8 @@
   },
   "files": [
     "dist",
-    "README.md"
+    "README.md",
+    "CHANGELOG.md"
   ],
   "scripts": {
     "build": "tsc",
