@@ -1,5 +1,13 @@
 # Changelog — @aspensprotocol/sdk-ts
 
+## Unreleased
+
+### Removed
+
+- **`EnhancedOrderbookLevel.postOnly`.** Whether a resting order is post-only
+  is its creator's business, not the book's; the orderbook adapters no longer
+  copy it from the wire. Order entry's own `postOnly` option is unchanged.
+
 ## 0.3.0
 
 ### Added
