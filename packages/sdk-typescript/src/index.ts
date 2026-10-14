@@ -299,6 +299,9 @@ export {
   type UserBalanceAccount,
 } from "./solana-settlement.js";
 
+// The trade contracts' settlement fee: two separately floored bps fees.
+export { feeForVolume, FEE_DENOMINATOR } from "./fees.js";
+
 // Native-asset identities (EVM sentinel + WSOL mint) shared by the
 // deposit/withdraw UI.
 export {
