@@ -10,12 +10,6 @@ interface OrderbookRowProps {
   maxCumulative: number;
   type: "bid" | "ask";
   /**
-   * Resting order was submitted as post-only. Each orderbook row is a
-   * single order (not a price-level aggregate), so this flag is exact
-   * per-row. Renders a small "PO" badge inline next to the price.
-   */
-  postOnly?: boolean;
-  /**
    * Optional third cell, right-aligned. The composite view puts the row's
    * chain marks and quote ticker here. When present the row uses the same
    * three-column grid as the panel's three-column header, so cells line up.
@@ -31,7 +25,6 @@ export function OrderbookRow({
   cumulative,
   maxCumulative,
   type,
-  postOnly,
   trailing,
   onClick,
 }: OrderbookRowProps) {
@@ -59,14 +52,6 @@ export function OrderbookRow({
         className={`relative z-10 ${colorClass} font-semibold whitespace-nowrap flex items-center gap-1`}
       >
         {price}
-        {postOnly && (
-          <span
-            className="text-[8px] font-bold tracking-wide bg-amber-500/20 text-amber-500 px-1 rounded-sm leading-none py-[1px]"
-            title="Post-only: this resting order is guaranteed not to take liquidity"
-          >
-            PO
-          </span>
-        )}
       </span>
       <span className="relative z-10 text-muted-foreground text-right whitespace-nowrap">
         {size}
