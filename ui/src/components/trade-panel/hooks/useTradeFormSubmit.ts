@@ -92,7 +92,7 @@ export function useTradeFormSubmit({
       if (matchingOrderId !== undefined) {
         const isOrderId = /^0x[0-9a-fA-F]{64}$/.test(matchingOrderId);
         if (!isOrderId) {
-          setError("Order ID must be a 32-byte hex value (0x + 64 hex digits)");
+          setError("Order ID must be 0x followed by 64 hex characters");
           return;
         }
       }
@@ -104,9 +104,7 @@ export function useTradeFormSubmit({
       // The input is disabled in FCE mode already; this is the backstop for
       // a value that got set before FCE mode turned on.
       if (fceEnabled && data.matchingOrderIds?.length) {
-        setError(
-          "Fill order ID is not supported on this deployment (FCE transport)",
-        );
+        setError("Filling a specific order isn't supported on this deployment");
         return;
       }
 
@@ -191,7 +189,7 @@ export function useTradeFormSubmit({
       // someone's funds.
       if (fceEnabled && overrideInPlay !== undefined) {
         setError(
-          "Settling to a different address is not supported on this deployment (FCE transport)",
+          "Sending to another address isn't supported on this deployment",
         );
         return;
       }
@@ -202,8 +200,8 @@ export function useTradeFormSubmit({
       if (fceEnabled && receivingWallet === null) {
         setError(
           legs.receivingEcosystem === "solana"
-            ? "Connect a Solana wallet to receive on this market"
-            : "Connect an EVM wallet to receive on this market",
+            ? "Connect a Solana wallet to receive funds"
+            : "Connect an EVM wallet to receive funds",
         );
         return;
       }
@@ -258,9 +256,7 @@ export function useTradeFormSubmit({
             receivingWallet.address,
           ));
       if (isRedirect && !data.settleRedirectAck) {
-        setError(
-          "Confirm the settlement address: proceeds go to it and only its key holder can withdraw them",
-        );
+        setError("Confirm the receiving address in Settlement");
         return;
       }
 
@@ -280,7 +276,7 @@ export function useTradeFormSubmit({
       if (sameAddressDefault) {
         if (!hasSameAddressAck(signingWallet.address) && !data.sameAddressAck) {
           setError(
-            "Confirm settlement: both legs of this market settle to your one connected address (see the Settlement section)",
+            "Confirm using the same address on both chains, in Settlement",
           );
           return;
         }
