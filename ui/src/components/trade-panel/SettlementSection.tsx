@@ -31,7 +31,10 @@
 import { useState } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import type { UseFormSetValue } from "react-hook-form";
-import { sameSettleAddress, validateSettleAddress } from "@aspens/terminal-sdk";
+import {
+  sameSettleAddress,
+  validateSettleAddress,
+} from "@aspensprotocol/sdk-ts";
 import { useExchangeStore } from "@/lib/store";
 import { settlementWallets, sideLegs } from "@/lib/wallet";
 import { hasSameAddressAck } from "@/lib/settlement-ack";

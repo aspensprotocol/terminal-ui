@@ -1,4 +1,4 @@
-import { formatNumber } from "@aspens/terminal-sdk";
+import { formatNumber } from "@aspensprotocol/sdk-ts";
 import type { OrderSide } from "./types";
 
 interface AvailableBalanceProps {

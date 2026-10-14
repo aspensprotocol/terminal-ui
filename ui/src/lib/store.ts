@@ -16,8 +16,8 @@ import type {
   OrderStatus,
 } from "./types/exchange";
 import type { ConnectedWallet } from "./wallet/types";
-import type { Configuration } from "@aspens/terminal-sdk";
-import { toDisplayValue, toDisplayValueCapped } from "@aspens/terminal-sdk";
+import type { Configuration } from "@aspensprotocol/sdk-ts";
+import { toDisplayValue, toDisplayValueCapped } from "@aspensprotocol/sdk-ts";
 import { sameAddress } from "./utils";
 
 /** Shape of a locally-tracked cancelled order — see `cancelledOrders`. */
@@ -148,7 +148,7 @@ interface ExchangeState {
    * `userBalances` — the panel shows the aggregated view while the
    * Transfer / deposit UI needs the per-chain breakdown.
    */
-  chainBalanceSlices: import("@aspens/terminal-sdk").ChainBalanceSlice[];
+  chainBalanceSlices: import("@aspensprotocol/sdk-ts").ChainBalanceSlice[];
   userOrders: Record<string, Order>; // Keyed by order id
   userTrades: Trade[]; // Keep as array for chronological ordering
   /**
@@ -206,7 +206,7 @@ interface ExchangeState {
   setActiveWallet: (walletId: string) => void;
   setBalances: (balances: Balance[]) => void;
   setChainBalanceSlices: (
-    slices: import("@aspens/terminal-sdk").ChainBalanceSlice[],
+    slices: import("@aspensprotocol/sdk-ts").ChainBalanceSlice[],
   ) => void;
   /** Append a cancelled order to the persisted history log. */
   recordCancelledOrder: (entry: CancelledOrderEntry) => void;
@@ -252,7 +252,8 @@ const initialState = {
   userAddress: null,
   isAuthenticated: false,
   userBalances: {} as Record<string, Balance>,
-  chainBalanceSlices: [] as import("@aspens/terminal-sdk").ChainBalanceSlice[],
+  chainBalanceSlices:
+    [] as import("@aspensprotocol/sdk-ts").ChainBalanceSlice[],
   userOrders: {} as Record<string, Order>,
   userTrades: [],
   cancelledOrders: loadCancelledOrders(),

@@ -17,7 +17,7 @@
 
 import { useMemo } from "react";
 import { ColumnDef } from "@tanstack/react-table";
-import { toDisplayValue, type ChainBalanceSlice } from "@aspens/terminal-sdk";
+import { toDisplayValue, type ChainBalanceSlice } from "@aspensprotocol/sdk-ts";
 import { useExchangeStore } from "@/lib/store";
 import { useUserBalances } from "@/lib/hooks";
 import { DataTable } from "@/components/ui/data-table";

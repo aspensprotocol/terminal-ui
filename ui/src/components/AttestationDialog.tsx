@@ -27,7 +27,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { AttestationReport } from "@aspens/terminal-sdk";
+import type { AttestationReport } from "@aspensprotocol/sdk-ts";
 import { getExchangeClient } from "@/lib/api";
 import { parseTdxQuote, type ParsedTdxQuote } from "@/lib/tdx-quote";
 import {

@@ -7,7 +7,7 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import type { Market } from "@aspens/terminal-sdk";
+import type { Market } from "@aspensprotocol/sdk-ts";
 import { cancelSigningWallet } from "./selection";
 import type { ConnectedWallet } from "./types";
 

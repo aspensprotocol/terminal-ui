@@ -6,7 +6,7 @@
 
 "use client";
 
-import { ExchangeClient } from "@aspens/terminal-sdk";
+import { ExchangeClient } from "@aspensprotocol/sdk-ts";
 
 let _exchange: ExchangeClient | null = null;
 

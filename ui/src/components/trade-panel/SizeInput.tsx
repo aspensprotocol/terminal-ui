@@ -6,7 +6,7 @@ import {
   calculatePercentageSize,
   roundToLotSize,
   getDecimalPlaces,
-} from "@aspens/terminal-sdk";
+} from "@aspensprotocol/sdk-ts";
 import type { Token, Market } from "@/lib/types/exchange";
 import type { OrderSide } from "./types";
 

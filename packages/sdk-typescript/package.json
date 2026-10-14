@@ -1,16 +1,29 @@
 {
-  "name": "@aspens/terminal-sdk",
+  "name": "@aspensprotocol/sdk-ts",
   "version": "0.1.0",
-  "private": true,
+  "description": "TypeScript gRPC-Web client for the Aspens arborter: markets, orders, signing, balances",
+  "license": "GPL-3.0-only",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aspensprotocol/terminal-ui.git",
+    "directory": "packages/sdk-typescript"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
     }
   },
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",

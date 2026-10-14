@@ -1,7 +1,7 @@
 import "@/styles/globals.css";
 import { Geist, Geist_Mono } from "next/font/google";
 import Script from "next/script";
-import { parseRpcUrlMap } from "@aspens/terminal-sdk";
+import { parseRpcUrlMap } from "@aspensprotocol/sdk-ts";
 import { Providers } from "@/lib/providers";
 import { Toaster } from "@/components/ui/sonner";
 

@@ -12,7 +12,7 @@ import {
 } from "wagmi/chains";
 import { coinbaseWallet, injected, walletConnect } from "wagmi/connectors";
 import { defineChain } from "viem";
-import { PUBLIC_RPC_URLS } from "@aspens/terminal-sdk";
+import { PUBLIC_RPC_URLS } from "@aspensprotocol/sdk-ts";
 
 // WalletConnect project ID - you should get your own at https://cloud.walletconnect.com
 const projectId =
