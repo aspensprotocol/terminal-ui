@@ -221,6 +221,7 @@ export {
 export {
   depositIx,
   deriveAssociatedTokenAccount,
+  deriveUserBalancePda,
   deriveWithdrawNoncePda,
   deriveWithdrawEpochPda,
   deriveTerminationPda,
@@ -273,6 +274,30 @@ export {
   type RawEvmLog,
   type ReadMidribEventsOptions,
 } from "./evm-settlement-events.js";
+
+// Settlement evidence and account reads for the Solana midrib program: the
+// Anchor NetSettled / Withdrawn events, the UserBalance account, and the
+// instance's fee rates.
+export {
+  NET_SETTLED_EVENT_DISCRIMINATOR,
+  WITHDRAWN_EVENT_DISCRIMINATOR,
+  USER_BALANCE_ACCOUNT_DISCRIMINATOR,
+  TRADING_INSTANCE_ACCOUNT_DISCRIMINATOR,
+  decodeMidribEventData,
+  parseMidribLogs,
+  readMidribSolanaEvents,
+  decodeUserBalance,
+  readUserBalance,
+  decodeTradingInstanceFees,
+  readSolanaFeeRates,
+  type MidribSolanaEvent,
+  type MidribSolanaLog,
+  type MidribSolanaScan,
+  type ParsedMidribLogs,
+  type ReadMidribSolanaEventsOptions,
+  type SolanaEvidenceConnection,
+  type UserBalanceAccount,
+} from "./solana-settlement.js";
 
 // Native-asset identities (EVM sentinel + WSOL mint) shared by the
 // deposit/withdraw UI.
