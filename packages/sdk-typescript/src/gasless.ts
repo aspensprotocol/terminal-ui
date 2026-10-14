@@ -19,20 +19,8 @@ import { sha256 } from "@noble/hashes/sha256";
 
 // -- Chain-agnostic order id ---------------------------------------------
 
-/**
- * Derive the canonical 32-byte order id. Both client and arborter run this
- * recipe independently and must agree byte-for-byte — and a mismatch is SILENT.
- * The arborter does not validate a supplied id (there is no field to supply
- * one in); it simply derives its own, so a client that drifts tracks an order
- * under an id the server never used.
- *
- * Layout (little-endian for integers):
- *   sha256(
- *     user_pubkey || client_nonce || origin_chain_id || destination_chain_id ||
- *     input_token || output_token || input_amount || output_amount
- *   )
- */
-export function deriveOrderId(params: {
+/** The eight values the order id is hashed over, in hashing order. */
+export interface OrderIdInputs {
   userPubkey: Uint8Array;
   clientNonce: bigint;
   originChainId: bigint;
@@ -41,7 +29,18 @@ export function deriveOrderId(params: {
   outputToken: Uint8Array;
   inputAmount: bigint;
   outputAmount: bigint;
-}): Uint8Array {
+}
+
+/**
+ * The exact bytes the order id is the SHA-256 of — exposed so a mismatch can
+ * be diagnosed field by field instead of as two unrelated digests.
+ *
+ * Layout (little-endian for integers):
+ *   user_pubkey || client_nonce:u64 || origin_chain_id:u64 ||
+ *   destination_chain_id:u64 || input_token || output_token ||
+ *   input_amount:u128 || output_amount:u128
+ */
+export function encodeOrderIdPreimage(params: OrderIdInputs): Uint8Array {
   const buf: Uint8Array[] = [
     params.userPubkey,
     u64Le(params.clientNonce),
@@ -59,7 +58,21 @@ export function deriveOrderId(params: {
     flat.set(b, off);
     off += b.length;
   }
-  return sha256(flat);
+  return flat;
+}
+
+/**
+ * Derive the canonical 32-byte order id. Both client and arborter run this
+ * recipe independently and must agree byte-for-byte — and a mismatch is SILENT.
+ * The arborter does not validate a supplied id (there is no field to supply
+ * one in); it simply derives its own, so a client that drifts tracks an order
+ * under an id the server never used.
+ *
+ * The id is `sha256(encodeOrderIdPreimage(params))`; see that function for the
+ * layout.
+ */
+export function deriveOrderId(params: OrderIdInputs): Uint8Array {
+  return sha256(encodeOrderIdPreimage(params));
 }
 
 // -- EVM EIP-712 domain constants ----------------------------------------
