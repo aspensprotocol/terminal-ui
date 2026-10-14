@@ -259,6 +259,21 @@ export {
   type FeeRates,
 } from "./midrib-evm.js";
 
+// Settlement evidence from MidribV3 logs: NetSettled / TokenDeposited /
+// Withdrawn, decoded and fetched per account in block chunks.
+export {
+  NET_SETTLED_TOPIC,
+  TOKEN_DEPOSITED_TOPIC,
+  WITHDRAWN_TOPIC,
+  DEFAULT_LOG_CHUNK_BLOCKS,
+  decodeMidribLog,
+  readMidribEvents,
+  type MidribEvmEvent,
+  type MidribEvmLog,
+  type RawEvmLog,
+  type ReadMidribEventsOptions,
+} from "./evm-settlement-events.js";
+
 // Native-asset identities (EVM sentinel + WSOL mint) shared by the
 // deposit/withdraw UI.
 export {
