@@ -221,6 +221,7 @@ export {
 export {
   depositIx,
   deriveAssociatedTokenAccount,
+  deriveUserBalancePda,
   deriveWithdrawNoncePda,
   deriveWithdrawEpochPda,
   deriveTerminationPda,
@@ -240,6 +241,66 @@ export {
   type BuildWithdrawVoucherIxsOpts,
   type WithdrawalVoucherFields,
 } from "./solana-ix.js";
+
+// MidribV3 (EVM) without a framework: the ABI, write-call parameters for
+// deposits and voucher withdrawals, the canonical withdrawal-request message,
+// and the balance and fee-rate reads.
+export {
+  MIDRIB_V3_ABI,
+  ERC20_APPROVAL_ABI,
+  withdrawRequestMessage,
+  evmApproveCall,
+  evmDepositCall,
+  evmDepositNativeCall,
+  evmWithdrawCall,
+  midribRevertName,
+  readTradeBalance,
+  readEvmFeeRates,
+  type EvmWithdrawalVoucher,
+  type FeeRates,
+} from "./midrib-evm.js";
+
+// Settlement evidence from MidribV3 logs: NetSettled / TokenDeposited /
+// Withdrawn, decoded and fetched per account in block chunks.
+export {
+  NET_SETTLED_TOPIC,
+  TOKEN_DEPOSITED_TOPIC,
+  WITHDRAWN_TOPIC,
+  DEFAULT_LOG_CHUNK_BLOCKS,
+  decodeMidribLog,
+  readMidribEvents,
+  type MidribEvmEvent,
+  type MidribEvmLog,
+  type RawEvmLog,
+  type ReadMidribEventsOptions,
+} from "./evm-settlement-events.js";
+
+// Settlement evidence and account reads for the Solana midrib program: the
+// Anchor NetSettled / Withdrawn events, the UserBalance account, and the
+// instance's fee rates.
+export {
+  NET_SETTLED_EVENT_DISCRIMINATOR,
+  WITHDRAWN_EVENT_DISCRIMINATOR,
+  USER_BALANCE_ACCOUNT_DISCRIMINATOR,
+  TRADING_INSTANCE_ACCOUNT_DISCRIMINATOR,
+  decodeMidribEventData,
+  parseMidribLogs,
+  readMidribSolanaEvents,
+  decodeUserBalance,
+  readUserBalance,
+  decodeTradingInstanceFees,
+  readSolanaFeeRates,
+  type MidribSolanaEvent,
+  type MidribSolanaLog,
+  type MidribSolanaScan,
+  type ParsedMidribLogs,
+  type ReadMidribSolanaEventsOptions,
+  type SolanaEvidenceConnection,
+  type UserBalanceAccount,
+} from "./solana-settlement.js";
+
+// The trade contracts' settlement fee: two separately floored bps fees.
+export { feeForVolume, FEE_DENOMINATOR } from "./fees.js";
 
 // Native-asset identities (EVM sentinel + WSOL mint) shared by the
 // deposit/withdraw UI.

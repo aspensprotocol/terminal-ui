@@ -35,14 +35,7 @@ import {
   switchChain,
   writeContract,
 } from "wagmi/actions";
-import {
-  BaseError,
-  ContractFunctionRevertedError,
-  parseAbi,
-  type Address,
-  type Hex,
-  type PublicClient,
-} from "viem";
+import { type Address, type PublicClient } from "viem";
 import {
   Connection,
   PublicKey,
@@ -58,10 +51,17 @@ import {
   deriveAssociatedTokenAccount,
   isNativeToken,
   isWsolMint,
-  bytesToHex,
   resolveRpcUrl,
   publicClientFor,
   ensureWalletChain,
+  MIDRIB_V3_ABI,
+  ERC20_APPROVAL_ABI,
+  evmApproveCall,
+  evmDepositCall,
+  evmDepositNativeCall,
+  evmWithdrawCall,
+  midribRevertName,
+  withdrawRequestMessage,
   type RpcUrlMap,
   type RpcResolvableChain,
 } from "@aspensprotocol/sdk-ts";
@@ -117,39 +117,6 @@ function resolveSolanaRpcUrl(
   return url;
 }
 
-const ERC20_ABI = parseAbi([
-  "function allowance(address owner, address spender) view returns (uint256)",
-  "function approve(address spender, uint256 amount) returns (bool)",
-]);
-
-const MIDRIB_ABI = parseAbi([
-  "struct WithdrawalVoucher { address account; address token; uint256 amount; uint256 nonce; uint256 expiry; }",
-  "function deposit(address _token, uint160 _amount)",
-  "function depositNative() payable",
-  "function withdraw(WithdrawalVoucher _v, bytes _signature)",
-  "function terminatedAt() view returns (uint256)",
-  "function TERMINATION_DELAY() view returns (uint256)",
-  // Custom errors the deposit / withdraw paths can revert with. Listing them
-  // lets viem decode a revert into its name and arguments instead of raw
-  // bytes. A terminated instance refuses both calls with TERMINATED.
-  "error TERMINATED()",
-  "error ZERO_AMOUNT()",
-  "error MINIMUM_ORDER_AMOUNT(uint160 amount)",
-  "error INVALID_SIGNER()",
-  "error WITHDRAW_VOUCHER_EXPIRED()",
-  "error WITHDRAW_NONCE_ALREADY_USED()",
-  "error WITHDRAW_RATE_LIMITED(uint256 cap, uint256 attempted)",
-]);
-
-/** The name of the MidribV3 custom error `err` carries, if any. */
-function midribErrorName(err: unknown): string | undefined {
-  if (!(err instanceof BaseError)) return undefined;
-  const reverted = err.walk((e) => e instanceof ContractFunctionRevertedError);
-  return reverted instanceof ContractFunctionRevertedError
-    ? reverted.data?.errorName
-    : undefined;
-}
-
 /**
  * A user-facing explanation for a MidribV3 call that reverted TERMINATED.
  *
@@ -172,12 +139,12 @@ async function describeTerminated(
     const [at, delay] = await Promise.all([
       pub.readContract({
         address: midrib,
-        abi: MIDRIB_ABI,
+        abi: MIDRIB_V3_ABI,
         functionName: "terminatedAt",
       }),
       pub.readContract({
         address: midrib,
-        abi: MIDRIB_ABI,
+        abi: MIDRIB_V3_ABI,
         functionName: "TERMINATION_DELAY",
       }),
     ]);
@@ -405,12 +372,13 @@ export function useDepositWithdraw(): UseDepositWithdrawResult {
         // rides the payable depositNative call.
         if (isNativeToken(token.address)) {
           toast.info("Depositing…");
-          const depositHash = await writeContract(wagmi, {
-            address: midribAddr,
-            abi: MIDRIB_ABI,
-            functionName: "depositNative",
-            value: params.amount,
-          });
+          const depositHash = await writeContract(
+            wagmi,
+            evmDepositNativeCall({
+              contract: midribAddr,
+              amount: params.amount,
+            }),
+          );
           await pub.waitForTransactionReceipt({ hash: depositHash });
           toast.success("Deposit confirmed", {
             description: `${params.tokenTicker} on ${chain.network}`,
@@ -423,7 +391,7 @@ export function useDepositWithdraw(): UseDepositWithdrawResult {
         // needless approval prompt.
         const allowance = (await pub.readContract({
           address: tokenAddr,
-          abi: ERC20_ABI,
+          abi: ERC20_APPROVAL_ABI,
           functionName: "allowance",
           args: [account, midribAddr],
         })) as bigint;
@@ -432,23 +400,27 @@ export function useDepositWithdraw(): UseDepositWithdrawResult {
           toast.info("Approving token transfer…", {
             description: `${params.tokenTicker} → MidribV3`,
           });
-          const approveHash = await writeContract(wagmi, {
-            address: tokenAddr,
-            abi: ERC20_ABI,
-            functionName: "approve",
-            args: [midribAddr, params.amount],
-          });
+          const approveHash = await writeContract(
+            wagmi,
+            evmApproveCall({
+              token: tokenAddr,
+              spender: midribAddr,
+              amount: params.amount,
+            }),
+          );
           await pub.waitForTransactionReceipt({ hash: approveHash });
         }
 
         // 2. Move funds into the trade contract.
         toast.info("Depositing…");
-        const depositHash = await writeContract(wagmi, {
-          address: midribAddr,
-          abi: MIDRIB_ABI,
-          functionName: "deposit",
-          args: [tokenAddr, params.amount],
-        });
+        const depositHash = await writeContract(
+          wagmi,
+          evmDepositCall({
+            contract: midribAddr,
+            token: tokenAddr,
+            amount: params.amount,
+          }),
+        );
         await pub.waitForTransactionReceipt({ hash: depositHash });
         toast.success("Deposit confirmed", {
           description: `${params.tokenTicker} on ${chain.network}`,
@@ -457,7 +429,7 @@ export function useDepositWithdraw(): UseDepositWithdrawResult {
         console.error("[useDepositWithdraw] deposit failed:", err);
         toast.error("Deposit failed", {
           description:
-            midribErrorName(err) === "TERMINATED"
+            midribRevertName(err) === "TERMINATED"
               ? await describeTerminated(
                   () => publicClientFor(chain, rpcUrls),
                   midrib as Address,
@@ -541,7 +513,12 @@ export function useDepositWithdraw(): UseDepositWithdrawResult {
               // 1. Authenticate the request: Ed25519 over the exact
               //    canonical bytes the arborter rebuilds.
               const account = user.toBase58();
-              const canonical = `${chain.network}|${token.address}|${account}|${amount.toString()}`;
+              const canonical = withdrawRequestMessage({
+                network: chain.network,
+                token: token.address,
+                account,
+                amount,
+              });
               toast.info("Sign the withdrawal request in your wallet…");
               const requestSig = await walletCtx.signMessage(
                 new TextEncoder().encode(canonical),
@@ -615,7 +592,12 @@ export function useDepositWithdraw(): UseDepositWithdrawResult {
 
         // 1. Authenticate the voucher request: EIP-191 personal-sign over
         // the canonical bytes the arborter rebuilds.
-        const canonical = `${chain.network}|${token.address}|${account}|${params.amount.toString()}`;
+        const canonical = withdrawRequestMessage({
+          network: chain.network,
+          token: token.address,
+          account,
+          amount: params.amount,
+        });
         toast.info("Sign the withdrawal request in your wallet…");
         const requestSig = await signMessage(wagmi, { message: canonical });
         const requestSigBytes = new Uint8Array(
@@ -637,21 +619,10 @@ export function useDepositWithdraw(): UseDepositWithdrawResult {
         // 3. Submit the voucher on-chain. Native tokens (sentinel) are paid
         // out as raw value by the same call.
         toast.info("Withdrawing…");
-        const hash = await writeContract(wagmi, {
-          address: midrib as Address,
-          abi: MIDRIB_ABI,
-          functionName: "withdraw",
-          args: [
-            {
-              account: voucher.account as Address,
-              token: voucher.token as Address,
-              amount: BigInt(voucher.amount),
-              nonce: voucher.nonce,
-              expiry: voucher.expiry,
-            },
-            bytesToHex(voucher.signature) as Hex,
-          ],
-        });
+        const hash = await writeContract(
+          wagmi,
+          evmWithdrawCall({ contract: midrib as Address, voucher }),
+        );
         await pub.waitForTransactionReceipt({ hash });
         toast.success("Withdraw confirmed", {
           description: `${params.tokenTicker} on ${chain.network}`,
@@ -660,7 +631,7 @@ export function useDepositWithdraw(): UseDepositWithdrawResult {
         console.error("[useDepositWithdraw] withdraw failed:", err);
         toast.error("Withdraw failed", {
           description:
-            midribErrorName(err) === "TERMINATED"
+            midribRevertName(err) === "TERMINATED"
               ? await describeTerminated(
                   () => publicClientFor(chain, rpcUrls),
                   midrib as Address,

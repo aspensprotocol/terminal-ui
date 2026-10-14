@@ -66,7 +66,7 @@ export function deriveAssociatedTokenAccount(
 }
 
 /** Derive UserBalance PDA — seeds: `b"balance" || instance || user || mint`. */
-function deriveUserBalancePda(
+export function deriveUserBalancePda(
   instance: PublicKey,
   user: PublicKey,
   mint: PublicKey,

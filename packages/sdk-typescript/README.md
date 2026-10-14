@@ -2,8 +2,8 @@
 
 TypeScript gRPC-Web client for the Aspens arborter: market config, order encoding and signing
 (EIP-191 / Ed25519), order submission and cancellation, order-id verification, orderbook and
-trade streams, balances, settlement-address resolution, Solana instructions, and decimals
-handling. No React dependency. See `CHANGELOG.md` for what changed in each release.
+trade streams, balances, settlement-address resolution, Solana instructions, EVM deposit and
+withdrawal calls, settlement evidence and fee rates on both chains, and decimals handling. No React dependency. See `CHANGELOG.md` for what changed in each release.
 
 The generated protobuf types under `src/protos/` arrive from the `protos` repo's `sync-protos`
 fan-out; do not edit them by hand.
@@ -110,13 +110,83 @@ units, so a qty or price that differs only below the tokens' precision derives t
 the pair-unit strings against the agreed ticket as well. `orderIdPreimage` returns the hashed bytes
 for diagnosing a mismatch.
 
+### Deposits and withdrawals (EVM)
+
+The builders return `writeContract` parameters; nothing is signed or sent:
+
+```ts
+await walletClient.writeContract(
+  evmApproveCall({ token, spender: midrib, amount }),
+);
+await walletClient.writeContract(
+  evmDepositCall({ contract: midrib, token, amount }),
+);
+
+const message = withdrawRequestMessage({ network, token, account, amount });
+const signature = await walletClient.signMessage({ account, message }); // EIP-191
+const voucher = await client.requestWithdrawVoucher({
+  network,
+  token,
+  account,
+  amount: amount.toString(),
+  signature: hexToBytes(signature),
+});
+await walletClient.writeContract(
+  evmWithdrawCall({ contract: midrib, voucher }),
+);
+```
+
+The native asset uses `evmDepositNativeCall` and needs no approval. Solana deposits and
+withdrawals use `depositIx` / `buildWithdrawVoucherIxs`; the request text is the same
+`withdrawRequestMessage`, signed as raw Ed25519 over its UTF-8 bytes.
+
+### Settlement evidence
+
+EVM: `readMidribEvents(publicClient, { contract, account, fromBlock, toBlock })` returns the
+account's `NetSettled`, `TokenDeposited` and `Withdrawn` logs, decoded, with `txHash`, `logIndex`
+and `blockNumber`. A failed chunk rejects the whole read; retry the range.
+
+Solana: deposits emit no event, so watch `deposited` on the UserBalance account as well.
+
+```ts
+const scan = await readMidribSolanaEvents(connection, {
+  programId,
+  instance,
+  user,
+  mint,
+  until,
+});
+// scan.events: NetSettled / Withdrawn, oldest first; scan.newestSignature: the next `until`;
+// scan.incomplete: transactions whose logs were truncated.
+const balance = await readUserBalance(connection, {
+  programId,
+  instance,
+  user,
+  mint,
+});
+```
+
+### Fees
+
+```ts
+const { maintenanceBps, operatorBps } = await readEvmFeeRates(
+  publicClient,
+  midrib,
+);
+// or: await readSolanaFeeRates(connection, { programId, instance })
+const fee = feeForVolume(grossTakerVolume, maintenanceBps, operatorBps);
+```
+
+`feeForVolume` floors the two rates separately, as the contracts do; that can be one base unit
+less than flooring their sum.
+
 ## Releasing
 
 1. Bump `version` in `package.json` and merge to `main`.
 2. Tag the merge commit and push the tag:
 
    ```bash
-   git tag sdk-v0.2.0 && git push origin sdk-v0.2.0
+   git tag sdk-v0.3.0 && git push origin sdk-v0.3.0
    ```
 
 `.github/workflows/publish-sdk.yml` checks that the tag matches `package.json`, runs the tests,
