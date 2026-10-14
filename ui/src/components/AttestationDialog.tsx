@@ -143,8 +143,8 @@ export function AttestationDialog({
         <DialogHeader>
           <DialogTitle>TEE Attestation</DialogTitle>
           <DialogDescription>
-            TDX attestation from the arborter signer, challenged with a fresh
-            nonce.
+            TDX attestation from the venue&apos;s signer, challenged with a
+            fresh nonce.
           </DialogDescription>
         </DialogHeader>
 
