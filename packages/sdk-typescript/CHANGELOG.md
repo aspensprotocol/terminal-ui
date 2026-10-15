@@ -1,6 +1,6 @@
 # Changelog — @aspensprotocol/sdk-ts
 
-## Unreleased
+## 0.4.0
 
 ### Changed (breaking)
 
