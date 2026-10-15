@@ -92,6 +92,23 @@ from gRPC (`VenueTrade`) carry `marketId`, `timestampMs`, `priceRaw`, `qtyRaw` (
 `buyerIs` / `sellerIs`, the four maker/taker addresses and `orderHit` (`""` when the venue
 redacted a hidden maker).
 
+### Sessions and nonces (replay protection)
+
+Every order carries the venue session and a nonce, both signed:
+
+```ts
+const nonce = clientNonce(); // max(unix millis, last + 1)
+const session = await client.currentSession();
+const signature = await signOrder({ ...order, nonce, session }, adapter);
+await client.placeOrder({ ...params, nonce, session, signature });
+```
+
+The arborter opens a new session every time it starts and refuses an order signed for any other
+one ("session changed"); call `client.currentSession(true)` and sign a NEW order. Within a session
+it admits each signer's nonce once, and only above the lowest of that signer's 32 highest used
+nonces, so a re-sent signed order is refused as a replay (`ALREADY_EXISTS`) whatever became of the
+first. Never re-send signed bytes.
+
 ### Order terms and id verification
 
 Counterparties exchange an order's terms as one line, `aspens-otc:v1:<base64url(JSON)>`, with
