@@ -2,6 +2,23 @@
 
 ## Unreleased
 
+### Changed (breaking)
+
+- **Orders carry the venue session.** `OrderSigningData.session` and
+  `PlaceOrderParams.session` are required: the arborter opens a new session
+  every time it starts and refuses an order for any other one ("session
+  changed"), so nothing signed before a restart is placed after it. Read it
+  with `client.currentSession()`; after a "session changed" refusal call
+  `client.currentSession(true)` and sign a new order.
+- **`clientNonce()` returns `max(unix millis, last + 1)`.** The arborter now
+  admits each signer's nonce once per session, and only above the lowest of
+  its 32 highest used nonces; a repeated or too-low nonce is refused as a
+  replay. Nonces must therefore increase.
+
+### Added
+
+- `ExchangeClient.currentSession(refresh?)`.
+
 ### Removed
 
 - **`EnhancedOrderbookLevel.postOnly`.** Whether a resting order is post-only

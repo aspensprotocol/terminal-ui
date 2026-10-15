@@ -30,6 +30,7 @@ const base: OrderSigningData = {
   quoteAccountAddress: "0xq",
   postOnly: false,
   nonce: 0n,
+  session: 0n,
 };
 
 describe("hidden flag wire encoding", () => {
@@ -88,6 +89,21 @@ describe("nonce wire encoding", () => {
     }
     return false;
   }
+
+  test("the session reaches the wire as field 13", () => {
+    // Field 13, varint: tag (13 << 3) | 0 = 104. The arborter refuses an order
+    // whose decoded session differs from its own, so it must be on the wire
+    // exactly as signed.
+    const SESSION_TAG = 104;
+    const s = 1_234_567n;
+    const bytes = toBinary(
+      OrderSchema,
+      createOrderMessage({ ...base, session: s }),
+    );
+    expect(contains(bytes, [SESSION_TAG, ...varint(s)])).toBe(true);
+    const unset = toBinary(OrderSchema, createOrderMessage({ ...base }));
+    expect([...unset]).not.toContain(SESSION_TAG);
+  });
 
   test("nonce = 0 is wire-skipped (proto3 default)", () => {
     // The FCE transport depends on exactly this: its adapter rebuilds the

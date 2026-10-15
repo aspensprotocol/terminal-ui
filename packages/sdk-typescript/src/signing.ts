@@ -127,8 +127,22 @@ export interface OrderSigningData {
    * the arborter never produces. Mint it once with
    * {@link import("./order-commitment.js").clientNonce}, or use
    * {@link import("./fce/payloads.js").FCE_ORDER_NONCE} on the FCE transport.
+   *
+   * It is also the order's replay guard: within a venue session the arborter
+   * admits each signer's nonce once, and only above the lowest of that
+   * signer's 32 highest used nonces. Increasing nonces (`clientNonce`) always
+   * qualify.
    */
   nonce: bigint;
+  /**
+   * The venue session the order is signed for: `Configuration.session` from
+   * GetConfig. The arborter opens a new session every time it starts and
+   * refuses an order for any other one ("session changed"), so nothing
+   * signed before a restart is placed after it — re-read the config and
+   * re-sign. Signed, but not part of the order-id derivation. The same value
+   * must reach `PlaceOrderParams.session`.
+   */
+  session: bigint;
 }
 
 /**
@@ -219,6 +233,8 @@ export function createOrderMessage(data: OrderSigningData): Order {
     // constructed, which is what keeps the nonce the wallet signs, the nonce
     // the wire carries and the nonce the id is derived over the same number.
     nonce: data.nonce,
+    // Field 13: the venue session, signed with everything else.
+    session: data.session,
   });
 }
 

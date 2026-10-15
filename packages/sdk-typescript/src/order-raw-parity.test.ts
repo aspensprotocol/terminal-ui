@@ -85,6 +85,7 @@ function signingData(over: Partial<OrderSigningData> = {}): OrderSigningData {
     postOnly: false,
     hidden: false,
     nonce: 1_723_000_000_000n,
+    session: 0n,
     ...over,
   };
 }
@@ -104,6 +105,7 @@ function placeParams(over: Partial<PlaceOrderParams> = {}): PlaceOrderParams {
     postOnly: false,
     hidden: false,
     nonce: 1_723_000_000_000n,
+    session: 0n,
     ...over,
   };
 }

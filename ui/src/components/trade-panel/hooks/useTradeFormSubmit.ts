@@ -395,6 +395,10 @@ export function useTradeFormSubmit({
         // no nonce field, so the adapter rebuilds the order without one. Zero
         // is wire-skipped, which is exactly what that rebuild produces.
         const nonce = fceEnabled ? FCE_ORDER_NONCE : clientNonce();
+        // The venue session the order is signed for. The arborter opens a new
+        // one every time it starts and refuses any other; the FCE transport
+        // carries no session field at all.
+        const session = fceEnabled ? 0n : await client.currentSession();
 
         // Create order signing data. `quoteBudget` rides INSIDE the Order, so
         // the envelope signature below covers it.
@@ -409,6 +413,7 @@ export function useTradeFormSubmit({
           hidden: data.hidden,
           quoteBudget,
           nonce,
+          session,
           matchingOrderIds: effectiveMatchingOrderIds,
         };
 
@@ -475,6 +480,7 @@ export function useTradeFormSubmit({
           // wire order won't match the bytes the wallet signed.
           quoteBudget,
           nonce,
+          session,
           matchingOrderIds: effectiveMatchingOrderIds,
         });
 
@@ -515,7 +521,13 @@ export function useTradeFormSubmit({
           // (adjust price or untoggle post-only), not the usual wallet
           // user-cancel UX. Arborter strings come from
           // handlers/send_order.rs and start with "post_only".
-          if (msg.includes("post_only") || msg.includes("post-only")) {
+          if (msg.includes("session changed")) {
+            // The venue restarted since this page read its session. Pick up
+            // the new one now; the user's next submit signs a NEW order for
+            // it (fresh nonce) — the refused bytes are never re-sent.
+            await client.currentSession(true).catch(() => undefined);
+            errorMessage = "The venue restarted — submit the order again";
+          } else if (msg.includes("post_only") || msg.includes("post-only")) {
             errorMessage =
               "Post-only order would cross — adjust your price (or untoggle Post-only) and resubmit";
           } else if (msg.includes("rejected") || msg.includes("denied")) {

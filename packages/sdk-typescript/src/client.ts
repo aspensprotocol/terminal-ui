@@ -157,6 +157,12 @@ export interface PlaceOrderParams {
    */
   nonce: bigint;
   /**
+   * `Order.session` — the SAME value passed to `OrderSigningData.session`.
+   * Read it from `Configuration.session` (GetConfig); after an order is
+   * refused with "session changed", re-read the config and re-sign.
+   */
+  session: bigint;
+  /**
    * The caller's own copy of the canonical order id, from
    * `buildOrderCommitment`. Required on the FCE transport, whose adapter JSON
    * still declares the key; ignored on gRPC, where the arborter derives the id
@@ -326,6 +332,7 @@ class RestClient {
       hidden: params.hidden ?? false,
       quoteBudget: params.quoteBudget,
       nonce: params.nonce,
+      session: params.session,
       matchingOrderIds: params.matchingOrderIds,
     });
 
@@ -587,6 +594,24 @@ export class ExchangeClient {
       throw new Error("GetConfig returned no configuration");
     }
     return response.config;
+  }
+
+  /**
+   * The venue session to sign into `Order.session` (and pass as
+   * `PlaceOrderParams.session`): the cached configuration's, fetching the
+   * configuration first when none is cached or `refresh` is set.
+   *
+   * The arborter opens a new session every time it starts and refuses an
+   * order for any other one with "session changed". After that refusal, call
+   * this with `refresh = true` and sign a NEW order (fresh nonce) for the
+   * session it returns — never re-send the refused bytes.
+   */
+  async currentSession(refresh = false): Promise<bigint> {
+    const cached = refresh ? null : this.cache.getConfig();
+    if (cached) return cached.session;
+    const config = await this.fetchConfiguration();
+    this.cache.setConfig(config);
+    return config.session;
   }
 
   /**
