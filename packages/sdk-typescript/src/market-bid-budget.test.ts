@@ -100,6 +100,8 @@ describe("quote_budget wire encoding", () => {
     marketId: "base::0xaa::quote::0xbb",
     baseAccountAddress: "0xb",
     quoteAccountAddress: "0xq",
+    nonce: 0n,
+    session: 0n,
   };
 
   test("omitted quoteBudget is wire-skipped (digests unchanged for the three derivable cells)", () => {

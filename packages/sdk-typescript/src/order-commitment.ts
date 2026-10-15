@@ -49,22 +49,29 @@ import type { Market } from "./types.js";
 /** Largest value a `uint64` can carry — the nonce's ceiling. */
 const U64_MAX = (1n << 64n) - 1n;
 
+/** The last nonce {@link clientNonce} handed out, in this process. */
+let lastNonce = 0n;
+
 /**
- * A fresh client nonce: unix milliseconds.
+ * A fresh client nonce: `max(unix millis, last + 1)`.
  *
- * Mirrors the Rust SDK's `client_nonce()`. Millis is a choice, not a
- * requirement — any `uint64` works, and reusing one deliberately is how a
- * caller asks for a replay to be refused (the repeat derives the same id).
+ * Mirrors the Rust SDK's `client_nonce()`. The arborter admits each signer's
+ * nonce once per venue session, and only above the lowest of the signer's 32
+ * highest used nonces, so nonces must increase: millis do across orders and
+ * across restarts of this process, and `last + 1` keeps two orders minted in
+ * the same millisecond distinct.
  *
  * Mint it ONCE per order and pass the same value to `OrderSigningData.nonce`,
  * {@link buildOrderCommitment} and `PlaceOrderParams.nonce`.
  */
 export function clientNonce(): bigint {
   const ms = BigInt(Date.now());
-  if (ms < 0n || ms > U64_MAX) {
-    throw new Error(`unix millis ${ms} is not a uint64`);
+  const next = ms > lastNonce ? ms : lastNonce + 1n;
+  if (next < 0n || next > U64_MAX) {
+    throw new Error(`nonce ${next} is not a uint64`);
   }
-  return ms;
+  lastNonce = next;
+  return next;
 }
 
 /** What {@link buildOrderCommitment} produces. None of it is sent over gRPC. */

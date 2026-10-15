@@ -223,3 +223,50 @@ describe("polling reads close the stream they read", () => {
     expect(serverSignal?.aborted).toBe(true);
   });
 });
+
+describe("currentSession", () => {
+  /** A venue whose session moves on each restart, counting GetConfig calls. */
+  function restartingVenue() {
+    let session = 41n;
+    let calls = 0;
+    const transport = createRouterTransport(({ service }) => {
+      service(ConfigService, {
+        getConfig() {
+          calls++;
+          return { config: { chains: [], markets: [], session } };
+        },
+      });
+    });
+    return {
+      transport,
+      restart: () => {
+        session += 1n;
+      },
+      calls: () => calls,
+    };
+  }
+
+  test("fetches once, then answers from the cache", async () => {
+    const v = restartingVenue();
+    const client = new ExchangeClient({
+      grpcUrl: "http://unused.invalid",
+      grpcTransport: v.transport,
+    });
+    expect(await client.currentSession()).toBe(41n);
+    expect(await client.currentSession()).toBe(41n);
+    expect(v.calls()).toBe(1);
+  });
+
+  test("refresh re-reads the session after a restart", async () => {
+    const v = restartingVenue();
+    const client = new ExchangeClient({
+      grpcUrl: "http://unused.invalid",
+      grpcTransport: v.transport,
+    });
+    expect(await client.currentSession()).toBe(41n);
+    v.restart();
+    expect(await client.currentSession()).toBe(41n); // stale until asked
+    expect(await client.currentSession(true)).toBe(42n);
+    expect(await client.currentSession()).toBe(42n); // and cached again
+  });
+});

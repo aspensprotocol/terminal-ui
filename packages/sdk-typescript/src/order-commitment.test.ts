@@ -249,12 +249,19 @@ describe("quote budget cell rule", () => {
 // -- nonce minting -------------------------------------------------------
 
 describe("clientNonce", () => {
-  test("is unix millis and fits a uint64", () => {
+  test("is never below unix millis and fits a uint64", () => {
     const before = BigInt(Date.now());
     const n = clientNonce();
-    const after = BigInt(Date.now());
     expect(n).toBeGreaterThanOrEqual(before);
-    expect(n).toBeLessThanOrEqual(after);
     expect(n).toBeLessThanOrEqual((1n << 64n) - 1n);
+  });
+
+  test("strictly increases, even many times within one millisecond", () => {
+    // The arborter admits each signer's nonce once and only above its floor,
+    // so a repeat — two orders minted in the same millisecond — is refused.
+    const burst = Array.from({ length: 1000 }, () => clientNonce());
+    for (let i = 1; i < burst.length; i++) {
+      expect(burst[i]!).toBeGreaterThan(burst[i - 1]!);
+    }
   });
 });
