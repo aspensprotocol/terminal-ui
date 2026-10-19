@@ -1,5 +1,12 @@
 # Changelog — @aspensprotocol/sdk-ts
 
+## 0.4.2
+
+### Changed
+
+- **Published from CI by npm trusted publishing, with provenance.** The code
+  is unchanged from 0.4.1, which was published by hand without provenance.
+
 ## 0.4.1
 
 ### Changed

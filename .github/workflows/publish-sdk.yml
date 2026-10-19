@@ -4,7 +4,7 @@ name: Publish SDK to npmjs
 # with provenance. Release by bumping "version" in
 # packages/sdk-typescript/package.json, merging, then pushing a matching tag:
 #
-#   git tag sdk-v0.4.1 && git push origin sdk-v0.4.1
+#   git tag sdk-v0.4.2 && git push origin sdk-v0.4.2
 #
 # Authentication: npm trusted publishing (OIDC, this workflow file) once it is
 # configured on the package; until then the NPM_TOKEN repository secret, a
