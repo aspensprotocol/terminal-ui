@@ -102,7 +102,7 @@ Next.js 16 + React 19 + TypeScript + Tailwind CSS 4.
 ### TypeScript SDK (`packages/sdk-typescript/`)
 
 gRPC-Web client for the arborter backend, with generated protobuf
-types. Published to GitHub Packages as `@aspensprotocol/sdk-ts` on an
+types. Published to npmjs as `@aspensprotocol/sdk-ts` on an
 `sdk-v*` tag so other frontends can use it; see
 `packages/sdk-typescript/README.md` for installing and releasing.
 
