@@ -1,5 +1,13 @@
 # Changelog — @aspensprotocol/sdk-ts
 
+## 0.4.1
+
+### Changed
+
+- **Published to npmjs** (`registry.npmjs.org`), public, with provenance.
+  Installing needs no token or registry mapping. The code is unchanged from
+  0.4.0, which stays on GitHub Packages only.
+
 ## 0.4.0
 
 ### Changed (breaking)

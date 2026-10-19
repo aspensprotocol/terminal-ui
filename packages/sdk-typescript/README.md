@@ -10,18 +10,7 @@ fan-out; do not edit them by hand.
 
 ## Installing
 
-The package is published to GitHub Packages, which requires authentication even to read. In
-the consuming project, add an `.npmrc`:
-
-```ini
-@aspensprotocol:registry=https://npm.pkg.github.com
-//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
-```
-
-`GITHUB_TOKEN` is a personal access token (classic) with `read:packages` locally. In GitHub
-Actions, use the workflow's `secrets.GITHUB_TOKEN` with `permissions: packages: read`; a
-repository other than `aspensprotocol/terminal-ui` also needs read access granted under the
-package's settings ("Manage Actions access").
+The package is published to npmjs, public, with provenance; installing needs no token.
 
 ```bash
 bun add @aspensprotocol/sdk-ts
@@ -203,8 +192,12 @@ less than flooring their sum.
 2. Tag the merge commit and push the tag:
 
    ```bash
-   git tag sdk-v0.3.0 && git push origin sdk-v0.3.0
+   git tag sdk-v0.4.1 && git push origin sdk-v0.4.1
    ```
 
 `.github/workflows/publish-sdk.yml` checks that the tag matches `package.json`, runs the tests,
-builds, and publishes. A version can be published only once.
+builds, and publishes to npmjs. A version can be published only once.
+
+The workflow authenticates with npm trusted publishing (configured on the package's npmjs
+settings for this repository and `publish-sdk.yml`) or, before that is set up, the `NPM_TOKEN`
+repository secret.
