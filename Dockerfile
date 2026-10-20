@@ -1,5 +1,9 @@
-# Stage 1: Builder
-FROM oven/bun:1@sha256:87416c977a612a204eb54ab9f3927023c2a3c971f4f345a01da08ea6262ae30e AS builder
+# Stage 1: Builder. Bun installs, real Node runs the builds (`tsc`, `next
+# build`, both #!/usr/bin/env node) — the same split as CI's tests job. In the
+# oven/bun image `node` is Bun's own wrapper, so those ran on Bun, and Bun has
+# crashed in `next build` there (payments, Bun 1.3.7: SIGSEGV, then SIGILL).
+FROM node:22.23.3-bookworm-slim@sha256:c3de60bf2f9dd0ac6370e6117950ff62d6e339527e7472301c9c78a017978392 AS builder
+COPY --from=oven/bun:1@sha256:87416c977a612a204eb54ab9f3927023c2a3c971f4f345a01da08ea6262ae30e /usr/local/bin/bun /usr/local/bin/bun
 
 WORKDIR /app
 
