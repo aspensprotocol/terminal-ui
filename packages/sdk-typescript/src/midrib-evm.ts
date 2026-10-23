@@ -69,7 +69,8 @@ export const ERC20_APPROVAL_ABI = parseAbi([
  * character for character: the token address as the venue's configuration
  * spells it, and the account as the wallet reports it. EVM wallets sign it
  * with EIP-191 `personal_sign`; Solana wallets sign its UTF-8 bytes with raw
- * Ed25519.
+ * Ed25519; Tron wallets sign it as is under the TRON message prefix
+ * (`SigningAdapter.signTronMessage`), with the account in its `0x` hex form.
  */
 export function withdrawRequestMessage(params: {
   network: string;

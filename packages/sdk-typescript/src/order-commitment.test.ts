@@ -137,6 +137,51 @@ describe("buildOrderCommitment", () => {
   });
 });
 
+// -- a Tron leg ------------------------------------------------------------
+
+describe("tron order id equals the arborter's", () => {
+  // The arborter derives a Tron order's id exactly as an EVM one's, over the
+  // same 20 account bytes decoded from the 0x hex. So the arborter's EVM
+  // known-good vector, with both chains tagged Tron, must come out unchanged.
+  const tronConfig = (architecture: string): Configuration =>
+    create(ConfigurationSchema, {
+      chains: [
+        { network: BASE_NETWORK, chainId: BASE_CHAIN_ID, architecture },
+        { network: QUOTE_NETWORK, chainId: QUOTE_CHAIN_ID, architecture },
+      ],
+    });
+
+  test("both legs Tron: the arborter's known-good vector", () => {
+    for (const architecture of ["Tron", "tron", "TRON"]) {
+      expect(
+        buildOrderCommitment(opts({ config: tronConfig(architecture) }))
+          .orderId,
+      ).toBe(
+        "0xc6d8846de54b5b1b2513fa5fb8b535ea48bbe2835c17187e6564443aaa774f2d",
+      );
+    }
+  });
+
+  test("a T-form user address is refused, not hashed as some other bytes", () => {
+    // USER's base58check Tron form (0x41 ‖ account ‖ checksum). The venue
+    // keys a Tron account by its 0x hex; the T-form is display-only.
+    expect(() =>
+      buildOrderCommitment(
+        opts({
+          config: tronConfig("Tron"),
+          userAddress: "TYBNgWfhGuNzdLtjKtxXTfskAhTbMcqbaG",
+        }),
+      ),
+    ).toThrow(/hex/);
+  });
+
+  test("an unknown origin architecture is refused, not hashed as EVM", () => {
+    expect(() =>
+      buildOrderCommitment(opts({ config: tronConfig("sui") })),
+    ).toThrow(/sui/);
+  });
+});
+
 // -- what changes the id, and what must not ------------------------------
 
 describe("order id inputs", () => {

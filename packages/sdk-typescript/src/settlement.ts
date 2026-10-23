@@ -20,20 +20,21 @@
 import { PublicKey } from "@solana/web3.js";
 import { checksumAddress } from "viem";
 
-const isSolana = (architecture: string) =>
-  architecture.toLowerCase() === "solana";
+import { parseArchitecture, unreachableArchitecture } from "./architecture.js";
 
 /**
  * Why `address` is not usable as a settlement address on a chain of
  * `architecture` — or `null` if it is.
  *
  * Rules (mirroring the arborter's entry validation):
- * - Solana architecture: base58 decoding to exactly 32 bytes.
- * - Everything else (EVM): a `0x`-prefixed 20-byte hex string. The prefix
- *   is required — the venue's ledger only canonicalizes `0x`-prefixed
- *   addresses, so an unprefixed spelling would key a separate balance.
+ * - Solana: base58 decoding to exactly 32 bytes.
+ * - EVM and Tron: a `0x`-prefixed 20-byte hex string. The prefix is
+ *   required — the venue's ledger only canonicalizes `0x`-prefixed
+ *   addresses, so an unprefixed spelling would key a separate balance. A
+ *   Tron `T…` address is refused: convert it with `tronToHex` first.
+ * - Any other architecture throws.
  *
- * Plus one stricter, client-only rule: a MIXED-CASE EVM address claims an
+ * Plus one stricter, client-only rule: a MIXED-CASE hex address claims an
  * EIP-55 checksum and is refused when that checksum is wrong. The venue
  * deliberately accepts any casing (the field sits inside the signature and
  * is echoed byte-verbatim), so catching the typo is the client's job or
@@ -43,16 +44,33 @@ export function validateSettleAddress(
   architecture: string,
   address: string,
 ): string | null {
-  if (isSolana(architecture)) {
-    try {
-      // PublicKey enforces base58 decoding to exactly 32 bytes.
-      new PublicKey(address);
-      return null;
-    } catch {
-      return `"${address}" is not a valid Solana address (base58, 32 bytes)`;
-    }
+  const arch = parseArchitecture(architecture);
+  switch (arch) {
+    case "solana":
+      try {
+        // PublicKey enforces base58 decoding to exactly 32 bytes.
+        new PublicKey(address);
+        return null;
+      } catch {
+        return `"${address}" is not a valid Solana address (base58, 32 bytes)`;
+      }
+    case "tron":
+      if (address.startsWith("T")) {
+        return (
+          `"${address}" is a Tron T-address; the venue takes the account as ` +
+          "0x hex (convert it with tronToHex)"
+        );
+      }
+      return validateHexAddress(address);
+    case "evm":
+      return validateHexAddress(address);
+    default:
+      return unreachableArchitecture(arch);
   }
+}
 
+/** The EVM-form rules: `0x` + 20 bytes of hex, EIP-55 if mixed-case. */
+function validateHexAddress(address: string): string | null {
   if (!address.startsWith("0x")) {
     return (
       `"${address}" must carry the 0x prefix — the venue's ledger only ` +
@@ -75,15 +93,24 @@ export function validateSettleAddress(
 }
 
 /**
- * Two spellings of one address, judged by the chain's rules: EVM hex is
- * case-insensitive, base58 is not.
+ * Two spellings of one address, judged by the chain's rules: EVM and Tron
+ * hex is case-insensitive, base58 is not.
  */
 export function sameSettleAddress(
   architecture: string,
   a: string,
   b: string,
 ): boolean {
-  return isSolana(architecture) ? a === b : a.toLowerCase() === b.toLowerCase();
+  const arch = parseArchitecture(architecture);
+  switch (arch) {
+    case "solana":
+      return a === b;
+    case "evm":
+    case "tron":
+      return a.toLowerCase() === b.toLowerCase();
+    default:
+      return unreachableArchitecture(arch);
+  }
 }
 
 export interface ResolveLegAddressesParams {

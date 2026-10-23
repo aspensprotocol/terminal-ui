@@ -417,11 +417,16 @@ export function useTradeFormSubmit({
           matchingOrderIds: effectiveMatchingOrderIds,
         };
 
-        // Sign the order envelope using the matched wallet. This
-        // (EIP-191 / personal_sign over the protobuf Order bytes)
-        // remains the auth over the SendOrderRequest itself.
+        // Sign the order envelope using the matched wallet, under the
+        // scheme of the chain the order gives on (EIP-191 / personal_sign
+        // over the protobuf Order bytes on EVM). This remains the auth over
+        // the SendOrderRequest itself.
         const signingAdapter = createActiveSigningAdapter();
-        const signature = await signOrder(orderData, signingAdapter);
+        const signature = await signOrder(
+          orderData,
+          signingAdapter,
+          requiredEcosystem,
+        );
 
         // The caller's own copy of the canonical order id. It is NOT sent over
         // gRPC — `OrderAuthorization` is gone and the arborter derives the id

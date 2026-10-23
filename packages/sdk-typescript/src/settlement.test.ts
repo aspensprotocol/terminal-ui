@@ -96,6 +96,50 @@ describe("validateSettleAddress", () => {
   });
 });
 
+describe("validateSettleAddress on tron", () => {
+  // From the shared Tron vector fixture: the Nile test key's two forms.
+  const TRON_HEX = "0xa5411a1a5784b0828bbafcfa588c72ef3f3ce646";
+  const TRON_T = "TR2zV5HudeeSw37JKTwMWofufa2JL7qnss";
+
+  test("validateSettleAddress on tron accepts hex and rejects T-form", () => {
+    expect(validateSettleAddress("tron", TRON_HEX)).toBeNull();
+    expect(validateSettleAddress("Tron", TRON_HEX)).toBeNull();
+    const refused = validateSettleAddress("tron", TRON_T);
+    expect(refused).not.toBeNull();
+    // Says what to do about it: the venue takes the 0x-hex form.
+    expect(refused).toMatch(/tronToHex/);
+  });
+
+  test("a tron leg applies the EVM checksum rule to mixed case", () => {
+    expect(validateSettleAddress("tron", CHECKSUMMED)).toBeNull();
+    const badChecksum =
+      CHECKSUMMED.slice(0, -1) +
+      (CHECKSUMMED.slice(-1) === CHECKSUMMED.slice(-1).toUpperCase()
+        ? CHECKSUMMED.slice(-1).toLowerCase()
+        : CHECKSUMMED.slice(-1).toUpperCase());
+    expect(validateSettleAddress("tron", badChecksum)).toMatch(/checksum/);
+  });
+
+  test("a tron leg refuses a Solana pubkey", () => {
+    expect(validateSettleAddress("tron", SOL_PUBKEY)).not.toBeNull();
+  });
+
+  test("tron hex compares case-insensitively", () => {
+    expect(
+      sameSettleAddress(
+        "tron",
+        TRON_HEX,
+        TRON_HEX.toUpperCase().replace("0X", "0x"),
+      ),
+    ).toBe(true);
+  });
+
+  test("an unknown architecture is refused, not validated as EVM", () => {
+    expect(() => validateSettleAddress("sui", TRON_HEX)).toThrow(/sui/);
+    expect(() => sameSettleAddress("sui", TRON_HEX, TRON_HEX)).toThrow(/sui/);
+  });
+});
+
 describe("sameSettleAddress", () => {
   test("EVM hex is case-insensitive", () => {
     expect(

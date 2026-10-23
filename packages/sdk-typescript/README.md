@@ -81,6 +81,18 @@ from gRPC (`VenueTrade`) carry `marketId`, `timestampMs`, `priceRaw`, `qtyRaw` (
 `buyerIs` / `sellerIs`, the four maker/taker addresses and `orderHit` (`""` when the venue
 redacted a hidden maker).
 
+### Signing per chain architecture
+
+`signOrder` and `signCancelOrder` take the `Chain.architecture` of the chain the order gives on, and
+sign under that chain's scheme. `"EVM"` and `"Solana"` call the adapter's `signMessage` with the
+encoded message as `0x` hex. `"Tron"` calls `signTronMessage` with the lowercase hex TEXT of the
+encoded message (no `0x`), signed under the TRON message prefix; an adapter without it is refused.
+An unknown architecture throws (`parseArchitecture`). `privateKeyTronAdapter(key)` is a Tron adapter
+over a raw key, for services.
+
+Tron accounts are `0x` hex everywhere the venue sees them. Convert a `T…` address at the input edge
+with `tronToHex`, and back for display with `hexToTron`.
+
 ### Sessions and nonces (replay protection)
 
 Every order carries the venue session and a nonce, both signed:
@@ -88,7 +100,12 @@ Every order carries the venue session and a nonce, both signed:
 ```ts
 const nonce = clientNonce(); // max(unix millis, last + 1)
 const session = await client.currentSession();
-const signature = await signOrder({ ...order, nonce, session }, adapter);
+// The architecture of the chain the order gives on (a buy gives quote).
+const signature = await signOrder(
+  { ...order, nonce, session },
+  adapter,
+  givingChain.architecture,
+);
 await client.placeOrder({ ...params, nonce, session, signature });
 ```
 

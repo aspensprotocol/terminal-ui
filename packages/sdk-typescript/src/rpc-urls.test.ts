@@ -183,6 +183,19 @@ describe("public endpoint fallback", () => {
     expect(publicRpcUrl(masked("solana-localnet", 1, "Solana"))).toBeNull();
   });
 
+  // A Tron chain's configured url is its node's HTTP base, and its chain id
+  // is not an EVM one. Taking the EVM arm here would hand a Tron chain whose
+  // id coincides with an EVM chain's that chain's JSON-RPC endpoint.
+  it("never gives a Tron chain an EVM endpoint", () => {
+    expect(PUBLIC_RPC_URLS.evm[1]).toBeDefined();
+    expect(publicRpcUrl(masked("tron-x", 1, "Tron"))).toBeNull();
+    expect(publicRpcUrl(masked("tron-nile", 3448148188, "TRON"))).toBeNull();
+  });
+
+  it("refuses an unknown architecture instead of treating it as EVM", () => {
+    expect(() => publicRpcUrl(masked("sui", 1, "sui"))).toThrow(/sui/);
+  });
+
   it("returns null for a chain on neither list", () => {
     expect(
       resolveRpcUrl(masked("unlisted", 31337, "EVM"), undefined),

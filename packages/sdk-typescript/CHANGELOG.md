@@ -1,5 +1,31 @@
 # Changelog — @aspensprotocol/sdk-ts
 
+## Unreleased
+
+### Changed (breaking)
+
+- **`signOrder` and `signCancelOrder` take the signing leg's architecture**
+  as a required third argument: the `Chain.architecture` of the chain the
+  order gives on. EVM and Solana legs sign exactly as before; a Tron leg
+  signs with the adapter's `signTronMessage`; an unknown architecture throws.
+- **Chain architecture is a closed set.** `"EVM"`, `"Solana"` and `"Tron"`
+  (any case; empty means EVM) are read by `parseArchitecture`, and anything
+  else throws where it used to be treated as EVM: `validateSettleAddress`,
+  `sameSettleAddress`, `buildOrderCommitment`, `publicRpcUrl` /
+  `resolveRpcUrl` and `fetchChainBalanceSlices` / `getBalances` (which
+  used to skip such a chain).
+
+### Added
+
+- **Tron.** `tronToHex` / `hexToTron` convert a `T…` address at the display
+  edge (the venue only ever sees `0x` hex); `tronMessageDigest` is the TRON
+  message prefix digest; `buildTriggerRawData` and `tronTxId` encode a
+  `TriggerSmartContract` transaction and its txID. `SigningAdapter` gains
+  optional `signTronMessage(text)` and `signTronTransaction(txId,
+rawDataHex)`, and `privateKeyTronAdapter(key)` implements both.
+  `WalletBinding.ecosystem` accepts `"tron"`, whose balances are read with
+  the EVM code at the node's `/jsonrpc`.
+
 ## 0.4.2
 
 ### Changed

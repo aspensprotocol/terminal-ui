@@ -136,10 +136,34 @@ export {
   hexToBytes,
   bytesToHex,
   normalizeWalletSignature,
+  privateKeyTronAdapter,
   type SigningAdapter,
   type OrderSigningData,
   type CancelSigningData,
 } from "./signing.js";
+
+// Chain architectures as a closed set: an unknown one throws.
+export {
+  parseArchitecture,
+  isEvmAddressed,
+  type Architecture,
+} from "./architecture.js";
+
+// Tron primitives: the T-form address edge, the TRON message digest, and
+// hand-encoded TriggerSmartContract transactions.
+export {
+  tronToHex,
+  hexToTron,
+  tronMessageDigest,
+  tronMessageText,
+  buildTriggerRawData,
+  tronTxId,
+  tronJsonRpcUrl,
+  TRON_ADDRESS_PREFIX,
+  TRON_EXPIRATION_MS,
+  type TronRefBlock,
+  type TriggerRawDataParams,
+} from "./tron.js";
 
 // Order-id derivation foundation (pure, framework-agnostic).
 export {

@@ -14,17 +14,24 @@ import {
 } from "./protos/arborter_pb.js";
 import type { Order, OrderToCancel } from "./protos/arborter_pb.js";
 
-import type { TypedDataDefinition } from "viem";
+import type { Hex, TypedDataDefinition } from "viem";
+import { sign } from "viem/accounts";
+import { sha256 } from "@noble/hashes/sha256";
+
+import { parseArchitecture, unreachableArchitecture } from "./architecture.js";
+import { tronMessageDigest, tronMessageText } from "./tron.js";
 
 /**
  * Interface for signing adapters (wallet implementations).
  *
  * Wallets implement `signMessage`, the envelope signature over the encoded
- * `Order` / `OrderToCancel` bytes (EIP-191 on EVM, raw bytes on Solana). It is
- * the only method the SDK calls (`signOrder` / `signCancelOrder` below).
+ * `Order` / `OrderToCancel` bytes (EIP-191 on EVM, raw bytes on Solana).
+ * `signOrder` / `signCancelOrder` below call it on an EVM or Solana leg, and
+ * `signTronMessage` on a Tron leg, which a Tron wallet must implement.
  *
- * `signTypedData` (EIP-712, EVM) and `signBytes` (raw Ed25519, Solana) are
- * optional extras an adapter may expose; nothing in the SDK calls them.
+ * `signTypedData` (EIP-712, EVM), `signBytes` (raw Ed25519, Solana) and
+ * `signTronTransaction` are optional extras the SDK's order and cancel paths
+ * do not call.
  */
 export interface SigningAdapter {
   /**
@@ -49,6 +56,28 @@ export interface SigningAdapter {
    * signing a hex string vs. the bytes it represents.
    */
   signBytes?(bytes: Uint8Array): Promise<Uint8Array>;
+
+  /**
+   * Tron: sign `text` under the TRON message prefix (tronweb
+   * `signMessageV2`, a MetaMask Tron `signMessage` of a string), i.e. over
+   * `keccak256("\x19TRON Signed Message:\n" ‖ len ‖ text)`. Returns the
+   * 65-byte `r ‖ s ‖ v` signature as a 0x-hex string.
+   *
+   * Always TEXT: for an order or cancel it is the lowercase hex of the
+   * encoded message, without `0x`; for a withdraw request it is the request
+   * string as is. Never pass binary to a Tron wallet: it decodes bytes as
+   * UTF-8 lossily, so two different orders could produce one signed text.
+   */
+  signTronMessage?(text: string): Promise<string>;
+
+  /**
+   * Tron: sign a transaction the caller encoded itself. `txId` is
+   * `sha256(raw_data)` (64 hex characters) and `rawDataHex` the `raw_data`
+   * it was computed from, so the wallet can show the call and check the
+   * one against the other. Returns the 65-byte `r ‖ s ‖ v` signature over
+   * `txId` as a 0x-hex string.
+   */
+  signTronTransaction?(txId: string, rawDataHex: string): Promise<string>;
 }
 
 /**
@@ -264,57 +293,130 @@ function serializeCancelOrder(order: OrderToCancel): Uint8Array {
 }
 
 /**
- * Sign an order using the provided signing adapter
+ * Sign `encoded` (an `Order` or `OrderToCancel`) the way the venue verifies it
+ * on a leg of `architecture`.
+ *
+ * - EVM and Solana: `adapter.signMessage` over the bytes as 0x-hex (EIP-191
+ *   `personal_sign` of the bytes on EVM, raw Ed25519 on Solana).
+ * - Tron: `adapter.signTronMessage` over the bytes' lowercase hex TEXT, under
+ *   the TRON prefix. An adapter without it is refused, never handed to
+ *   `signMessage`, whose Ethereum-prefixed signature the venue rejects on a
+ *   Tron leg.
+ */
+async function signEncoded(
+  encoded: Uint8Array,
+  adapter: SigningAdapter,
+  architecture: string,
+): Promise<Uint8Array> {
+  const arch = parseArchitecture(architecture);
+  switch (arch) {
+    case "evm":
+    case "solana": {
+      const signature = await adapter.signMessage(bytesToHex(encoded));
+      return normalizeWalletSignature(hexToBytes(signature));
+    }
+    case "tron": {
+      if (!adapter.signTronMessage) {
+        throw new Error(
+          "this order gives on a Tron chain, and the signing wallet has no " +
+            "signTronMessage: a Tron leg is signed under the TRON message " +
+            "prefix, never EIP-191",
+        );
+      }
+      const signature = hexToBytes(
+        await adapter.signTronMessage(tronMessageText(encoded)),
+      );
+      if (signature.length !== 65) {
+        throw new Error(
+          `unexpected Tron signature length ${signature.length}; expected 65 (r || s || v)`,
+        );
+      }
+      return signature;
+    }
+    default:
+      return unreachableArchitecture(arch);
+  }
+}
+
+/**
+ * Sign an order using the provided signing adapter.
  *
  * @param orderData The order data to sign
  * @param adapter The signing adapter (wallet implementation)
+ * @param architecture `Chain.architecture` of the chain this order GIVES on
+ *   (a buy gives quote, a sell gives base): the venue verifies the signature
+ *   against that leg's account, under that chain's scheme. An unknown value
+ *   throws.
  * @returns The signature as Uint8Array
  */
 export async function signOrder(
   orderData: OrderSigningData,
   adapter: SigningAdapter,
+  architecture: string,
 ): Promise<Uint8Array> {
-  // Create the protobuf Order message
-  const order = createOrderMessage(orderData);
-
-  // Serialize to bytes
-  const protobufBytes = serializeOrder(order);
-
-  // Convert to hex string for signing
-  const hexString = bytesToHex(protobufBytes);
-
-  // Sign using the adapter (uses personal_sign under the hood)
-  const signature = await adapter.signMessage(hexString);
-
-  return normalizeWalletSignature(hexToBytes(signature));
+  return signEncoded(
+    serializeOrder(createOrderMessage(orderData)),
+    adapter,
+    architecture,
+  );
 }
 
 /**
- * Sign a cancel order using the provided signing adapter
+ * Sign a cancel order using the provided signing adapter.
  *
  * @param cancelData The cancel data to sign
  * @param adapter The signing adapter (wallet implementation)
+ * @param architecture `Chain.architecture` of the chain the order gives on,
+ *   whose wallet placed it and must sign its cancel. An unknown value throws.
  * @returns The signature as Uint8Array
  */
 export async function signCancelOrder(
   cancelData: CancelSigningData,
   adapter: SigningAdapter,
+  architecture: string,
 ): Promise<Uint8Array> {
-  // Create the protobuf OrderToCancel message
-  const order = createCancelMessage(cancelData);
+  return signEncoded(
+    serializeCancelOrder(createCancelMessage(cancelData)),
+    adapter,
+    architecture,
+  );
+}
 
-  // Serialize to bytes
-  const protobufBytes = serializeCancelOrder(order);
-
-  // Convert to hex string for signing
-  const hexString = bytesToHex(protobufBytes);
-
-  console.log("[Signing] Cancel order bytes hex:", hexString);
-
-  // Sign using the adapter
-  const signature = await adapter.signMessage(hexString);
-
-  console.log("[Signing] Cancel signature received:", signature);
-
-  return normalizeWalletSignature(hexToBytes(signature));
+/**
+ * A Tron {@link SigningAdapter} over a raw secp256k1 private key, for
+ * services and scripts (a browser uses the wallet's own adapter).
+ *
+ * `signTronMessage` signs the TRON message digest of its text;
+ * `signTronTransaction` signs a txID after checking it is `sha256` of the
+ * given `raw_data`. Both return 65-byte `r ‖ s ‖ v` with `v` = 27/28.
+ * `signMessage` (EIP-191) is refused: one key signing both schemes is how a
+ * Tron leg ends up carrying an Ethereum-prefixed signature.
+ */
+export function privateKeyTronAdapter(privateKey: Hex): SigningAdapter {
+  const signDigest = (hash: Hex): Promise<Hex> =>
+    sign({ hash, privateKey, to: "hex" });
+  return {
+    async signMessage(): Promise<string> {
+      throw new Error(
+        "a Tron adapter signs under the TRON message prefix (signTronMessage), " +
+          "never EIP-191",
+      );
+    },
+    async signTronMessage(text: string): Promise<string> {
+      return signDigest(tronMessageDigest(text));
+    },
+    async signTronTransaction(
+      txId: string,
+      rawDataHex: string,
+    ): Promise<string> {
+      const id = (txId.startsWith("0x") ? txId.slice(2) : txId).toLowerCase();
+      const actual = bytesToHex(sha256(hexToBytes(rawDataHex)));
+      if (actual.slice(2) !== id) {
+        throw new Error(
+          `txID ${txId} is not sha256 of the raw_data given (${actual.slice(2)})`,
+        );
+      }
+      return signDigest(actual as Hex);
+    },
+  };
 }

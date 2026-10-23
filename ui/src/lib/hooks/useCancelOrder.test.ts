@@ -46,8 +46,9 @@ function makeDeps(
   const recordCancelledOrder = mock(() => {});
   const removeHiddenOrder = mock(() => {});
   return {
-    createSigningAdapter: (_order: Order) => ({
-      signMessage: async () => "0x00",
+    resolveSigner: (_order: Order) => ({
+      adapter: { signMessage: async () => "0x00" },
+      architecture: "evm",
     }),
     signCancel: async () => new Uint8Array([1, 2, 3]),
     submitCancel: async () => ({ order_id: "order-1" }),
@@ -65,11 +66,14 @@ describe("submitCancelOrder signer selection", () => {
       quote_account_address: "0xquote",
     });
     const seen: Order[] = [];
-    const signCancel = mock(async () => new Uint8Array([9]));
+    const signCancel = mock(
+      async (_d: unknown, _a: unknown, _arch: string) => new Uint8Array([9]),
+    );
+    const adapter = { signMessage: async () => "0x00" };
     const deps = makeDeps({
-      createSigningAdapter: (o: Order) => {
+      resolveSigner: (o: Order) => {
         seen.push(o);
-        return { signMessage: async () => "0x00" };
+        return { adapter, architecture: "solana" };
       },
       signCancel,
     });
@@ -78,13 +82,16 @@ describe("submitCancelOrder signer selection", () => {
 
     expect(seen).toEqual([order]);
     expect(signCancel).toHaveBeenCalledTimes(1);
+    // Signed with the resolved wallet, under its chain's architecture.
+    expect(signCancel.mock.calls[0]![1]).toBe(adapter);
+    expect(signCancel.mock.calls[0]![2]).toBe("solana");
   });
 
   test("a signer-resolution failure propagates and nothing is submitted or recorded", async () => {
     const order = makeOrder({ side: "buy", quote_account_address: "0xquote" });
     const submitCancel = mock(async () => ({ order_id: "order-1" }));
     const deps = makeDeps({
-      createSigningAdapter: () => {
+      resolveSigner: () => {
         throw new Error("wallet 0xquote is not connected");
       },
       submitCancel,

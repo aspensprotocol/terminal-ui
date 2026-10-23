@@ -20,6 +20,8 @@
  * so this map is unnecessary; see the RPC-MASK-1 tech-debt item.
  */
 
+import { parseArchitecture, unreachableArchitecture } from "./architecture.js";
+
 /** The fixed mask the arborter substitutes for a whole `url` it cannot parse. */
 export const MASKED_RPC_URL = "********";
 
@@ -93,14 +95,24 @@ export const PUBLIC_RPC_URLS: {
  * The {@link PUBLIC_RPC_URLS} entry for `chain`, or `null` when it has none.
  *
  * A Solana chain is matched by `network` only, never by its nominal
- * `chainId`, so it cannot pick up an EVM chain's endpoint.
+ * `chainId`, so it cannot pick up an EVM chain's endpoint. A Tron chain has
+ * no public entry: its url is a node's HTTP base, not an EVM JSON-RPC
+ * endpoint, so an EVM chain's could never stand in for it. An absent
+ * `architecture` is EVM; an unknown one throws.
  */
 export function publicRpcUrl(chain: RpcResolvableChain): string | null {
-  const solana = PUBLIC_RPC_URLS.solana[chain.network];
-  if (solana) return solana;
-  if (chain.architecture?.toLowerCase() === "solana") return null;
-  if (!chain.chainId) return null;
-  return PUBLIC_RPC_URLS.evm[chain.chainId] ?? null;
+  const arch = parseArchitecture(chain.architecture ?? "");
+  switch (arch) {
+    case "solana":
+      return PUBLIC_RPC_URLS.solana[chain.network] ?? null;
+    case "evm":
+      if (!chain.chainId) return null;
+      return PUBLIC_RPC_URLS.evm[chain.chainId] ?? null;
+    case "tron":
+      return null;
+    default:
+      return unreachableArchitecture(arch);
+  }
 }
 
 /**

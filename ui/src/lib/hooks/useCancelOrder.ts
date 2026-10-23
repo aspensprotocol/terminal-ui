@@ -30,12 +30,17 @@ import type { Order } from "@/lib/types/exchange";
  * already-resolved `order` rather than the hook itself.
  */
 export interface CancelSubmissionDeps {
-  /** The adapter for the wallet that may cancel THIS order; throws when
-   * that wallet is not connected. */
-  createSigningAdapter: (order: Order) => SigningAdapter;
+  /** The adapter for the wallet that may cancel THIS order, and the
+   * architecture of the chain it signs for; throws when that wallet is not
+   * connected. */
+  resolveSigner: (order: Order) => {
+    adapter: SigningAdapter;
+    architecture: string;
+  };
   signCancel: (
     data: CancelSigningData,
     adapter: SigningAdapter,
+    architecture: string,
   ) => Promise<Uint8Array>;
   submitCancel: (params: {
     userAddress: string;
@@ -59,14 +64,15 @@ export async function submitCancelOrder(
   deps: CancelSubmissionDeps,
 ): Promise<void> {
   try {
-    const signingAdapter = deps.createSigningAdapter(order);
+    const signer = deps.resolveSigner(order);
     const signature = await deps.signCancel(
       {
         marketId: order.market_id,
         side: order.side,
         orderId,
       },
-      signingAdapter,
+      signer.adapter,
+      signer.architecture,
     );
 
     await deps.submitCancel({
@@ -154,17 +160,21 @@ export function useCancelOrder() {
       setCancellingOrders((prev) => new Set(prev).add(orderId));
       try {
         await submitCancelOrder(order, userAddress, orderId, {
-          createSigningAdapter: (o) => {
+          resolveSigner: (o) => {
             const { connectedWallets, activeWalletId, markets } =
               useExchangeStore.getState();
-            return createSigningAdapterForWallet(
-              cancelSigningWallet(
-                o,
-                markets[o.market_id],
-                connectedWallets,
-                activeWalletId,
-              ),
+            const wallet = cancelSigningWallet(
+              o,
+              markets[o.market_id],
+              connectedWallets,
+              activeWalletId,
             );
+            // The wallet that placed the order is on the chain the order
+            // gives on; its ecosystem is that chain's architecture.
+            return {
+              adapter: createSigningAdapterForWallet(wallet),
+              architecture: wallet.ecosystem,
+            };
           },
           signCancel: signCancelOrder,
           submitCancel: (params) => client.cancelOrder(params),
