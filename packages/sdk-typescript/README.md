@@ -164,6 +164,35 @@ The native asset uses `evmDepositNativeCall` and needs no approval. Solana depos
 withdrawals use `depositIx` / `buildWithdrawVoucherIxs`; the request text is the same
 `withdrawRequestMessage`, signed as raw Ed25519 over its UTF-8 bytes.
 
+### Deposits and withdrawals (Tron)
+
+Tron writes are native Tron transactions sent by the SDK itself; the adapter only signs
+(`signTronTransaction`). Each one resolves only on a `SUCCESS` receipt and throws a
+`TronTxError` otherwise (`err.sent` says whether anything was broadcast):
+
+```ts
+const node = { urls: ["https://nile.trongrid.io"], apiKey }; // apiKey optional
+const sender = { node, adapter, owner: tronToHex(walletAddress) };
+
+await tronDeposit({ ...sender, contract: midrib, token: usdt, amount }); // approve if short, then deposit
+await tronDepositNative({ ...sender, contract: midrib, amount: sun }); // TRX, no approve
+
+const message = withdrawRequestMessage({
+  network,
+  token,
+  account: sender.owner,
+  amount,
+});
+const signature = await adapter.signTronMessage!(message);
+const voucher = await client.requestWithdrawVoucher({
+  /* as on EVM */
+});
+await tronWithdraw({ ...sender, contract: midrib, voucher });
+```
+
+Reads use the EVM code: `publicClientFor(chain, rpcUrls)` on a Tron chain (or
+`tronPublicClient(node)`) is a viem client at the node's `/jsonrpc`.
+
 ### Settlement evidence
 
 EVM: `readMidribEvents(publicClient, { contract, account, fromBlock, toBlock })` returns the

@@ -189,7 +189,27 @@ describe("public endpoint fallback", () => {
   it("never gives a Tron chain an EVM endpoint", () => {
     expect(PUBLIC_RPC_URLS.evm[1]).toBeDefined();
     expect(publicRpcUrl(masked("tron-x", 1, "Tron"))).toBeNull();
-    expect(publicRpcUrl(masked("tron-nile", 3448148188, "TRON"))).toBeNull();
+  });
+
+  // TronGrid's HTTP bases, by chain id (eth_chainId answered 0x2b6653dc and
+  // 0xcd8690dc). The base, not /jsonrpc: the native write routes hang off it.
+  it("rescues a masked Tron chain with TronGrid's HTTP base", () => {
+    expect(publicRpcUrl(masked("tron-mainnet", 728126428, "Tron"))).toBe(
+      "https://api.trongrid.io",
+    );
+    expect(publicRpcUrl(masked("tron-nile", 3448148188, "TRON"))).toBe(
+      "https://nile.trongrid.io",
+    );
+    expect(
+      resolveRpcUrl(masked("my-nile", 3448148188, "tron"), undefined),
+    ).toBe("https://nile.trongrid.io");
+  });
+
+  // The Tron ids are not EVM ids: an EVM chain that claims one must not pick
+  // up a Tron node's base as its JSON-RPC endpoint.
+  it("never gives an EVM chain a Tron endpoint", () => {
+    expect(publicRpcUrl(masked("evm-x", 728126428, "EVM"))).toBeNull();
+    expect(publicRpcUrl(masked("evm-y", 3448148188, "EVM"))).toBeNull();
   });
 
   it("refuses an unknown architecture instead of treating it as EVM", () => {

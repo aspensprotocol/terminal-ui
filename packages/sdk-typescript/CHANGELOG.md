@@ -36,6 +36,30 @@
     implements both.
   - `WalletBinding.ecosystem` accepts `"tron"`, whose balances are read
     with the EVM code at the node's `/jsonrpc`.
+  - `sendTronTx` sends one `TriggerSmartContract` call over a Tron node's
+    HTTP API (`TronNode`: base urls tried in order, optional
+    `TRON-PRO-API-KEY`). It simulates the exact call first (a revert signs
+    and sends nothing), signs once through
+    `SigningAdapter.signTronTransaction`, rebroadcasts the identical hex
+    when no node answers, and resolves only on a `SUCCESS` receipt. Any
+    other receipt, a refused broadcast, or a transaction unseen a block
+    past its expiration throws a `TronTxError` naming the txID. `nowBlock`,
+    `simulateTronCall`, `broadcastHex` and `txInfo` are the single calls.
+  - `tronDeposit` (approve when the allowance is short, then `deposit`),
+    `tronDepositNative` (TRX as call value, no approve) and `tronWithdraw`
+    (the venue's voucher) send MidribV3's EVM calldata through
+    `sendTronTx`, with a fee limit per call (`TRON_*_FEE_LIMIT_SUN`, 3x the
+    energy measured on Nile). Mainnet USDT's dynamic energy factor can push
+    a USDT deposit or withdraw past its limit; that fails as an
+    OUT_OF_ENERGY error, never as a success.
+  - `publicClientFor` gives a Tron chain a viem client at `<base>/jsonrpc`,
+    and `tronPublicClient(node)` builds one from a `TronNode`, so
+    `readTradeBalance`, `readEvmFeeRates`, `readMidribEvents` and
+    `readEvmWalletBalance` read Tron unchanged. `publicClientFor` now
+    refuses a Solana chain.
+  - `PUBLIC_RPC_URLS.tron`: TronGrid's keyless bases for mainnet
+    (`728126428`) and Nile (`3448148188`), used when a Tron chain's url is
+    masked and no override is set.
 - **`givingArchitecture(market, side)`**: the architecture of the chain an
   order gives on and is signed for.
 

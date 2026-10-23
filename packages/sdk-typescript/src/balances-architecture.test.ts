@@ -76,6 +76,23 @@ describe("fetchChainBalanceSlices by architecture", () => {
     expect(slices[0]!.deposited).toBe(1234n);
   });
 
+  test("fetchChainBalanceSlices includes a tron chain", async () => {
+    // The config's url is masked, as GetConfig serves it: the chain is
+    // still read, through TronGrid's public base for its chain id.
+    const config = configWith("Tron");
+    config.chains[0]!.rpcs[0]!.url = "********";
+    const slices = await fetchChainBalanceSlices({
+      wallets: [{ ecosystem: "tron", address: ACCOUNT }],
+      config,
+    });
+    expect(slices.map((s) => [s.chainNetwork, s.tokenTicker])).toEqual([
+      ["tron-nile", "USDT"],
+    ]);
+    expect(urls.length).toBeGreaterThan(0);
+    for (const url of urls)
+      expect(url).toBe("https://nile.trongrid.io/jsonrpc");
+  });
+
   test("a Tron chain is not read with an EVM wallet binding", async () => {
     const slices = await fetchChainBalanceSlices({
       wallets: [{ ecosystem: "evm", address: ACCOUNT }],

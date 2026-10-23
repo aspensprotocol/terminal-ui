@@ -166,6 +166,40 @@ export {
   type TriggerRawDataParams,
 } from "./tron.js";
 
+// Tron writes over the node's HTTP API: one transaction is simulated, signed
+// once, rebroadcast as the identical hex, and succeeds only on a SUCCESS
+// receipt. Reads use the EVM code over the node's /jsonrpc.
+export {
+  sendTronTx,
+  simulateTronCall,
+  nowBlock,
+  broadcastHex,
+  txInfo,
+  tronPublicClient,
+  TronTxError,
+  TRON_BLOCK_INTERVAL_MS,
+  type TronNode,
+  type TronCall,
+  type TronBlockHeader,
+  type TronTxInfo,
+  type TronBroadcastResult,
+  type TronReceipt,
+  type SendTronTxParams,
+} from "./tron-client.js";
+
+// MidribV3 on Tron: deposit (approve, then deposit), depositNative and the
+// voucher withdraw, with the EVM calldata sent through sendTronTx.
+export {
+  tronDeposit,
+  tronDepositNative,
+  tronWithdraw,
+  TRON_APPROVE_FEE_LIMIT_SUN,
+  TRON_DEPOSIT_FEE_LIMIT_SUN,
+  TRON_DEPOSIT_NATIVE_FEE_LIMIT_SUN,
+  TRON_WITHDRAW_FEE_LIMIT_SUN,
+  type TronSender,
+} from "./midrib-tron.js";
+
 // Order-id derivation foundation (pure, framework-agnostic).
 export {
   deriveOrderId,
@@ -207,7 +241,7 @@ export {
   type ChainBalanceSlice,
 } from "./balances.js";
 
-// Chain-correct viem clients for EVM reads + the wallet-network guard.
+// Chain-correct viem clients for EVM and Tron reads + the wallet-network guard.
 export {
   publicClientFor,
   walletChainMismatch,

@@ -66,6 +66,8 @@ export const PUBLIC_RPC_URLS: {
   evm: Readonly<Record<number, string>>;
   /** Solana chain `network` -> endpoint. */
   solana: Readonly<Record<string, string>>;
+  /** Tron `chainId` -> the node's HTTP base (`/jsonrpc` is derived from it). */
+  tron: Readonly<Record<number, string>>;
 } = {
   evm: {
     // Mainnets
@@ -89,16 +91,24 @@ export const PUBLIC_RPC_URLS: {
     "solana-mainnet": "https://solana-rpc.publicnode.com",
     "solana-devnet": "https://api.devnet.solana.com",
   },
+  // TronGrid, keyless. Its JSON-RPC answered eth_chainId with each id
+  // (0x2b6653dc, 0xcd8690dc), and its /jsonrpc and /wallet routes allow any
+  // origin, checked 2026-10-23. Keyless use is rate-limited; a deployment
+  // with a TronGrid key sets its own endpoint.
+  tron: {
+    728126428: "https://api.trongrid.io",
+    3448148188: "https://nile.trongrid.io",
+  },
 };
 
 /**
  * The {@link PUBLIC_RPC_URLS} entry for `chain`, or `null` when it has none.
  *
  * A Solana chain is matched by `network` only, never by its nominal
- * `chainId`, so it cannot pick up an EVM chain's endpoint. A Tron chain has
- * no public entry: its url is a node's HTTP base, not an EVM JSON-RPC
- * endpoint, so an EVM chain's could never stand in for it. An absent
- * `architecture` is EVM; an unknown one throws.
+ * `chainId`, so it cannot pick up an EVM chain's endpoint. A Tron chain is
+ * matched by `chainId` in its own list: its url is a node's HTTP base, not
+ * an EVM JSON-RPC endpoint, so the EVM and Tron lists never stand in for
+ * each other. An absent `architecture` is EVM; an unknown one throws.
  */
 export function publicRpcUrl(chain: RpcResolvableChain): string | null {
   const arch = parseArchitecture(chain.architecture ?? "");
@@ -109,7 +119,8 @@ export function publicRpcUrl(chain: RpcResolvableChain): string | null {
       if (!chain.chainId) return null;
       return PUBLIC_RPC_URLS.evm[chain.chainId] ?? null;
     case "tron":
-      return null;
+      if (!chain.chainId) return null;
+      return PUBLIC_RPC_URLS.tron[chain.chainId] ?? null;
     default:
       return unreachableArchitecture(arch);
   }
