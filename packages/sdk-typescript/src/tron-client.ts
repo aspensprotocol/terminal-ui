@@ -65,7 +65,19 @@ export interface TronNode {
   urls: string[];
   /** Sent as the `TRON-PRO-API-KEY` header when set (TronGrid). */
   apiKey?: string;
+  /**
+   * How long one HTTP request may take before it is abandoned as
+   * unanswered, in milliseconds; default {@link TRON_REQUEST_TIMEOUT_MS}.
+   */
+  timeoutMs?: number;
 }
+
+/**
+ * The default limit on one Tron HTTP request (connect, send and read). A
+ * request still pending then is aborted and counts as unanswered, so a
+ * stalled connection cannot hold a send past its expiry check.
+ */
+export const TRON_REQUEST_TIMEOUT_MS = 30_000;
 
 /** A block's number, ID and timestamp, from either `getnowblock`. */
 export interface TronBlockHeader {
@@ -158,13 +170,25 @@ function headers(node: TronNode): Record<string, string> {
 }
 
 type Posted =
-  | { kind: "answered"; json: Record<string, unknown> }
-  | { kind: "unanswered"; reason: string };
+  | { kind: "answered"; json: Record<string, unknown>; base: string }
+  | { kind: "unanswered"; reason: string }
+  /** A node refused the request itself (HTTP 4xx); resending it is futile. */
+  | { kind: "refused"; status: number; reason: string };
+
+/** A 4xx a node returns for a request it will never accept. 403 and 429 are rate limits. */
+function isClientError(status: number): boolean {
+  return status >= 400 && status < 500 && status !== 403 && status !== 429;
+}
 
 /**
  * POST `body` (already JSON text) to `path` on the first of `node.urls` that
- * answers. A fetch that throws, an HTTP error status, or a body that is not
- * a JSON object counts as no answer, and the next url is tried.
+ * answers.
+ *
+ * A fetch that throws or exceeds the node's timeout, a 5xx, a 403 or 429
+ * rate limit, or a body that is not a JSON object counts as no answer, and
+ * the next url is tried. A 4xx other than those is the request's own fault:
+ * when no url answers and one returned such a status, the result is
+ * `refused`, never `unanswered`.
  */
 async function postRaw(
   node: TronNode,
@@ -175,6 +199,8 @@ async function postRaw(
     return { kind: "unanswered", reason: `${path}: no Tron node url` };
   }
   const reasons: string[] = [];
+  let refused: { status: number; reason: string } | null = null;
+  const timeoutMs = node.timeoutMs ?? TRON_REQUEST_TIMEOUT_MS;
   for (const base of node.urls) {
     const where = `${path} at ${redact(base)}`;
     let response: Response;
@@ -183,13 +209,24 @@ async function postRaw(
         method: "POST",
         headers: headers(node),
         body,
+        signal: AbortSignal.timeout(timeoutMs),
       });
     } catch (err) {
       reasons.push(`${where}: request failed (${errText(err)})`);
       continue;
     }
     if (!response.ok) {
-      reasons.push(`${where}: HTTP ${response.status}`);
+      let detail = "";
+      try {
+        detail = (await response.text()).slice(0, 200);
+      } catch {
+        // The status alone says enough.
+      }
+      const reason = `${where}: HTTP ${response.status}${detail ? ` (${detail})` : ""}`;
+      reasons.push(reason);
+      if (isClientError(response.status) && !refused) {
+        refused = { status: response.status, reason };
+      }
       continue;
     }
     let json: unknown;
@@ -203,24 +240,38 @@ async function postRaw(
       reasons.push(`${where}: the answer is not a JSON object`);
       continue;
     }
-    return { kind: "answered", json: json as Record<string, unknown> };
+    return { kind: "answered", json: json as Record<string, unknown>, base };
+  }
+  if (refused) {
+    return { kind: "refused", status: refused.status, reason: refused.reason };
   }
   return { kind: "unanswered", reason: reasons.join("; ") };
 }
 
-/** {@link postRaw} for a read: no answer, or a node `Error`, throws. */
+/**
+ * {@link postRaw} for a read: no answer, a refusal, or a node `Error`
+ * throws. Returns the answer and the base url that gave it.
+ */
+async function postFrom(
+  node: TronNode,
+  path: string,
+  body: string,
+): Promise<{ json: Record<string, unknown>; base: string }> {
+  const posted = await postRaw(node, path, body);
+  if (posted.kind !== "answered") throw new Error(posted.reason);
+  const error = posted.json["Error"];
+  if (typeof error === "string") {
+    throw new Error(`${path}: node error: ${error}`);
+  }
+  return { json: posted.json, base: posted.base };
+}
+
 async function post(
   node: TronNode,
   path: string,
   body: string,
 ): Promise<Record<string, unknown>> {
-  const posted = await postRaw(node, path, body);
-  if (posted.kind === "unanswered") throw new Error(posted.reason);
-  const error = posted.json["Error"];
-  if (typeof error === "string") {
-    throw new Error(`${path}: node error: ${error}`);
-  }
-  return posted.json;
+  return (await postFrom(node, path, body)).json;
 }
 
 function errText(err: unknown): string {
@@ -305,10 +356,19 @@ export async function nowBlock(
   node: TronNode,
   opts: { solidified?: boolean } = {},
 ): Promise<TronBlockHeader> {
+  return (await nowBlockFrom(node, opts)).header;
+}
+
+/** {@link nowBlock}, with the base url that answered. */
+async function nowBlockFrom(
+  node: TronNode,
+  opts: { solidified?: boolean } = {},
+): Promise<{ header: TronBlockHeader; base: string }> {
   const path = opts.solidified
     ? "/walletsolidity/getnowblock"
     : "/wallet/getnowblock";
-  return parseBlock(await post(node, path, "{}"), path);
+  const { json, base } = await postFrom(node, path, "{}");
+  return { header: parseBlock(json, path), base };
 }
 
 /**
@@ -417,6 +477,13 @@ export async function broadcastHex(
   );
   if (posted.kind === "unanswered") {
     return { kind: "unanswered", reason: posted.reason };
+  }
+  if (posted.kind === "refused") {
+    return {
+      kind: "rejected",
+      code: `HTTP ${posted.status}`,
+      message: posted.reason,
+    };
   }
   const resp = posted.json;
   if (resp["result"] === true) return { kind: "accepted" };
@@ -553,7 +620,13 @@ const sleep = (ms: number) =>
  * - Resolves only for a receipt whose `receipt.result` is `SUCCESS`. Any
  *   other receipt throws with the txID and the reason; OUT_OF_ENERGY and a
  *   broadcast refused for the account's resources name the account.
- * - Unseen once the head is a block past the expiration throws.
+ * - Unseen once the head is a block past the expiration throws, as
+ *   UNCONFIRMED: the node that judged the expiry also gave the last look,
+ *   and the message says to check before retrying rather than claiming the
+ *   transaction had no effect.
+ * - Every HTTP request is abandoned after the node's timeout and counts as
+ *   unanswered, so a stalled connection cannot hold the wait open. A 4xx
+ *   (other than a 403 / 429 rate limit) on the broadcast is a refusal.
  */
 export async function sendTronTx(
   params: SendTronTxParams,
@@ -672,29 +745,38 @@ export async function sendTronTx(
     }
     if (info) return judge(info);
 
-    let head: TronBlockHeader | null = null;
+    let headAt: { header: TronBlockHeader; base: string } | null = null;
     try {
-      head = await nowBlock(node);
+      headAt = await nowBlockFrom(node);
     } catch {
       // An unreadable head cannot prove expiry; the backstop below still ends the wait.
     }
-    if (head && head.timeMs > expirationMs + TRON_BLOCK_INTERVAL_MS) {
-      // One last look: it may have landed between the read above and this
-      // head.
+    if (
+      headAt &&
+      headAt.header.timeMs > expirationMs + TRON_BLOCK_INTERVAL_MS
+    ) {
+      const { header: head, base } = headAt;
+      // One last look, asked of the very node whose head is past the
+      // expiration, so a lagging node's "unseen" is never judged against
+      // another node's head. It may also have landed since the read above.
       let last: TronTxInfo | null;
       try {
-        last = await txInfo(node, id);
+        last = await txInfo({ ...node, urls: [base] }, id);
       } catch (err) {
         throw sent(
-          `tron transaction ${id} is past its expiration and its receipt cannot ` +
-            `be read (${errText(err)}); whether it landed is unknown`,
+          `tron transaction ${id} is UNCONFIRMED: past its expiration, and its ` +
+            `receipt cannot be read (${errText(err)}); whether it landed is ` +
+            `unknown, so check it before retrying`,
         );
       }
       if (last) return judge(last);
+      // Unseen by that node is not proof it never landed elsewhere: the
+      // outcome is unknown, and a retry could do the same thing twice.
       throw sent(
-        `tron transaction ${id} expired unseen: the head (block ${head.number}, ` +
-          `${head.timeMs} ms) is past its expiration (${expirationMs} ms) plus a ` +
-          `block, and no block includes it; it had no effect`,
+        `tron transaction ${id} is UNCONFIRMED: not seen before expiry by ` +
+          `${redact(base)} (its head, block ${head.number} at ${head.timeMs} ms, ` +
+          `is past the expiration ${expirationMs} ms plus a block); check the ` +
+          `txID or the account before retrying`,
       );
     }
 

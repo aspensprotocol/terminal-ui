@@ -178,6 +178,7 @@ export {
   tronPublicClient,
   TronTxError,
   TRON_BLOCK_INTERVAL_MS,
+  TRON_REQUEST_TIMEOUT_MS,
   type TronNode,
   type TronCall,
   type TronBlockHeader,

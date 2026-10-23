@@ -68,6 +68,10 @@ type Route = (body: Record<string, unknown>, nth: number) => Answer;
 
 let seen: Seen[] = [];
 let routes: Record<string, Route> = {};
+/** Per-host routes, consulted before `routes` (for multi-node tests). */
+let hostRoutes: Record<string, Record<string, Route>> = {};
+/** Answer with this to never answer: the request settles only by its abort. */
+const HANG = { hang: true };
 const realFetch = globalThis.fetch;
 
 function json(value: unknown, status = 200): Response {
@@ -89,9 +93,16 @@ function installFetch() {
     seen.push({ url, path, headers: hdrs, body });
     if (u.host === "down.example") throw new TypeError("connect failed");
     const nth = (counts[url] = (counts[url] ?? 0) + 1) - 1;
-    const route = routes[path];
+    const route = hostRoutes[u.host]?.[path] ?? routes[path];
     if (!route) throw new Error(`unmocked ${path}`);
     const answer = route(body, nth);
+    if (answer === HANG) {
+      return new Promise<Response>((_resolve, reject) => {
+        init?.signal?.addEventListener("abort", () =>
+          reject(init.signal!.reason ?? new Error("aborted")),
+        );
+      });
+    }
     if (answer instanceof Response) return answer;
     if (answer && typeof answer === "object" && "throw" in answer) {
       throw new TypeError((answer as { throw: string }).throw);
@@ -142,6 +153,7 @@ function defaultRoutes(): Record<string, Route> {
 /** A fresh node: default routes, nothing seen, answer counts at zero. */
 function reset() {
   seen = [];
+  hostRoutes = {};
   routes = defaultRoutes();
   installFetch();
 }
@@ -316,7 +328,8 @@ describe("sendTronTx", () => {
     const id = decodeSent(broadcasts()[0]!).txId;
     expect(err.sent).toBe(true);
     expect(err.message).toContain(id);
-    expect(err.message).toContain("expired unseen");
+    expect(err.message).toContain("UNCONFIRMED");
+    expect(err.message).not.toContain("no effect");
   });
 
   // Exactly at expiration plus one block the transaction can still be in
@@ -341,7 +354,7 @@ describe("sendTronTx", () => {
     routes["/wallet/gettransactioninfobyid"] = receipts("REVERT", 1);
     const err = await rejection(sendTronTx(params(countingAdapter())));
     expect(err.message).toContain("REVERT opcode executed");
-    expect(err.message).not.toContain("expired unseen");
+    expect(err.message).not.toContain("UNCONFIRMED");
   });
 
   test("sendTronTx rebroadcasts the identical hex", async () => {
@@ -393,7 +406,8 @@ describe("sendTronTx", () => {
           : block(SOLID_NUMBER + 41, EXPIRY_PLUS_BLOCK + 1);
     const again = countingAdapter();
     const err = await rejection(sendTronTx(params(again)));
-    expect(err.message).toContain("expired unseen");
+    expect(err.message).toContain("UNCONFIRMED");
+    expect(err.message).not.toContain("no effect");
     expect(again.signed).toHaveLength(1);
     expect(broadcasts().length).toBeGreaterThan(1);
     expect(new Set(broadcasts()).size).toBe(1);
@@ -546,6 +560,192 @@ describe("sendTronTx", () => {
     routes["/wallet/gettransactioninfobyid"] = receipts("SUCCESS");
     await sendTronTx(params(countingAdapter()));
     for (const s of seen) expect(s.headers["tron-pro-api-key"]).toBeUndefined();
+  });
+  // -- Fix round: timeouts, signature forms, expiry judgement, 4xx --------
+
+  test("a request that never answers is abandoned, and the send still settles", async () => {
+    // After the transaction is built, the node hangs on everything: the
+    // broadcast, the receipt and the head. Each request is aborted at the
+    // node's timeout, and the backstop ends the wait as an error.
+    routes["/wallet/broadcasthex"] = () => HANG;
+    routes["/wallet/gettransactioninfobyid"] = () => HANG;
+    routes["/wallet/getnowblock"] = (_b, nth) =>
+      nth === 0 ? block(SOLID_NUMBER + 19, HEAD_TIME) : HANG;
+    const err = await rejection(
+      sendTronTx(
+        params(countingAdapter(), {
+          node: { urls: [BASE], timeoutMs: 20 },
+          giveUpAfterMs: 150,
+        }),
+      ),
+    );
+    expect(err.sent).toBe(true);
+    expect(err.message).toContain("whether it landed is unknown");
+    expect(broadcasts().length).toBeGreaterThan(1);
+    expect(new Set(broadcasts()).size).toBe(1);
+  });
+
+  test("a hung broadcast still reaches the expiry judgement", async () => {
+    routes["/wallet/broadcasthex"] = () => HANG;
+    routes["/wallet/getnowblock"] = (_b, nth) =>
+      nth === 0
+        ? block(SOLID_NUMBER + 19, HEAD_TIME)
+        : block(SOLID_NUMBER + 41, EXPIRY_PLUS_BLOCK + 1);
+    const err = await rejection(
+      sendTronTx(
+        params(countingAdapter(), {
+          node: { urls: [BASE], timeoutMs: 20 },
+        }),
+      ),
+    );
+    expect(err.message).toContain("UNCONFIRMED");
+  });
+
+  test("every request carries an abort signal", async () => {
+    const signals: (AbortSignal | null | undefined)[] = [];
+    const inner = globalThis.fetch;
+    globalThis.fetch = ((input: RequestInfo | URL, init?: RequestInit) => {
+      signals.push(init?.signal);
+      return inner(input, init);
+    }) as typeof fetch;
+    routes["/wallet/gettransactioninfobyid"] = receipts("SUCCESS");
+    await sendTronTx(params(countingAdapter()));
+    expect(signals.length).toBeGreaterThan(0);
+    for (const sig of signals) expect(sig).toBeInstanceOf(AbortSignal);
+  });
+
+  // MetaMask-style wallets may return v as 0/1 rather than 27/28. Both
+  // recover to the owner, and the wallet's bytes are broadcast as given.
+  test("the recover check accepts v = 0/1 as well as 27/28", async () => {
+    const inner = privateKeyTronAdapter(KEY);
+    const returned: string[] = [];
+    const zeroOne: SigningAdapter = {
+      signMessage: inner.signMessage,
+      async signTronTransaction(txId, rawDataHex) {
+        const sig = await inner.signTronTransaction!(txId, rawDataHex);
+        const v = parseInt(sig.slice(-2), 16);
+        expect([27, 28]).toContain(v);
+        const out = sig.slice(0, -2) + (v - 27).toString(16).padStart(2, "0");
+        returned.push(out);
+        return out;
+      },
+    };
+    routes["/wallet/gettransactioninfobyid"] = receipts("SUCCESS");
+    const receipt = await sendTronTx(params(zeroOne));
+    const tx = decodeSent(broadcasts()[0]!);
+    expect(receipt.txId).toBe(tx.txId);
+    expect("0x" + hex(tx.signature)).toBe(returned[0]!);
+    expect([0, 1]).toContain(tx.signature[64]!);
+
+    // And 27/28 as returned by the key adapter.
+    reset();
+    routes["/wallet/gettransactioninfobyid"] = receipts("SUCCESS");
+    await sendTronTx(params(countingAdapter()));
+    expect([27, 28]).toContain(decodeSent(broadcasts()[0]!).signature[64]!);
+  });
+
+  // Node A lags: it never sees the transaction, and its head read blips, so
+  // the head past expiry comes from node B, which does hold the receipt.
+  // The last look goes to B, never to A.
+  test("a lagging node's unseen is not judged against another node's head", async () => {
+    const LAG = "https://lag.example";
+    hostRoutes["lag.example"] = {
+      "/wallet/gettransactioninfobyid": () => ({}),
+      "/wallet/getnowblock": (_b, nth) =>
+        nth === 0
+          ? block(SOLID_NUMBER + 19, HEAD_TIME)
+          : new Response("blip", { status: 502 }),
+    };
+    routes["/wallet/getnowblock"] = () =>
+      block(SOLID_NUMBER + 41, EXPIRY_PLUS_BLOCK + 1);
+    routes["/wallet/gettransactioninfobyid"] = receipts("SUCCESS");
+    const receipt = await sendTronTx(
+      params(countingAdapter(), { node: { urls: [LAG, BASE] } }),
+    );
+    expect(receipt.txId).toBe(decodeSent(broadcasts()[0]!).txId);
+  });
+
+  test("unseen at expiry is UNCONFIRMED, never 'no effect'", async () => {
+    const LAG = "https://lag.example";
+    hostRoutes["lag.example"] = {
+      "/wallet/gettransactioninfobyid": () => ({}),
+      "/wallet/getnowblock": (_b, nth) =>
+        nth === 0
+          ? block(SOLID_NUMBER + 19, HEAD_TIME)
+          : new Response("blip", { status: 502 }),
+    };
+    routes["/wallet/getnowblock"] = () =>
+      block(SOLID_NUMBER + 41, EXPIRY_PLUS_BLOCK + 1);
+    const err = await rejection(
+      sendTronTx(params(countingAdapter(), { node: { urls: [LAG, BASE] } })),
+    );
+    expect(err.sent).toBe(true);
+    expect(err.message).toContain("UNCONFIRMED");
+    expect(err.message).toContain("before retrying");
+    expect(err.message).not.toContain("no effect");
+    // The last receipt look was asked of the node whose head judged expiry.
+    const receiptsAsked = at("/wallet/gettransactioninfobyid");
+    expect(receiptsAsked.at(-1)!.url.startsWith(BASE)).toBe(true);
+  });
+
+  test("a 4xx broadcast is a refusal, not an expiry", async () => {
+    routes["/wallet/broadcasthex"] = () =>
+      new Response(JSON.stringify({ Error: "bad transaction hex" }), {
+        status: 400,
+      });
+    // Heads would prove expiry if the send kept waiting.
+    routes["/wallet/getnowblock"] = (_b, nth) =>
+      nth === 0
+        ? block(SOLID_NUMBER + 19, HEAD_TIME)
+        : block(SOLID_NUMBER + 41, EXPIRY_PLUS_BLOCK + 1);
+    const err = await rejection(sendTronTx(params(countingAdapter())));
+    expect(err.sent).toBe(true);
+    expect(err.message).toContain("HTTP 400");
+    expect(err.message).toContain("bad transaction hex");
+    expect(err.message).not.toContain("UNCONFIRMED");
+    expect(broadcasts()).toHaveLength(1);
+  });
+
+  test("429 and 403 are rate limits: the same hex goes out again", async () => {
+    routes["/wallet/broadcasthex"] = (_b, nth) =>
+      nth === 0
+        ? new Response("slow down", { status: 429 })
+        : nth === 1
+          ? new Response("forbidden: rate", { status: 403 })
+          : { result: true };
+    routes["/wallet/gettransactioninfobyid"] = receipts("SUCCESS", 3);
+    await sendTronTx(params(countingAdapter()));
+    expect(broadcasts()).toHaveLength(3);
+    expect(new Set(broadcasts()).size).toBe(1);
+  });
+
+  test("a 4xx read before signing is an error and nothing is signed", async () => {
+    routes["/wallet/triggerconstantcontract"] = () =>
+      new Response("not found", { status: 404 });
+    const adapter = countingAdapter();
+    const err = await rejection(sendTronTx(params(adapter)));
+    expect(err.sent).toBe(false);
+    expect(err.message).toContain("HTTP 404");
+    expect(adapter.signed).toEqual([]);
+  });
+
+  test("a 4xx from one url still fails over to the next", async () => {
+    hostRoutes["bad.example"] = {
+      "/wallet/triggerconstantcontract": () =>
+        new Response("not found", { status: 404 }),
+      "/walletsolidity/getnowblock": () => new Response("nf", { status: 404 }),
+      "/wallet/getnowblock": () => new Response("nf", { status: 404 }),
+      "/wallet/broadcasthex": () => new Response("nf", { status: 404 }),
+      "/wallet/gettransactioninfobyid": () =>
+        new Response("nf", { status: 404 }),
+    };
+    routes["/wallet/gettransactioninfobyid"] = receipts("SUCCESS");
+    await sendTronTx(
+      params(countingAdapter(), {
+        node: { urls: ["https://bad.example", BASE] },
+      }),
+    );
+    expect(broadcasts().length).toBeGreaterThan(0);
   });
 });
 
