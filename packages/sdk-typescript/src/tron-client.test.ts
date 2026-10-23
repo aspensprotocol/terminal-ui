@@ -22,6 +22,8 @@ import {
   type TronNode,
 } from "./tron-client.js";
 import {
+  assertTronWithdrawTrx,
+  TRON_MIN_TRX_FOR_WITHDRAW_SUN,
   TRON_APPROVE_FEE_LIMIT_SUN,
   TRON_DEPOSIT_FEE_LIMIT_SUN,
   TRON_DEPOSIT_NATIVE_FEE_LIMIT_SUN,
@@ -295,6 +297,11 @@ describe("sendTronTx", () => {
     expect(err.message).toContain("FAILED");
     expect(err.message).toContain("REVERT opcode executed");
     expect(err.message).toContain("0x90b8ec18");
+    // The receipt was read at the head, where it can still be reorged out:
+    // the message must not claim the failure is final.
+    expect(err.message).toContain("FAILED at the head");
+    expect(err.message).toContain("not yet solidified");
+    expect(err.message).not.toContain("no effect");
   });
 
   test("sendTronTx throws on OUT_OF_ENERGY, naming the account", async () => {
@@ -303,6 +310,8 @@ describe("sendTronTx", () => {
     expect(err.sent).toBe(true);
     expect(err.message).toContain("OUT_OF_ENERGY");
     expect(err.message).toContain(OWNER);
+    expect(err.message).toContain("not yet solidified");
+    expect(err.message).not.toContain("no effect");
   });
 
   // Anything but the exact string SUCCESS is a failure, including results
@@ -1015,5 +1024,52 @@ describe("MidribV3 on Tron", () => {
       }),
     );
     expect(err.sent).toBe(true);
+  });
+});
+
+// -- The TRX check before a withdraw voucher -------------------------------
+
+/** Serves `eth_getBalance` at `/jsonrpc` with `sun` as the answer. */
+function jsonRpcBalance(sun: bigint): Route {
+  return (body) => ({
+    jsonrpc: "2.0",
+    id: body["id"],
+    result: "0x" + sun.toString(16),
+  });
+}
+
+describe("assertTronWithdrawTrx", () => {
+  test("the floor is the Rust SDK's: 84,386 energy x 100 sun + 604,000 sun", () => {
+    expect(TRON_MIN_TRX_FOR_WITHDRAW_SUN).toBe(9_042_600n);
+  });
+
+  test("passes at the floor, reading the owner's balance over /jsonrpc", async () => {
+    routes["/jsonrpc"] = jsonRpcBalance(9_042_600n);
+    await assertTronWithdrawTrx({
+      node: NODE,
+      owner: OWNER.toUpperCase().replace("0X", "0x"),
+    });
+    const reads = at("/jsonrpc");
+    expect(reads).toHaveLength(1);
+    expect(reads[0]!.body["method"]).toBe("eth_getBalance");
+    expect((reads[0]!.body["params"] as string[])[0]).toBe(OWNER);
+    // A check only: nothing simulated, signed or broadcast.
+    expect(at("/wallet/triggerconstantcontract")).toEqual([]);
+    expect(broadcasts()).toEqual([]);
+  });
+
+  test("one sun short throws, naming the account and the amounts", async () => {
+    routes["/jsonrpc"] = jsonRpcBalance(9_042_599n);
+    const err = await assertTronWithdrawTrx({ node: NODE, owner: OWNER }).then(
+      () => {
+        throw new Error("expected a rejection");
+      },
+      (e: unknown) => e as Error,
+    );
+    expect(err.message).toContain("insufficient TRX");
+    expect(err.message).toContain(OWNER);
+    expect(err.message).toContain("9042599 sun");
+    expect(err.message).toContain("9042600 sun");
+    expect(err.message).toContain("No voucher requested");
   });
 });

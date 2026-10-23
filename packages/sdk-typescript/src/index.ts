@@ -131,6 +131,7 @@ export {
 export {
   signOrder,
   signCancelOrder,
+  signWithdrawRequest,
   createOrderMessage,
   serializeOrder,
   hexToBytes,
@@ -189,11 +190,14 @@ export {
 } from "./tron-client.js";
 
 // MidribV3 on Tron: deposit (approve, then deposit), depositNative and the
-// voucher withdraw, with the EVM calldata sent through sendTronTx.
+// voucher withdraw, with the EVM calldata sent through sendTronTx, and the
+// TRX check a withdraw runs before it requests a voucher.
 export {
   tronDeposit,
   tronDepositNative,
   tronWithdraw,
+  assertTronWithdrawTrx,
+  TRON_MIN_TRX_FOR_WITHDRAW_SUN,
   TRON_APPROVE_FEE_LIMIT_SUN,
   TRON_DEPOSIT_FEE_LIMIT_SUN,
   TRON_DEPOSIT_NATIVE_FEE_LIMIT_SUN,

@@ -607,6 +607,15 @@ function signedTxHex(raw: Uint8Array, signature: Uint8Array): string {
   return hexBody(w.finish());
 }
 
+/**
+ * Said of a failed receipt: it was read at the head, where a block can still
+ * be reorged out and the same signed bytes re-included before they expire, so
+ * the failure is not final.
+ */
+const AT_HEAD =
+  "That block is not yet solidified, so this is not final: check the txID " +
+  "once it is solidified before retrying";
+
 const sleep = (ms: number) =>
   new Promise<void>((resolve) => setTimeout(resolve, ms));
 
@@ -624,7 +633,9 @@ const sleep = (ms: number) =>
  *   timestamp, so a new txID) could land beside the first.
  * - Resolves only for a receipt whose `receipt.result` is `SUCCESS`. Any
  *   other receipt throws with the txID and the reason; OUT_OF_ENERGY and a
- *   broadcast refused for the account's resources name the account.
+ *   broadcast refused for the account's resources name the account. A
+ *   failed receipt is read at the head, so its message says the failure is
+ *   not final yet rather than that the transaction had no effect.
  * - Unseen once the head is a block past the expiration throws, as
  *   UNCONFIRMED: the node that judged the expiry also gave the last look,
  *   and the message says to check before retrying rather than claiming the
@@ -712,12 +723,12 @@ export async function sendTronTx(
       throw sent(
         `tron transaction ${id} ran out of energy in block ${info.blockNumber}: ` +
           `${reason}. Energy is paid by burning ${owner.toLowerCase()}'s TRX up ` +
-          `to the fee limit: fund that account. It had no effect`,
+          `to the fee limit: fund that account. ${AT_HEAD}`,
       );
     }
     throw sent(
-      `tron transaction ${id} was included in block ${info.blockNumber} and ` +
-        `FAILED: ${reason}. It had no effect`,
+      `tron transaction ${id} FAILED at the head, in block ${info.blockNumber}: ` +
+        `${reason}. ${AT_HEAD}`,
     );
   };
 

@@ -383,6 +383,59 @@ export async function signCancelOrder(
 }
 
 /**
+ * Sign a withdrawal request's text (`withdrawRequestMessage(...)`) the way
+ * the venue verifies it on a chain of `architecture`.
+ *
+ * - EVM: `adapter.signMessage` over the text's UTF-8 bytes, i.e. EIP-191
+ *   `personal_sign` of the text.
+ * - Solana: `adapter.signMessage` over the same bytes, raw Ed25519.
+ * - Tron: `adapter.signTronMessage` over the text as is, under the TRON
+ *   message prefix. An adapter without it is refused, never handed to
+ *   `signMessage`, whose Ethereum-prefixed signature the venue rejects on a
+ *   Tron chain.
+ *
+ * @param text The request text, exactly as `withdrawRequestMessage` built it
+ * @param adapter The signing adapter of the withdrawing account
+ * @param architecture `Chain.architecture` of the chain withdrawn from. An
+ *   unknown value throws.
+ * @returns The signature: 65 bytes (EVM, Tron) or 64 (Solana)
+ */
+export async function signWithdrawRequest(
+  text: string,
+  adapter: SigningAdapter,
+  architecture: string,
+): Promise<Uint8Array> {
+  const arch = parseArchitecture(architecture);
+  switch (arch) {
+    case "evm":
+    case "solana": {
+      const signature = await adapter.signMessage(
+        bytesToHex(new TextEncoder().encode(text)),
+      );
+      return normalizeWalletSignature(hexToBytes(signature));
+    }
+    case "tron": {
+      if (!adapter.signTronMessage) {
+        throw new Error(
+          "this withdrawal is from a Tron chain, and the signing wallet has " +
+            "no signTronMessage: a Tron withdrawal request is signed under " +
+            "the TRON message prefix, never EIP-191",
+        );
+      }
+      const signature = hexToBytes(await adapter.signTronMessage(text));
+      if (signature.length !== 65) {
+        throw new Error(
+          `unexpected Tron signature length ${signature.length}; expected 65 (r || s || v)`,
+        );
+      }
+      return signature;
+    }
+    default:
+      return unreachableArchitecture(arch);
+  }
+}
+
+/**
  * A Tron {@link SigningAdapter} over a raw secp256k1 private key, for
  * services and scripts (a browser uses the wallet's own adapter).
  *

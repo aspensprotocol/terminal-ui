@@ -55,6 +55,44 @@ export const TRON_DEPOSIT_NATIVE_FEE_LIMIT_SUN = 3n * 32_798n * 100n;
  */
 export const TRON_WITHDRAW_FEE_LIMIT_SUN = 3n * 84_386n * 100n;
 
+/**
+ * TRX a Tron withdraw needs before a voucher is requested, in sun: the
+ * costliest measured voucher withdraw on Nile (84,386 energy x 100 sun +
+ * 604,000 sun of bandwidth), the same floor the Rust SDK checks. A voucher
+ * places a hold, so one the wallet cannot pay to submit would strand it until
+ * expiry.
+ */
+export const TRON_MIN_TRX_FOR_WITHDRAW_SUN = 84_386n * 100n + 604_000n;
+
+/**
+ * Refuse a Tron withdraw the wallet cannot pay for, before anything is signed
+ * or a voucher requested: throws when `owner` holds less than
+ * {@link TRON_MIN_TRX_FOR_WITHDRAW_SUN}. Call it first, ahead of
+ * `signWithdrawRequest` and the voucher request, so a short wallet fails with
+ * nothing held.
+ *
+ * The balance is read over the node's `/jsonrpc` (`reads`, by default a
+ * client over `node`); a read that fails throws too.
+ */
+export async function assertTronWithdrawTrx(params: {
+  node: TronNode;
+  /** The withdrawing account, `0x` hex. */
+  owner: string;
+  reads?: PublicClient;
+}): Promise<void> {
+  const reads = params.reads ?? tronPublicClient(params.node);
+  const owner = params.owner.toLowerCase();
+  const trx = await reads.getBalance({ address: owner as Address });
+  if (trx < TRON_MIN_TRX_FOR_WITHDRAW_SUN) {
+    throw new Error(
+      `insufficient TRX: ${owner} holds ${trx} sun, and a voucher withdraw ` +
+        `burns up to about ${TRON_MIN_TRX_FOR_WITHDRAW_SUN} sun. Fund it with ` +
+        `TRX first. (No voucher requested: your withdrawable balance is ` +
+        `untouched.)`,
+    );
+  }
+}
+
 /** Who sends, and through which node. */
 export interface TronSender {
   node: TronNode;

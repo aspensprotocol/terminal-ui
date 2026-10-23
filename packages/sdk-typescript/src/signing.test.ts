@@ -21,12 +21,14 @@ import {
   serializeOrder,
   signCancelOrder,
   signOrder,
+  signWithdrawRequest,
   type CancelSigningData,
   type OrderSigningData,
   type SigningAdapter,
 } from "./signing.js";
 import { tronMessageDigest } from "./tron.js";
 import { givingArchitecture } from "./architecture.js";
+import { withdrawRequestMessage } from "./midrib-evm.js";
 import { OrderToCancelSchema, Side } from "./protos/arborter_pb";
 
 describe("normalizeWalletSignature", () => {
@@ -304,6 +306,92 @@ describe("a cancel of a Tron-giving order", () => {
         givingArchitecture(market, "buy"),
       ),
     ).rejects.toThrow(/signTronMessage/);
+    expect(calls).toEqual([]);
+  });
+});
+
+describe("signWithdrawRequest", () => {
+  const W = V2.withdraw;
+  const TEXT = withdrawRequestMessage({
+    network: W.fields.network,
+    token: W.fields.token,
+    account: W.fields.account,
+    amount: BigInt(W.fields.amount),
+  });
+  const TEXT_HEX = toHex(new TextEncoder().encode(W.text));
+
+  test("the request text built from the fixture's fields is the fixture's", () => {
+    expect(TEXT).toBe(W.text);
+  });
+
+  test("a Tron withdrawal signs the text as is under the TRON prefix", async () => {
+    const { adapter, calls } = recordingAdapter({ tron: true });
+    const sig = await signWithdrawRequest(TEXT, adapter, "Tron");
+
+    expect(toHex(sig)).toBe(W.signature as Hex);
+    expect(calls).toEqual([{ method: "signTronMessage", arg: W.text }]);
+    const recover = async (hash: Hex) =>
+      (await recoverAddress({ hash, signature: toHex(sig) })).toLowerCase();
+    expect(await recover(W.digest as Hex)).toBe(W.signer_hex);
+    expect(await recover(hashMessage(W.text))).not.toBe(W.signer_hex);
+  });
+
+  test("a Tron withdrawal never reaches EIP-191", async () => {
+    // A wallet with both signers: only the TRON-prefixed one is asked.
+    const both = recordingAdapter({ tron: true });
+    const sig = await signWithdrawRequest(TEXT, both.adapter, "tron");
+    expect(both.calls.map((c) => c.method)).toEqual(["signTronMessage"]);
+    expect(toHex(sig)).not.toBe(W.negative_ethereum_prefixed.signature as Hex);
+
+    // An EVM wallet holding the same 20-byte account (signMessage only) is
+    // refused, never handed the request to sign with the Ethereum prefix.
+    const evmOnly = recordingAdapter({ tron: false });
+    await expect(
+      signWithdrawRequest(TEXT, evmOnly.adapter, "TRON"),
+    ).rejects.toThrow(/signTronMessage/);
+    expect(evmOnly.calls).toEqual([]);
+  });
+
+  test("a Tron withdrawal refuses a signature that is not 65 bytes", async () => {
+    const adapter: SigningAdapter = {
+      signMessage: async () => "0x00",
+      signTronMessage: async () => "0x" + "ab".repeat(64),
+    };
+    await expect(signWithdrawRequest(TEXT, adapter, "tron")).rejects.toThrow(
+      /65/,
+    );
+  });
+
+  test("an EVM withdrawal is EIP-191 over the text's bytes, as before", async () => {
+    const { adapter, calls } = recordingAdapter({ tron: true });
+    const sig = await signWithdrawRequest(TEXT, adapter, "EVM");
+
+    expect(calls).toEqual([{ method: "signMessage", arg: TEXT_HEX }]);
+    // The fixture's Ethereum-prefixed signature of the same text, same key.
+    expect(toHex(sig)).toBe(W.negative_ethereum_prefixed.signature as Hex);
+  });
+
+  test("a Solana withdrawal goes through signMessage with the text's bytes", async () => {
+    const calls: string[] = [];
+    const adapter: SigningAdapter = {
+      async signMessage(hexMessage: string) {
+        calls.push(hexMessage);
+        return "0x" + "11".repeat(64);
+      },
+      signTronMessage: async () => {
+        throw new Error("must not be called");
+      },
+    };
+    const sig = await signWithdrawRequest(TEXT, adapter, "Solana");
+    expect(sig.length).toBe(64);
+    expect(calls).toEqual([TEXT_HEX]);
+  });
+
+  test("an unknown architecture is refused before anything is signed", async () => {
+    const { adapter, calls } = recordingAdapter({ tron: true });
+    await expect(signWithdrawRequest(TEXT, adapter, "sui")).rejects.toThrow(
+      /sui/,
+    );
     expect(calls).toEqual([]);
   });
 });
