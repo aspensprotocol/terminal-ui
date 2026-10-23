@@ -6,6 +6,7 @@ import {
   clientNonce,
   decimalToRaw,
   FCE_ORDER_NONCE,
+  givingArchitecture,
   marketBidQuoteBudget,
   resolveLegAddresses,
   sameSettleAddress,
@@ -425,7 +426,7 @@ export function useTradeFormSubmit({
         const signature = await signOrder(
           orderData,
           signingAdapter,
-          requiredEcosystem,
+          givingArchitecture(selectedMarket, data.side),
         );
 
         // The caller's own copy of the canonical order id. It is NOT sent over

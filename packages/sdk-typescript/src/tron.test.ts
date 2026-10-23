@@ -391,6 +391,46 @@ describe("TRON-prefixed signatures", () => {
     ).rejects.toThrow(/TRON/);
   });
 
+  test("signTronTransaction refuses malformed hex before anything is signed", async () => {
+    const settle = vectors.transactions.settle;
+    const adapter = privateKeyTronAdapter(PK);
+    // A txID that is not 32 bytes of hex.
+    await expect(
+      adapter.signTronTransaction!(
+        settle.txID.slice(0, 62),
+        settle.raw_data_hex,
+      ),
+    ).rejects.toThrow(/32 bytes/);
+    await expect(
+      adapter.signTronTransaction!(
+        "zz" + settle.txID.slice(2),
+        settle.raw_data_hex,
+      ),
+    ).rejects.toThrow(/32 bytes/);
+    // raw_data that is not hex: a bad pair must not decode to some byte.
+    const garbled = "zz" + settle.raw_data_hex.slice(2);
+    await expect(
+      adapter.signTronTransaction!(settle.txID, garbled),
+    ).rejects.toThrow(/hex/);
+    await expect(
+      adapter.signTronTransaction!(settle.txID, settle.raw_data_hex + "0"),
+    ).rejects.toThrow(/hex/);
+    await expect(adapter.signTronTransaction!(settle.txID, "")).rejects.toThrow(
+      /hex/,
+    );
+  });
+
+  test("signTronTransaction accepts the txID with or without 0x, in any case", async () => {
+    const settle = vectors.transactions.settle;
+    const adapter = privateKeyTronAdapter(PK);
+    expect(
+      await adapter.signTronTransaction!(
+        "0x" + settle.txID.toUpperCase(),
+        settle.raw_data_hex,
+      ),
+    ).toBe(settle.signature);
+  });
+
   test("signTronTransaction refuses a txID that is not sha256(raw_data)", async () => {
     const settle = vectors.transactions.settle;
     const other = vectors.transactions.deposit_native;
@@ -404,6 +444,21 @@ describe("TRON-prefixed signatures", () => {
 });
 
 describe("tronJsonRpcUrl", () => {
+  test("is idempotent: a url already at /jsonrpc is not extended", () => {
+    expect(tronJsonRpcUrl("https://api.trongrid.io/jsonrpc")).toBe(
+      "https://api.trongrid.io/jsonrpc",
+    );
+    expect(tronJsonRpcUrl("https://api.trongrid.io/jsonrpc/")).toBe(
+      "https://api.trongrid.io/jsonrpc",
+    );
+    expect(tronJsonRpcUrl("https://node.example/tron/jsonrpc?apikey=abc")).toBe(
+      "https://node.example/tron/jsonrpc?apikey=abc",
+    );
+    expect(tronJsonRpcUrl(tronJsonRpcUrl("https://nile.trongrid.io"))).toBe(
+      "https://nile.trongrid.io/jsonrpc",
+    );
+  });
+
   test("appends /jsonrpc to the HTTP base, keeping a query-string key", () => {
     expect(tronJsonRpcUrl("https://api.trongrid.io")).toBe(
       "https://api.trongrid.io/jsonrpc",

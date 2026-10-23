@@ -145,6 +145,7 @@ export {
 // Chain architectures as a closed set: an unknown one throws.
 export {
   parseArchitecture,
+  givingArchitecture,
   isEvmAddressed,
   type Architecture,
 } from "./architecture.js";

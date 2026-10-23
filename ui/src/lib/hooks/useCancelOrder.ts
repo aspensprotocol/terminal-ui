@@ -12,15 +12,51 @@
 
 import { useCallback, useState } from "react";
 import {
+  givingArchitecture,
   signCancelOrder,
   type CancelSigningData,
+  type Market,
   type SigningAdapter,
 } from "@aspensprotocol/sdk-ts";
 import { useExchangeStore, type CancelledOrderEntry } from "@/lib/store";
 import { createSigningAdapterForWallet } from "@/lib/signing-adapter";
-import { cancelSigningWallet } from "@/lib/wallet";
+import { cancelSigningWallet, type ConnectedWallet } from "@/lib/wallet";
 import { useExchangeClient } from "./useExchangeClient";
 import type { Order } from "@/lib/types/exchange";
+
+/**
+ * The adapter and architecture a cancel of `order` is signed with.
+ *
+ * The wallet is the one that placed the order (`cancelSigningWallet`). The
+ * architecture is the chain the order GIVES on, read from the market — never
+ * from the wallet's ecosystem: a Tron account is the same 20 bytes as an EVM
+ * one, so an EVM wallet can hold the address of a Tron-leg order, and its
+ * ecosystem would send the cancel down the EIP-191 path the venue refuses.
+ * Throws when the market is not loaded or its giving-leg architecture is
+ * unknown.
+ */
+export function resolveCancelSigner(
+  order: Order,
+  market: Market | undefined,
+  connectedWallets: Record<string, ConnectedWallet>,
+  activeWalletId: string | null,
+  adapterFor: (wallet: ConnectedWallet) => SigningAdapter,
+): { adapter: SigningAdapter; architecture: string } {
+  if (!market) {
+    throw new Error(
+      `Cannot cancel this order: its market ${order.market_id} is not loaded, ` +
+        "so the chain it must be signed for is unknown.",
+    );
+  }
+  const architecture = givingArchitecture(market, order.side);
+  const wallet = cancelSigningWallet(
+    order,
+    market,
+    connectedWallets,
+    activeWalletId,
+  );
+  return { adapter: adapterFor(wallet), architecture };
+}
 
 /**
  * External effects the sign+submit step needs, injected so the NOT_FOUND
@@ -163,18 +199,13 @@ export function useCancelOrder() {
           resolveSigner: (o) => {
             const { connectedWallets, activeWalletId, markets } =
               useExchangeStore.getState();
-            const wallet = cancelSigningWallet(
+            return resolveCancelSigner(
               o,
               markets[o.market_id],
               connectedWallets,
               activeWalletId,
+              createSigningAdapterForWallet,
             );
-            // The wallet that placed the order is on the chain the order
-            // gives on; its ecosystem is that chain's architecture.
-            return {
-              adapter: createSigningAdapterForWallet(wallet),
-              architecture: wallet.ecosystem,
-            };
           },
           signCancel: signCancelOrder,
           submitCancel: (params) => client.cancelOrder(params),

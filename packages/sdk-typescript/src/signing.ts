@@ -387,8 +387,9 @@ export async function signCancelOrder(
  * services and scripts (a browser uses the wallet's own adapter).
  *
  * `signTronMessage` signs the TRON message digest of its text;
- * `signTronTransaction` signs a txID after checking it is `sha256` of the
- * given `raw_data`. Both return 65-byte `r ‖ s ‖ v` with `v` = 27/28.
+ * `signTronTransaction` validates both hex inputs and signs a txID only after
+ * checking it is `sha256` of the given `raw_data`, so a txID that does not
+ * match the raw data cannot be signed. Both return 65-byte `r ‖ s ‖ v` with `v` = 27/28.
  * `signMessage` (EIP-191) is refused: one key signing both schemes is how a
  * Tron leg ends up carrying an Ethereum-prefixed signature.
  */
@@ -410,7 +411,20 @@ export function privateKeyTronAdapter(privateKey: Hex): SigningAdapter {
       rawDataHex: string,
     ): Promise<string> {
       const id = (txId.startsWith("0x") ? txId.slice(2) : txId).toLowerCase();
-      const actual = bytesToHex(sha256(hexToBytes(rawDataHex)));
+      if (!/^[0-9a-f]{64}$/.test(id)) {
+        throw new Error(`txID ${txId} is not 32 bytes of hex`);
+      }
+      const raw = rawDataHex.startsWith("0x")
+        ? rawDataHex.slice(2)
+        : rawDataHex;
+      if (
+        raw.length === 0 ||
+        raw.length % 2 !== 0 ||
+        !/^[0-9a-fA-F]+$/.test(raw)
+      ) {
+        throw new Error("raw_data is not a non-empty, even-length hex string");
+      }
+      const actual = bytesToHex(sha256(hexToBytes(raw)));
       if (actual.slice(2) !== id) {
         throw new Error(
           `txID ${txId} is not sha256 of the raw_data given (${actual.slice(2)})`,

@@ -26,6 +26,7 @@ import {
   type SigningAdapter,
 } from "./signing.js";
 import { tronMessageDigest } from "./tron.js";
+import { givingArchitecture } from "./architecture.js";
 import { OrderToCancelSchema, Side } from "./protos/arborter_pb";
 
 describe("normalizeWalletSignature", () => {
@@ -276,6 +277,33 @@ describe("signOrder on evm and solana legs is unchanged", () => {
     await expect(
       signCancelOrder(FIXTURE_CANCEL, adapter, "sui"),
     ).rejects.toThrow(/sui/);
+    expect(calls).toEqual([]);
+  });
+});
+
+describe("a cancel of a Tron-giving order", () => {
+  test("never reaches EIP-191, even when the connected wallet is EVM", async () => {
+    // A buy on an EVM-base / Tron-quote market gives quote: the Tron leg.
+    // The wallet that holds the 0x account is an EVM wallet (the same 20
+    // bytes), whose adapter has only signMessage.
+    const market = {
+      baseChainArchitecture: "EVM",
+      quoteChainArchitecture: "Tron",
+    };
+    const calls: string[] = [];
+    const evmWallet: SigningAdapter = {
+      async signMessage(hexMessage: string) {
+        calls.push(hexMessage);
+        return "0x" + "11".repeat(65);
+      },
+    };
+    await expect(
+      signCancelOrder(
+        { ...FIXTURE_CANCEL, side: "buy" },
+        evmWallet,
+        givingArchitecture(market, "buy"),
+      ),
+    ).rejects.toThrow(/signTronMessage/);
     expect(calls).toEqual([]);
   });
 });

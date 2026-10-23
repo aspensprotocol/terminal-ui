@@ -1,30 +1,43 @@
 # Changelog — @aspensprotocol/sdk-ts
 
-## Unreleased
+## 0.5.0 (unreleased)
 
 ### Changed (breaking)
 
-- **`signOrder` and `signCancelOrder` take the signing leg's architecture**
+- **`signOrder` and `signCancelOrder` take the giving leg's architecture**
   as a required third argument: the `Chain.architecture` of the chain the
-  order gives on. EVM and Solana legs sign exactly as before; a Tron leg
-  signs with the adapter's `signTronMessage`; an unknown architecture throws.
+  order gives on (a buy gives quote, a sell gives base). EVM and Solana legs
+  sign exactly as before; a Tron leg signs with the adapter's
+  `signTronMessage`; an unknown architecture throws.
 - **Chain architecture is a closed set.** `"EVM"`, `"Solana"` and `"Tron"`
-  (any case; empty means EVM) are read by `parseArchitecture`, and anything
+  (any case; empty means EVM) are read by `parseArchitecture`. Anything
   else throws where it used to be treated as EVM: `validateSettleAddress`,
-  `sameSettleAddress`, `buildOrderCommitment`, `publicRpcUrl` /
-  `resolveRpcUrl` and `fetchChainBalanceSlices` / `getBalances` (which
-  used to skip such a chain).
+  `sameSettleAddress`, `buildOrderCommitment`, `publicRpcUrl` and
+  `resolveRpcUrl`. The balances fetch (`fetchChainBalanceSlices`,
+  `getBalances`) does not throw: it leaves such a chain out and warns that
+  its balances are OMITTED, and every other chain's balances still return.
+
+### Migration
+
+- Pass `givingArchitecture(market, side)` as the third argument:
+  `signOrder(data, adapter, givingArchitecture(market, data.side))`, and
+  the same for `signCancelOrder` with the cancelled order's side.
 
 ### Added
 
-- **Tron.** `tronToHex` / `hexToTron` convert a `T…` address at the display
-  edge (the venue only ever sees `0x` hex); `tronMessageDigest` is the TRON
-  message prefix digest; `buildTriggerRawData` and `tronTxId` encode a
-  `TriggerSmartContract` transaction and its txID. `SigningAdapter` gains
-  optional `signTronMessage(text)` and `signTronTransaction(txId,
-rawDataHex)`, and `privateKeyTronAdapter(key)` implements both.
-  `WalletBinding.ecosystem` accepts `"tron"`, whose balances are read with
-  the EVM code at the node's `/jsonrpc`.
+- **Tron.**
+  - `tronToHex` / `hexToTron` convert a `T…` address at the display edge;
+    the venue only ever sees `0x` hex.
+  - `tronMessageDigest` is the TRON message prefix digest.
+  - `buildTriggerRawData` and `tronTxId` encode a `TriggerSmartContract`
+    transaction and its txID; `tronJsonRpcUrl` gives a node's `/jsonrpc`.
+  - `SigningAdapter` gains optional `signTronMessage(text)` and
+    `signTronTransaction(txId, rawDataHex)`; `privateKeyTronAdapter(key)`
+    implements both.
+  - `WalletBinding.ecosystem` accepts `"tron"`, whose balances are read
+    with the EVM code at the node's `/jsonrpc`.
+- **`givingArchitecture(market, side)`**: the architecture of the chain an
+  order gives on and is signed for.
 
 ## 0.4.2
 

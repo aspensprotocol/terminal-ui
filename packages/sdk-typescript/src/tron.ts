@@ -324,10 +324,12 @@ export function tronTxId(rawData: Uint8Array): string {
 /**
  * The `/jsonrpc` URL under a Tron node's HTTP base (a Tron chain's
  * configured RPC URL), where the EVM read code points. A query string — where
- * a provider's API key goes — is kept.
+ * a provider's API key goes — is kept. A url already ending in `/jsonrpc` is
+ * returned as is, so an override given in either form works.
  */
 export function tronJsonRpcUrl(base: string): string {
   const url = new URL(base);
-  url.pathname = url.pathname.replace(/\/+$/, "") + "/jsonrpc";
+  const path = url.pathname.replace(/\/+$/, "");
+  url.pathname = path.endsWith("/jsonrpc") ? path : path + "/jsonrpc";
   return url.toString();
 }

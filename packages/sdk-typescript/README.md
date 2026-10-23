@@ -83,8 +83,9 @@ redacted a hidden maker).
 
 ### Signing per chain architecture
 
-`signOrder` and `signCancelOrder` take the `Chain.architecture` of the chain the order gives on, and
-sign under that chain's scheme. `"EVM"` and `"Solana"` call the adapter's `signMessage` with the
+`signOrder` and `signCancelOrder` take the `Chain.architecture` of the chain the order gives on
+(`givingArchitecture(market, side)`: a buy gives quote, a sell gives base), and sign under that
+chain's scheme. `"EVM"` and `"Solana"` call the adapter's `signMessage` with the
 encoded message as `0x` hex. `"Tron"` calls `signTronMessage` with the lowercase hex TEXT of the
 encoded message (no `0x`), signed under the TRON message prefix; an adapter without it is refused.
 An unknown architecture throws (`parseArchitecture`). `privateKeyTronAdapter(key)` is a Tron adapter
@@ -100,11 +101,11 @@ Every order carries the venue session and a nonce, both signed:
 ```ts
 const nonce = clientNonce(); // max(unix millis, last + 1)
 const session = await client.currentSession();
-// The architecture of the chain the order gives on (a buy gives quote).
+// Signed for the chain the order gives on (a buy gives quote).
 const signature = await signOrder(
   { ...order, nonce, session },
   adapter,
-  givingChain.architecture,
+  givingArchitecture(market, order.side),
 );
 await client.placeOrder({ ...params, nonce, session, signature });
 ```

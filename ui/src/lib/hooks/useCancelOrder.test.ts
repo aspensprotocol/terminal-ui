@@ -10,8 +10,14 @@
  */
 
 import { describe, expect, test, mock } from "bun:test";
-import { submitCancelOrder, type CancelSubmissionDeps } from "./useCancelOrder";
+import { signCancelOrder, type Market } from "@aspensprotocol/sdk-ts";
+import {
+  resolveCancelSigner,
+  submitCancelOrder,
+  type CancelSubmissionDeps,
+} from "./useCancelOrder";
 import type { Order } from "@/lib/types/exchange";
+import type { ConnectedWallet } from "@/lib/wallet";
 
 function makeOrder(overrides: Partial<Order> = {}): Order {
   return {
@@ -156,5 +162,63 @@ describe("submitCancelOrder NOT_FOUND handling", () => {
 
     expect(deps.recordCancelledOrder).toHaveBeenCalledTimes(1);
     expect(deps.removeHiddenOrder).toHaveBeenCalledWith("order-1");
+  });
+});
+
+describe("the cancel's architecture is the giving chain's, not the wallet's", () => {
+  // An EVM-base / Tron-quote market. A Tron account is the same 20 bytes as
+  // an EVM one, so the order's quote-leg (Tron) address is held by a
+  // connected EVM wallet.
+  const ACCOUNT = "0xa5411a1a5784b0828bbafcfa588c72ef3f3ce646";
+  const market = {
+    id: "evm-chain::0x01::tron-nile::0x02",
+    baseChainArchitecture: "EVM",
+    quoteChainArchitecture: "Tron",
+  } as Market;
+  const evmWallet: ConnectedWallet = {
+    id: `evm:${ACCOUNT}`,
+    name: "MetaMask",
+    address: ACCOUNT,
+    ecosystem: "evm",
+  };
+  const wallets = { [evmWallet.id]: evmWallet };
+
+  test("a buy gives quote: tron; a sell gives base: evm", () => {
+    const adapterFor = () => ({ signMessage: async () => "0x00" });
+    const buy = makeOrder({ side: "buy", quote_account_address: ACCOUNT });
+    const sell = makeOrder({ side: "sell", base_account_address: ACCOUNT });
+    expect(
+      resolveCancelSigner(buy, market, wallets, null, adapterFor).architecture,
+    ).toBe("tron");
+    expect(
+      resolveCancelSigner(sell, market, wallets, null, adapterFor).architecture,
+    ).toBe("evm");
+  });
+
+  test("a cancel of a Tron-giving order never reaches EIP-191 through an EVM wallet", async () => {
+    const signMessage = mock(async () => "0x" + "11".repeat(65));
+    const submitCancel = mock(async () => ({ order_id: "order-1" }));
+    const order = makeOrder({ side: "buy", quote_account_address: ACCOUNT });
+    const deps = makeDeps({
+      resolveSigner: (o: Order) =>
+        resolveCancelSigner(o, market, wallets, null, () => ({ signMessage })),
+      signCancel: signCancelOrder,
+      submitCancel,
+    });
+
+    await expect(
+      submitCancelOrder(order, ACCOUNT, "0x" + "ab".repeat(32), deps),
+    ).rejects.toThrow(/signTronMessage/);
+    expect(signMessage).not.toHaveBeenCalled();
+    expect(submitCancel).not.toHaveBeenCalled();
+  });
+
+  test("an unloaded market is refused, not signed as some default", () => {
+    const order = makeOrder({ side: "buy", quote_account_address: ACCOUNT });
+    expect(() =>
+      resolveCancelSigner(order, undefined, wallets, null, () => ({
+        signMessage: async () => "0x00",
+      })),
+    ).toThrow(/not loaded/);
   });
 });

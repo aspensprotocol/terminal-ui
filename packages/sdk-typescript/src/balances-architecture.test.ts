@@ -2,11 +2,12 @@
  * Which read path each chain architecture takes in the balances fetch.
  *
  * A Tron chain is read with the EVM code, through its node's `/jsonrpc`
- * endpoint under the configured HTTP base; an unknown architecture is an
- * error, not a chain to skip or to read as EVM.
+ * endpoint under the configured HTTP base. A chain whose architecture is
+ * unknown is never read, as EVM or otherwise: it is left out and named as
+ * OMITTED, and every other chain's balances still come back.
  */
 
-import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, spyOn, test } from "bun:test";
 import { create } from "@bufbuild/protobuf";
 
 import { fetchChainBalanceSlices } from "./balances.js";
@@ -93,12 +94,63 @@ describe("fetchChainBalanceSlices by architecture", () => {
     for (const url of urls) expect(url).toBe("https://nile.example/node");
   });
 
-  test("an unknown architecture is refused, not skipped", async () => {
-    await expect(
-      fetchChainBalanceSlices({
-        wallets: [{ ecosystem: "evm", address: ACCOUNT }],
-        config: configWith("sui"),
-      }),
-    ).rejects.toThrow(/sui/);
+  test("an unknown chain is omitted and named; tron and evm still come back", async () => {
+    const config = create(ConfigurationSchema, {
+      chains: [
+        {
+          network: "tron-nile",
+          chainId: 3448148188,
+          architecture: "Tron",
+          rpcs: [{ url: "https://nile.example/node", enabled: true }],
+          tradeContract: { address: INSTANCE },
+          tokens: { USDT: { address: USDT, decimals: 6, symbol: "USDT" } },
+        },
+        {
+          network: "bogus-chain",
+          chainId: 77,
+          architecture: "sui",
+          rpcs: [{ url: "https://bogus.example/rpc", enabled: true }],
+          tradeContract: { address: INSTANCE },
+          tokens: { BOG: { address: USDT, decimals: 6, symbol: "BOG" } },
+        },
+        {
+          network: "evm-chain",
+          chainId: 990001,
+          architecture: "EVM",
+          rpcs: [{ url: "https://evm.example/rpc", enabled: true }],
+          tradeContract: { address: INSTANCE },
+          tokens: { USDC: { address: USDT, decimals: 6, symbol: "USDC" } },
+        },
+      ],
+    });
+    const warn = spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      const slices = await fetchChainBalanceSlices({
+        wallets: [
+          { ecosystem: "evm", address: ACCOUNT },
+          { ecosystem: "tron", address: ACCOUNT },
+        ],
+        config,
+      });
+      expect(slices.map((s) => s.chainNetwork).sort()).toEqual([
+        "evm-chain",
+        "tron-nile",
+      ]);
+      // The bogus chain was not read at all, under any path.
+      expect(urls.some((u) => u.includes("bogus"))).toBe(false);
+      expect(new Set(urls)).toEqual(
+        new Set([
+          "https://nile.example/node/jsonrpc",
+          "https://evm.example/rpc",
+        ]),
+      );
+      // It is surfaced, by network and by the architecture string.
+      const warned = warn.mock.calls.map((c) => String(c[0])).join("\n");
+      expect(warned).toContain("bogus-chain");
+      expect(warned).toContain('"sui"');
+      expect(warned).toContain("OMITTED");
+    } finally {
+      warn.mockRestore();
+    }
   });
 });

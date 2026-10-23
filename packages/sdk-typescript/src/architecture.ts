@@ -15,6 +15,8 @@
  * is built and sent.
  */
 
+import type { Market } from "./types.js";
+
 /** A chain architecture the venue runs on. */
 export type Architecture = "evm" | "solana" | "tron";
 
@@ -39,6 +41,34 @@ export function parseArchitecture(architecture: string): Architecture {
         `unknown chain architecture "${architecture}": expected EVM, Solana or Tron`,
       );
   }
+}
+
+/**
+ * The architecture of the chain an order GIVES on, which is the chain its
+ * signature is verified on: a buy (BID) gives quote, a sell (ASK) gives
+ * base. Place and cancel both sign for this leg, so both take it from here,
+ * from the market's chains — never from whichever wallet happens to hold
+ * the address (a Tron account and an EVM one are the same 20 bytes).
+ *
+ * Throws when the market does not carry that leg's architecture (its chain
+ * config is not joined) or when it is unknown.
+ */
+export function givingArchitecture(
+  market: Pick<Market, "baseChainArchitecture" | "quoteChainArchitecture">,
+  side: "buy" | "sell",
+): Architecture {
+  const leg = side === "buy" ? "quote" : "base";
+  const architecture =
+    leg === "quote"
+      ? market.quoteChainArchitecture
+      : market.baseChainArchitecture;
+  if (architecture === undefined) {
+    throw new Error(
+      `the market carries no ${leg}-chain architecture, so the chain this ` +
+        `${side} order gives on (and signs for) is unknown`,
+    );
+  }
+  return parseArchitecture(architecture);
 }
 
 /**
