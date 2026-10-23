@@ -16,6 +16,12 @@
   `resolveRpcUrl`. The balances fetch (`fetchChainBalanceSlices`,
   `getBalances`) does not throw: it leaves such a chain out and warns that
   its balances are OMITTED, and every other chain's balances still return.
+- **`WalletBinding.ecosystem` is `Architecture`** (`"evm" | "solana" |
+"tron"`), widened from `"evm" | "solana"`. An exhaustive `switch` over it
+  must now handle `"tron"`.
+- **`PUBLIC_RPC_URLS` gains a `tron` key** (`chainId` -> TronGrid base).
+  Additive for readers; a value typed as `typeof PUBLIC_RPC_URLS` must now
+  carry it.
 
 ### Migration
 
@@ -67,6 +73,19 @@
     masked and no override is set.
 - **`givingArchitecture(market, side)`**: the architecture of the chain an
   order gives on and is signed for.
+- **`signWithdrawRequest(text, adapter, architecture)`** signs a
+  `withdrawRequestMessage` the way the venue verifies it on that chain:
+  EIP-191 over the text on EVM and raw Ed25519 over its bytes on Solana, as
+  callers did before, and the text as is under the TRON prefix
+  (`signTronMessage`) on Tron, never EIP-191. An unknown architecture throws.
+- **`assertTronWithdrawTrx({ node, owner })`** throws before a Tron
+  withdraw signs or requests a voucher when the account holds less than
+  `TRON_MIN_TRX_FOR_WITHDRAW_SUN` (9,042,600 sun, the costliest measured
+  voucher withdraw on Nile, as the Rust SDK checks), so a short wallet
+  fails with nothing held.
+- A Tron receipt that FAILED is read at the head, so `sendTronTx`'s error
+  says it is not final yet (check the txID once solidified) instead of
+  saying the transaction had no effect.
 
 ## 0.4.2
 
