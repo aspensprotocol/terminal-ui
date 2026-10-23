@@ -186,9 +186,12 @@ function isClientError(status: number): boolean {
  *
  * A fetch that throws or exceeds the node's timeout, a 5xx, a 403 or 429
  * rate limit, or a body that is not a JSON object counts as no answer, and
- * the next url is tried. A 4xx other than those is the request's own fault:
- * when no url answers and one returned such a status, the result is
- * `refused`, never `unanswered`.
+ * the next url is tried. A 4xx other than those is the request's own fault,
+ * but it speaks only for the node that returned it: the result is `refused`
+ * only when EVERY url returned such a status. If any url failed in a way
+ * that may have let the request through (a timeout, a dropped connection, a
+ * 5xx, a rate limit), the result is `unanswered`, because for a broadcast
+ * that node may have taken the transaction.
  */
 async function postRaw(
   node: TronNode,
@@ -200,6 +203,7 @@ async function postRaw(
   }
   const reasons: string[] = [];
   let refused: { status: number; reason: string } | null = null;
+  let refusals = 0;
   const timeoutMs = node.timeoutMs ?? TRON_REQUEST_TIMEOUT_MS;
   for (const base of node.urls) {
     const where = `${path} at ${redact(base)}`;
@@ -224,8 +228,9 @@ async function postRaw(
       }
       const reason = `${where}: HTTP ${response.status}${detail ? ` (${detail})` : ""}`;
       reasons.push(reason);
-      if (isClientError(response.status) && !refused) {
-        refused = { status: response.status, reason };
+      if (isClientError(response.status)) {
+        refusals++;
+        refused ??= { status: response.status, reason };
       }
       continue;
     }
@@ -242,7 +247,7 @@ async function postRaw(
     }
     return { kind: "answered", json: json as Record<string, unknown>, base };
   }
-  if (refused) {
+  if (refused && refusals === node.urls.length) {
     return { kind: "refused", status: refused.status, reason: refused.reason };
   }
   return { kind: "unanswered", reason: reasons.join("; ") };
@@ -626,7 +631,9 @@ const sleep = (ms: number) =>
  *   transaction had no effect.
  * - Every HTTP request is abandoned after the node's timeout and counts as
  *   unanswered, so a stalled connection cannot hold the wait open. A 4xx
- *   (other than a 403 / 429 rate limit) on the broadcast is a refusal.
+ *   (other than a 403 / 429 rate limit) on the broadcast is a refusal only
+ *   when every url returned one. A refusal after an unanswered broadcast,
+ *   like an unseen expiry or the backstop, is UNCONFIRMED.
  */
 export async function sendTronTx(
   params: SendTronTxParams,
@@ -782,8 +789,9 @@ export async function sendTronTx(
 
     if (Date.now() - started >= giveUpAfterMs) {
       throw sent(
-        `tron transaction ${id}: no receipt after ${giveUpAfterMs} ms and its ` +
-          `expiration could not be judged; whether it landed is unknown`,
+        `tron transaction ${id} is UNCONFIRMED: no receipt after ` +
+          `${giveUpAfterMs} ms and its expiration could not be judged; whether ` +
+          `it landed is unknown, so check it before retrying`,
       );
     }
     await sleep(pollIntervalMs);
@@ -797,9 +805,16 @@ function rejection(
   message: string,
   earlierUnanswered: boolean,
 ): string {
-  const caveat = earlierUnanswered
-    ? "; an earlier broadcast of it went unanswered, so it may still land before it expires"
-    : "";
+  if (earlierUnanswered) {
+    // The same bytes went out before and nobody said whether they were
+    // taken: this refusal does not prove the transaction never lands.
+    return (
+      `tron transaction ${id} is UNCONFIRMED: a node refused it (${code}: ` +
+      `${message}), but an earlier broadcast of it went unanswered, so it may ` +
+      `still land before it expires; check the txID or the account ` +
+      `${owner.toLowerCase()} before retrying`
+    );
+  }
   const lower = message.toLowerCase();
   const funding =
     code === "BANDWITH_ERROR" ||
@@ -810,8 +825,8 @@ function rejection(
   if (funding) {
     return (
       `tron node refused transaction ${id}: ${code}: ${message}. The account ` +
-      `${owner.toLowerCase()} cannot pay for it: fund it with TRX${caveat}`
+      `${owner.toLowerCase()} cannot pay for it: fund it with TRX`
     );
   }
-  return `tron node refused transaction ${id}: ${code}: ${message}${caveat}`;
+  return `tron node refused transaction ${id}: ${code}: ${message}`;
 }

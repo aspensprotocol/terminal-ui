@@ -581,6 +581,7 @@ describe("sendTronTx", () => {
     );
     expect(err.sent).toBe(true);
     expect(err.message).toContain("whether it landed is unknown");
+    expect(err.message).toContain("UNCONFIRMED");
     expect(broadcasts().length).toBeGreaterThan(1);
     expect(new Set(broadcasts()).size).toBe(1);
   });
@@ -704,6 +705,59 @@ describe("sendTronTx", () => {
     expect(err.message).toContain("bad transaction hex");
     expect(err.message).not.toContain("UNCONFIRMED");
     expect(broadcasts()).toHaveLength(1);
+  });
+
+  // One url refuses the broadcast while another may have received it (its
+  // request timed out): the transaction may have landed, so the outcome is
+  // UNCONFIRMED, never a hard refusal.
+  test("a 4xx from one url and a hang on another is UNCONFIRMED", async () => {
+    hostRoutes["refuse.example"] = {
+      "/wallet/broadcasthex": () =>
+        new Response(JSON.stringify({ Error: "bad transaction hex" }), {
+          status: 400,
+        }),
+      "/wallet/getnowblock": (_b, nth) =>
+        nth === 0
+          ? block(SOLID_NUMBER + 19, HEAD_TIME)
+          : block(SOLID_NUMBER + 41, EXPIRY_PLUS_BLOCK + 1),
+    };
+    routes["/wallet/broadcasthex"] = () => HANG;
+    const err = await rejection(
+      sendTronTx(
+        params(countingAdapter(), {
+          node: { urls: ["https://refuse.example", BASE], timeoutMs: 20 },
+        }),
+      ),
+    );
+    const id = decodeSent(broadcasts()[0]!).txId;
+    expect(err.sent).toBe(true);
+    expect(err.txId).toBe(id);
+    expect(err.message).toContain(id);
+    expect(err.message).toContain("UNCONFIRMED");
+    expect(err.message).toContain("before retrying");
+    expect(err.message).not.toContain("HTTP 400");
+    // The hanging url was asked.
+    expect(at("/wallet/broadcasthex").some((b) => b.url.startsWith(BASE))).toBe(
+      true,
+    );
+  });
+
+  // A refusal that follows an unanswered broadcast of the same bytes does
+  // not prove the first never landed.
+  test("a refusal after an unanswered broadcast is UNCONFIRMED", async () => {
+    routes["/wallet/broadcasthex"] = (_b, nth) =>
+      nth === 0
+        ? new Response("upstream down", { status: 503 })
+        : {
+            result: false,
+            code: "CONTRACT_VALIDATE_ERROR",
+            message: hexOf("balance is not sufficient."),
+          };
+    const err = await rejection(sendTronTx(params(countingAdapter())));
+    expect(err.sent).toBe(true);
+    expect(err.message).toContain("UNCONFIRMED");
+    expect(err.message).toContain("balance is not sufficient.");
+    expect(err.message).toContain("before retrying");
   });
 
   test("429 and 403 are rate limits: the same hex goes out again", async () => {

@@ -42,13 +42,13 @@
     and sends nothing), signs once through
     `SigningAdapter.signTronTransaction`, rebroadcasts the identical hex
     when no node answers, and resolves only on a `SUCCESS` receipt. Any
-    other receipt, a refused broadcast (including an HTTP 4xx other than a
-    403 / 429 rate limit), or a transaction unseen a block past its
-    expiration throws a `TronTxError` naming the txID. An unseen
-    transaction is reported as UNCONFIRMED, judged by the one node whose
-    head passed the expiration: check it before retrying. Each request is
-    abandoned after `TronNode.timeoutMs` (default 30 s) and counts as
-    unanswered. `nowBlock`,
+    other receipt, or a broadcast refused by every node (including an HTTP
+    4xx other than a 403 / 429 rate limit), throws a `TronTxError` naming
+    the txID. When the transaction may have landed (unseen a block past its
+    expiration, judged by the one node whose head passed it; a refusal after
+    a broadcast nobody answered; the wait's backstop), the error says
+    UNCONFIRMED: check the txID before retrying. Each request is abandoned
+    after `TronNode.timeoutMs` (default 30 s) and counts as unanswered. `nowBlock`,
     `simulateTronCall`, `broadcastHex` and `txInfo` are the single calls.
   - `tronDeposit` (approve when the allowance is short, then `deposit`),
     `tronDepositNative` (TRX as call value, no approve) and `tronWithdraw`
