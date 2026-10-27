@@ -9,7 +9,8 @@
  * verifies the envelope signature against it — so it renders read-only.
  * The RECEIVING leg defaults to the connected wallet on that chain and can
  * be redirected to any well-formed address there ("settle to a different
- * address"), behind an explicit per-order acknowledgement: the venue has
+ * address"; on Tron a `T…` address is accepted and signed as `0x` hex),
+ * behind an explicit per-order acknowledgement: the venue has
  * no address registry, so nothing can check anyone holds the redirected
  * address's key, and funds credited there are withdrawable only by that
  * key's holder.
@@ -31,12 +32,15 @@
 import { useState } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import type { UseFormSetValue } from "react-hook-form";
-import {
-  sameSettleAddress,
-  validateSettleAddress,
-} from "@aspensprotocol/sdk-ts";
+import { sameSettleAddress } from "@aspensprotocol/sdk-ts";
 import { useExchangeStore } from "@/lib/store";
-import { settlementWallets, sideLegs } from "@/lib/wallet";
+import {
+  displayAddress,
+  settleOverrideAddress,
+  settlementWallets,
+  sideLegs,
+  type ChainEcosystem,
+} from "@/lib/wallet";
 import { hasSameAddressAck } from "@/lib/settlement-ack";
 import { shortenAddress } from "@/lib/utils";
 import { ChainLogo } from "@/components/ChainLogo";
@@ -101,28 +105,40 @@ export function SettlementSection({
   const overrideActive =
     !fceEnabled && (addressIsMandatory || settleToDifferent);
 
+  // The typed address, checked and converted exactly as the submit hook
+  // does: on Tron a `T…` address becomes the `0x` hex the order signs.
   const trimmedOverride = settleAddress.trim();
-  const overrideError =
+  const override =
     overrideActive && trimmedOverride !== ""
-      ? validateSettleAddress(receiveArch, trimmedOverride)
+      ? settleOverrideAddress(receiveArch, trimmedOverride)
       : null;
+  const overrideError = override?.error ?? null;
+  const overrideAddress = override?.address ?? null;
 
   // A redirect = an override that names something OTHER than the wallet the
   // leg would default to. Restating the connected wallet is not a redirect.
   const isRedirect =
-    overrideActive &&
-    trimmedOverride !== "" &&
-    overrideError === null &&
+    overrideAddress !== null &&
     (receivingWallet === null ||
       !sameSettleAddress(
         receiveArch,
-        trimmedOverride,
+        overrideAddress,
         receivingWallet.address,
       ));
 
   const receiveAddress = overrideActive
-    ? trimmedOverride
+    ? (overrideAddress ?? trimmedOverride)
     : (receivingWallet?.address ?? "");
+
+  // Addresses are kept as the venue keys them; a Tron one reads as `T…`.
+  const show = (ecosystem: ChainEcosystem | null, address: string) =>
+    ecosystem ? displayAddress(ecosystem, address) : address;
+  const signingShown = signingWallet
+    ? show(legs.signingEcosystem, signingWallet.address)
+    : null;
+  const receiveShown = receiveAddress
+    ? show(legs.receivingEcosystem, receiveAddress)
+    : "";
 
   // The EVM/EVM single-address default: both legs hex, same string.
   const isSolanaArch = (a: string) => a.toLowerCase() === "solana";
@@ -142,9 +158,9 @@ export function SettlementSection({
     {
       leg: "give",
       network: giveNetwork,
-      address: signingWallet?.address ?? "—",
+      address: signingShown ?? "—",
     },
-    { leg: "receive", network: receiveNetwork, address: receiveAddress || "—" },
+    { leg: "receive", network: receiveNetwork, address: receiveShown || "—" },
   ];
 
   return (
@@ -189,7 +205,7 @@ export function SettlementSection({
               <span className="ml-auto">your signing wallet</span>
             </div>
             <p className="font-mono break-all">
-              {signingWallet?.address ?? "No wallet connected"}
+              {signingShown ?? "No wallet connected"}
             </p>
           </div>
 
@@ -202,7 +218,7 @@ export function SettlementSection({
 
             {fceEnabled ? (
               <p className="font-mono break-all">
-                {receiveAddress || `Connect a ${receiveNetwork} wallet`}
+                {receiveShown || `Connect a ${receiveNetwork} wallet`}
                 <span className="block font-sans text-muted-foreground mt-0.5">
                   Funds go to your connected wallet. Other addresses aren&apos;t
                   supported here.
@@ -240,7 +256,9 @@ export function SettlementSection({
                       placeholder={
                         isSolanaArch(receiveArch)
                           ? "Solana address (base58)"
-                          : "0x…"
+                          : legs.receivingEcosystem === "tron"
+                            ? "Tron address (T… or 0x…)"
+                            : "0x…"
                       }
                       value={settleAddress}
                       onChange={(e) => {
@@ -261,9 +279,15 @@ export function SettlementSection({
                     {overrideError !== null && (
                       <p className="text-red-500">{overrideError}</p>
                     )}
+                    {overrideAddress !== null &&
+                      overrideAddress !== trimmedOverride && (
+                        <p className="text-muted-foreground font-mono break-all">
+                          Signed as {overrideAddress}
+                        </p>
+                      )}
                   </>
                 ) : (
-                  <p className="font-mono break-all">{receiveAddress || "—"}</p>
+                  <p className="font-mono break-all">{receiveShown || "—"}</p>
                 )}
               </>
             )}

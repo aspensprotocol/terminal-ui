@@ -182,20 +182,38 @@ describe("the cancel's architecture is the giving chain's, not the wallet's", ()
     ecosystem: "evm",
   };
   const wallets = { [evmWallet.id]: evmWallet };
+  const tronWallet: ConnectedWallet = {
+    id: `tron:${ACCOUNT}`,
+    name: "MetaMask",
+    address: ACCOUNT,
+    ecosystem: "tron",
+  };
 
-  test("a buy gives quote: tron; a sell gives base: evm", () => {
-    const adapterFor = () => ({ signMessage: async () => "0x00" });
+  test("a buy gives quote: tron; a sell gives base: evm", async () => {
+    // Both wallets hold the account; each cancel takes the one of its leg.
+    const both = { ...wallets, [tronWallet.id]: tronWallet };
+    const adapterFor = (w: ConnectedWallet) => ({
+      signMessage: async () => w.ecosystem,
+    });
     const buy = makeOrder({ side: "buy", quote_account_address: ACCOUNT });
     const sell = makeOrder({ side: "sell", base_account_address: ACCOUNT });
-    expect(
-      resolveCancelSigner(buy, market, wallets, null, adapterFor).architecture,
-    ).toBe("tron");
-    expect(
-      resolveCancelSigner(sell, market, wallets, null, adapterFor).architecture,
-    ).toBe("evm");
+    const buySigner = resolveCancelSigner(buy, market, both, null, adapterFor);
+    const sellSigner = resolveCancelSigner(
+      sell,
+      market,
+      both,
+      null,
+      adapterFor,
+    );
+    expect(buySigner.architecture).toBe("tron");
+    expect(sellSigner.architecture).toBe("evm");
+    await expect(buySigner.adapter.signMessage("")).resolves.toBe("tron");
+    await expect(sellSigner.adapter.signMessage("")).resolves.toBe("evm");
   });
 
   test("a cancel of a Tron-giving order never reaches EIP-191 through an EVM wallet", async () => {
+    // Only the EVM wallet holds the account: it is refused at selection, as
+    // it cannot sign under the TRON prefix.
     const signMessage = mock(async () => "0x" + "11".repeat(65));
     const submitCancel = mock(async () => ({ order_id: "order-1" }));
     const order = makeOrder({ side: "buy", quote_account_address: ACCOUNT });
@@ -208,7 +226,7 @@ describe("the cancel's architecture is the giving chain's, not the wallet's", ()
 
     await expect(
       submitCancelOrder(order, ACCOUNT, "0x" + "ab".repeat(32), deps),
-    ).rejects.toThrow(/signTronMessage/);
+    ).rejects.toThrow(/a Tron wallet/);
     expect(signMessage).not.toHaveBeenCalled();
     expect(submitCancel).not.toHaveBeenCalled();
   });
