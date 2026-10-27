@@ -1,5 +1,5 @@
 /**
- * Chain-correct viem clients for EVM reads.
+ * Chain-correct viem clients for EVM (and Tron) reads.
  *
  * Reads do not go through wagmi. A wagmi `readContract(config, …)` with no
  * `chainId` falls back to the FIRST chain in its config — `mainnet` — so an
@@ -18,11 +18,13 @@
  */
 
 import { createPublicClient, http, type PublicClient } from "viem";
+import { parseArchitecture, unreachableArchitecture } from "./architecture.js";
 import {
   resolveRpcUrl,
   type RpcEndpointLike,
   type RpcUrlMap,
 } from "./rpc-urls.js";
+import { tronJsonRpcUrl } from "./tron.js";
 
 /**
  * Minimal chain shape needed to check/switch a wallet's network — no RPC
@@ -37,10 +39,19 @@ export interface ChainNetworkRef {
 /** Minimal chain shape — matches `Configuration.chains[n]`. */
 export interface EvmChainRef extends ChainNetworkRef {
   rpcs: RpcEndpointLike[];
+  /** `Chain.architecture`; absent or empty is EVM. */
+  architecture?: string;
 }
 
 /**
- * A viem public client for `chain`, or throws when no endpoint resolves.
+ * A viem public client for an EVM or Tron `chain`, or throws when no
+ * endpoint resolves.
+ *
+ * A Tron chain's endpoint is its node's HTTP base, so its client points at
+ * `<base>/jsonrpc`, where the EVM read code (`readTradeBalance`,
+ * `readEvmFeeRates`, `readMidribEvents`, `readEvmWalletBalance`) runs
+ * unchanged: viem's `eth_call` carries only `{to, data}`, which Tron
+ * accepts. A Solana or unknown chain throws.
  *
  * Throwing rather than falling back to a default keeps a misconfigured
  * deployment loud: the alternative is viem quietly using its own public RPC
@@ -50,6 +61,12 @@ export function publicClientFor(
   chain: EvmChainRef,
   rpcUrls: RpcUrlMap | undefined,
 ): PublicClient {
+  const arch = parseArchitecture(chain.architecture ?? "");
+  if (arch === "solana") {
+    throw new Error(
+      `'${chain.network}' is a Solana chain; it has no EVM public client`,
+    );
+  }
   const url = resolveRpcUrl(chain, rpcUrls);
   if (!url) {
     throw new Error(
@@ -58,7 +75,16 @@ export function publicClientFor(
         `public fallback — set CHAIN_RPC_URLS for this deployment.`,
     );
   }
-  return createPublicClient({ transport: http(url) }) as PublicClient;
+  switch (arch) {
+    case "evm":
+      return createPublicClient({ transport: http(url) }) as PublicClient;
+    case "tron":
+      return createPublicClient({
+        transport: http(tronJsonRpcUrl(url)),
+      }) as PublicClient;
+    default:
+      return unreachableArchitecture(arch);
+  }
 }
 
 /**

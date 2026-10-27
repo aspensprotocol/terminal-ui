@@ -21,7 +21,7 @@
  *      — the exact substrings the arborter cuts and hashes — and never
  *      lower-cased, checksummed or decoded on the way.
  *   2. **The user address IS decoded**, in its chain's own form: 20 raw bytes
- *      for EVM (hex), 32 for Solana (base58). Case is irrelevant there, so an
+ *      for EVM and Tron (hex), 32 for Solana (base58). Case is irrelevant there, so an
  *      EIP-55 spelling and a lowercase one are the same order.
  *   3. **Amounts are in each token's NATIVE base units**, not the market's pair
  *      units. `quantity` / `price` arrive in pair units (what the matching
@@ -38,6 +38,7 @@
 
 import { PublicKey } from "@solana/web3.js";
 
+import { parseArchitecture, unreachableArchitecture } from "./architecture.js";
 import {
   deriveOrderId,
   encodeOrderIdPreimage,
@@ -224,14 +225,26 @@ function requireChain(config: Configuration, network: string): ConfigChain {
 
 /**
  * The raw bytes of a user address, in the form its chain hashes: 20 for EVM
- * (the hex decoded), 32 for Solana (the base58 pubkey). The curve — that is,
- * the chain's architecture — decides, not the string: `"111…1"` is both valid
- * base58 and valid hex and decodes to different bytes each way.
+ * and Tron (the hex decoded; the arborter keys a Tron account by its `0x`
+ * hex, never the `T…` form), 32 for Solana (the base58 pubkey). The curve —
+ * that is, the chain's architecture — decides, not the string: `"111…1"` is
+ * both valid base58 and valid hex and decodes to different bytes each way.
+ * An unknown architecture throws.
  */
 function userAddressBytes(address: string, architecture: string): Uint8Array {
-  if (/^solana$/i.test(architecture)) {
-    return new PublicKey(address).toBytes();
+  const arch = parseArchitecture(architecture);
+  switch (arch) {
+    case "solana":
+      return new PublicKey(address).toBytes();
+    case "evm":
+    case "tron":
+      return hexAddressBytes(address);
+    default:
+      return unreachableArchitecture(arch);
   }
+}
+
+function hexAddressBytes(address: string): Uint8Array {
   const body = address.startsWith("0x") ? address.slice(2) : address;
   if (body.length % 2 !== 0 || !/^[0-9a-fA-F]*$/.test(body)) {
     throw new Error(

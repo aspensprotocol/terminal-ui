@@ -33,9 +33,9 @@ export interface Market {
   quoteChainNetwork?: string;
   baseChainTokenDecimals?: number;
   quoteChainTokenDecimals?: number;
-  /** Chain architecture of the base chain, e.g. "EVM", "Solana", "Hedera". */
+  /** Chain architecture of the base chain: "EVM", "Solana" or "Tron" (see `parseArchitecture`). */
   baseChainArchitecture?: string;
-  /** Chain architecture of the quote chain, e.g. "EVM", "Solana", "Hedera". */
+  /** Chain architecture of the quote chain: "EVM", "Solana" or "Tron" (see `parseArchitecture`). */
   quoteChainArchitecture?: string;
   name?: string;
 }

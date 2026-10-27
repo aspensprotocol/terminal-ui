@@ -43,6 +43,12 @@ import type { EnhancedBalance } from "./types.js";
 import { resolveRpcUrl, type RpcUrlMap } from "./rpc-urls.js";
 import { isNativeToken, isWsolMint } from "./native.js";
 import { readTradeBalance } from "./midrib-evm.js";
+import {
+  parseArchitecture,
+  unreachableArchitecture,
+  type Architecture,
+} from "./architecture.js";
+import { tronJsonRpcUrl } from "./tron.js";
 
 /** SPL Token program id — well-known constant. */
 const SPL_TOKEN_PROGRAM_ID = new PublicKey(
@@ -59,10 +65,13 @@ const ERC20_ABI = parseAbi([
 
 /** A user wallet binding produced by the UI's multi-wallet manager. */
 export interface WalletBinding {
-  /** Address in its native form (0x-hex for EVM, base58 for Solana). */
+  /**
+   * Address in the venue's form: 0x-hex for EVM and Tron (a Tron `T…`
+   * address converted with `tronToHex`), base58 for Solana.
+   */
   address: string;
-  /** Matches `Chain.architecture` (case-insensitive). */
-  ecosystem: "evm" | "solana";
+  /** The chain architecture this wallet's chains carry (`Chain.architecture`). */
+  ecosystem: Architecture;
 }
 
 /** Per-chain slice before aggregation; useful for debugging / deposit UI. */
@@ -81,7 +90,9 @@ export interface ChainBalanceSlice {
 /**
  * Fetch every chain slice for the given wallets, then aggregate into
  * per-ticker `EnhancedBalance` rows. Chains whose architecture doesn't
- * match any connected wallet are skipped.
+ * match any connected wallet are skipped. A chain whose architecture is
+ * unknown is never read (nor read as EVM): it is left out with a console
+ * warning naming it, and every other chain's balances still come back.
  */
 export async function fetchOnChainBalances(opts: {
   wallets: WalletBinding[];
@@ -99,7 +110,8 @@ export async function fetchOnChainBalances(opts: {
  * arborter masks `rpc_url` in `GetConfig`, so a chain with no override falls
  * back to the static public list (`PUBLIC_RPC_URLS`); a chain on neither is
  * SKIPPED with a console warning rather than contributing silent zeros — see
- * `rpc-urls.ts`.
+ * `rpc-urls.ts`. A chain whose architecture is unknown is skipped and named
+ * the same way: one misconfigured chain must not blank the others.
  */
 export async function fetchChainBalanceSlices(opts: {
   wallets: WalletBinding[];
@@ -111,9 +123,15 @@ export async function fetchChainBalanceSlices(opts: {
 
   const tasks: Promise<ChainBalanceSlice[]>[] = [];
   const unreachable: string[] = [];
+  const unknown: string[] = [];
   for (const chain of opts.config.chains) {
-    const arch = chain.architecture.toLowerCase();
-    if (arch !== "evm" && arch !== "solana") continue;
+    let arch: Architecture;
+    try {
+      arch = parseArchitecture(chain.architecture);
+    } catch {
+      unknown.push(`${chain.network} (architecture "${chain.architecture}")`);
+      continue;
+    }
     const wallet = walletByEcosystem.get(arch);
     if (!wallet) continue;
 
@@ -123,10 +141,22 @@ export async function fetchChainBalanceSlices(opts: {
       continue;
     }
 
-    if (arch === "evm") {
-      tasks.push(fetchEvmChainSlices(chain, wallet.address, rpcUrl));
-    } else {
-      tasks.push(fetchSolanaChainSlices(chain, wallet.address, rpcUrl));
+    switch (arch) {
+      case "evm":
+        tasks.push(fetchEvmChainSlices(chain, wallet.address, rpcUrl));
+        break;
+      case "tron":
+        // A Tron chain's url is its node's HTTP base; the EVM reads go to
+        // the node's JSON-RPC under it.
+        tasks.push(
+          fetchEvmChainSlices(chain, wallet.address, tronJsonRpcUrl(rpcUrl)),
+        );
+        break;
+      case "solana":
+        tasks.push(fetchSolanaChainSlices(chain, wallet.address, rpcUrl));
+        break;
+      default:
+        unreachableArchitecture(arch);
     }
   }
   if (unreachable.length > 0) {
@@ -135,6 +165,13 @@ export async function fetchChainBalanceSlices(opts: {
         `balances for these chains are OMITTED, not zero. The arborter masks ` +
         `rpc_url in GetConfig and these chains have no public fallback; supply an ` +
         `endpoint per chain (CHAIN_RPC_URLS).`,
+    );
+  }
+  if (unknown.length > 0) {
+    console.warn(
+      `[balances] unknown chain architecture for ${unknown.join(", ")} — ` +
+        `balances for these chains are OMITTED, not zero. This SDK reads ` +
+        `EVM, Solana and Tron chains only.`,
     );
   }
   const results = await Promise.all(tasks);
@@ -319,9 +356,11 @@ function aggregateSlicesToEnhancedBalances(
 ): EnhancedBalance[] {
   // Pick a representative user_address for the EnhancedBalance row. The UI
   // joins on token ticker so the exact value doesn't matter much — prefer
-  // the EVM wallet if present, else the Solana one, else the empty string.
+  // the EVM wallet if present, else the Tron one, else the Solana one, else
+  // the empty string.
   const representativeAddress =
     wallets.find((w) => w.ecosystem === "evm")?.address ??
+    wallets.find((w) => w.ecosystem === "tron")?.address ??
     wallets.find((w) => w.ecosystem === "solana")?.address ??
     "";
 

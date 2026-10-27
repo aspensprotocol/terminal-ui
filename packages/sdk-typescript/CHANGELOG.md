@@ -1,5 +1,92 @@
 # Changelog — @aspensprotocol/sdk-ts
 
+## 0.5.0 (unreleased)
+
+### Changed (breaking)
+
+- **`signOrder` and `signCancelOrder` take the giving leg's architecture**
+  as a required third argument: the `Chain.architecture` of the chain the
+  order gives on (a buy gives quote, a sell gives base). EVM and Solana legs
+  sign exactly as before; a Tron leg signs with the adapter's
+  `signTronMessage`; an unknown architecture throws.
+- **Chain architecture is a closed set.** `"EVM"`, `"Solana"` and `"Tron"`
+  (any case; empty means EVM) are read by `parseArchitecture`. Anything
+  else throws where it used to be treated as EVM: `validateSettleAddress`,
+  `sameSettleAddress`, `buildOrderCommitment`, `publicRpcUrl` and
+  `resolveRpcUrl`. The balances fetch (`fetchChainBalanceSlices`,
+  `getBalances`) does not throw: it leaves such a chain out and warns that
+  its balances are OMITTED, and every other chain's balances still return.
+- **`WalletBinding.ecosystem` is `Architecture`** (`"evm" | "solana" |
+"tron"`), widened from `"evm" | "solana"`. An exhaustive `switch` over it
+  must now handle `"tron"`.
+- **`PUBLIC_RPC_URLS` gains a `tron` key** (`chainId` -> TronGrid base).
+  Additive for readers; a value typed as `typeof PUBLIC_RPC_URLS` must now
+  carry it.
+
+### Migration
+
+- Pass `givingArchitecture(market, side)` as the third argument:
+  `signOrder(data, adapter, givingArchitecture(market, data.side))`, and
+  the same for `signCancelOrder` with the cancelled order's side.
+
+### Added
+
+- **Tron.**
+  - `tronToHex` / `hexToTron` convert a `T…` address at the display edge;
+    the venue only ever sees `0x` hex.
+  - `tronMessageDigest` is the TRON message prefix digest.
+  - `buildTriggerRawData` and `tronTxId` encode a `TriggerSmartContract`
+    transaction and its txID; `tronJsonRpcUrl` gives a node's `/jsonrpc`.
+  - `SigningAdapter` gains optional `signTronMessage(text)` and
+    `signTronTransaction(txId, rawDataHex)`; `privateKeyTronAdapter(key)`
+    implements both.
+  - `WalletBinding.ecosystem` accepts `"tron"`, whose balances are read
+    with the EVM code at the node's `/jsonrpc`.
+  - `sendTronTx` sends one `TriggerSmartContract` call over a Tron node's
+    HTTP API (`TronNode`: base urls tried in order, optional
+    `TRON-PRO-API-KEY`). It simulates the exact call first (a revert signs
+    and sends nothing), signs once through
+    `SigningAdapter.signTronTransaction`, rebroadcasts the identical hex
+    when no node answers, and resolves only on a `SUCCESS` receipt. Any
+    other receipt, or a broadcast refused by every node (including an HTTP
+    4xx other than a 403 / 429 rate limit), throws a `TronTxError` naming
+    the txID. When the transaction may have landed (unseen a block past its
+    expiration, judged by the one node whose head passed it; a refusal after
+    a broadcast nobody answered; the wait's backstop), the error says
+    UNCONFIRMED: check the txID before retrying. Each request is abandoned
+    after `TronNode.timeoutMs` (default 30 s) and counts as unanswered. `nowBlock`,
+    `simulateTronCall`, `broadcastHex` and `txInfo` are the single calls.
+  - `tronDeposit` (approve when the allowance is short, then `deposit`),
+    `tronDepositNative` (TRX as call value, no approve) and `tronWithdraw`
+    (the venue's voucher) send MidribV3's EVM calldata through
+    `sendTronTx`, with a fee limit per call (`TRON_*_FEE_LIMIT_SUN`, 3x the
+    energy measured on Nile). Mainnet USDT's dynamic energy factor can push
+    a USDT deposit or withdraw past its limit; that fails as an
+    OUT_OF_ENERGY error, never as a success.
+  - `publicClientFor` gives a Tron chain a viem client at `<base>/jsonrpc`,
+    and `tronPublicClient(node)` builds one from a `TronNode`, so
+    `readTradeBalance`, `readEvmFeeRates`, `readMidribEvents` and
+    `readEvmWalletBalance` read Tron unchanged. `publicClientFor` now
+    refuses a Solana chain.
+  - `PUBLIC_RPC_URLS.tron`: TronGrid's keyless bases for mainnet
+    (`728126428`) and Nile (`3448148188`), used when a Tron chain's url is
+    masked and no override is set.
+- **`givingArchitecture(market, side)`**: the architecture of the chain an
+  order gives on and is signed for.
+- **`signWithdrawRequest(text, adapter, architecture)`** signs a
+  `withdrawRequestMessage` the way the venue verifies it on that chain:
+  EIP-191 over the text on EVM and raw Ed25519 over its bytes on Solana, as
+  callers did before, and the text as is under the TRON prefix
+  (`signTronMessage`) on Tron, never EIP-191. An unknown architecture throws.
+- **`assertTronWithdrawTrx({ node, owner })`** throws before a Tron
+  withdraw signs or requests a voucher when the account holds less than
+  `TRON_MIN_TRX_FOR_WITHDRAW_SUN` (9,042,600 sun, the costliest measured
+  voucher withdraw on Nile, as the Rust SDK checks), so a short wallet
+  fails with nothing held.
+- A Tron receipt that FAILED is read at the head, so `sendTronTx`'s error
+  says it is not final yet (check the txID once solidified) instead of
+  saying the transaction had no effect.
+
 ## 0.4.2
 
 ### Changed

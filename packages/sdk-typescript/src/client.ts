@@ -795,16 +795,16 @@ export class ExchangeClient {
 
   /**
    * Fetch the user's balances by doing per-chain on-chain queries
-   * (ERC-20 / MidribV3 on EVM, SPL token + UserBalance PDA on Solana)
-   * for every chain in the cached arborter config whose architecture
-   * matches a connected wallet.
+   * (ERC-20 / MidribV3 on EVM, the same reads at the node's `/jsonrpc` on
+   * Tron, SPL token + UserBalance PDA on Solana) for every chain in the
+   * cached arborter config whose architecture matches a connected wallet.
    *
    * The arborter has no direct balance endpoint — it only sees in-flight
    * orders. Real balances live on-chain.
    *
    * Backward-compat: callers that pass a plain address string get EVM-only
-   * lookups. Prefer passing the full `WalletBinding[]` so Solana balances
-   * are included.
+   * lookups. Prefer passing the full `WalletBinding[]` so Solana and Tron
+   * balances are included (a Tron binding carries the `0x` hex account).
    */
   async getBalances(
     userOrWallets: string | WalletBinding[],

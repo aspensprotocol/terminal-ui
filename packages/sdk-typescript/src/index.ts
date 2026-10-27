@@ -131,15 +131,79 @@ export {
 export {
   signOrder,
   signCancelOrder,
+  signWithdrawRequest,
   createOrderMessage,
   serializeOrder,
   hexToBytes,
   bytesToHex,
   normalizeWalletSignature,
+  privateKeyTronAdapter,
   type SigningAdapter,
   type OrderSigningData,
   type CancelSigningData,
 } from "./signing.js";
+
+// Chain architectures as a closed set: an unknown one throws.
+export {
+  parseArchitecture,
+  givingArchitecture,
+  isEvmAddressed,
+  type Architecture,
+} from "./architecture.js";
+
+// Tron primitives: the T-form address edge, the TRON message digest, and
+// hand-encoded TriggerSmartContract transactions.
+export {
+  tronToHex,
+  hexToTron,
+  tronMessageDigest,
+  tronMessageText,
+  buildTriggerRawData,
+  tronTxId,
+  tronJsonRpcUrl,
+  TRON_ADDRESS_PREFIX,
+  TRON_EXPIRATION_MS,
+  type TronRefBlock,
+  type TriggerRawDataParams,
+} from "./tron.js";
+
+// Tron writes over the node's HTTP API: one transaction is simulated, signed
+// once, rebroadcast as the identical hex, and succeeds only on a SUCCESS
+// receipt. Reads use the EVM code over the node's /jsonrpc.
+export {
+  sendTronTx,
+  simulateTronCall,
+  nowBlock,
+  broadcastHex,
+  txInfo,
+  tronPublicClient,
+  TronTxError,
+  TRON_BLOCK_INTERVAL_MS,
+  TRON_REQUEST_TIMEOUT_MS,
+  type TronNode,
+  type TronCall,
+  type TronBlockHeader,
+  type TronTxInfo,
+  type TronBroadcastResult,
+  type TronReceipt,
+  type SendTronTxParams,
+} from "./tron-client.js";
+
+// MidribV3 on Tron: deposit (approve, then deposit), depositNative and the
+// voucher withdraw, with the EVM calldata sent through sendTronTx, and the
+// TRX check a withdraw runs before it requests a voucher.
+export {
+  tronDeposit,
+  tronDepositNative,
+  tronWithdraw,
+  assertTronWithdrawTrx,
+  TRON_MIN_TRX_FOR_WITHDRAW_SUN,
+  TRON_APPROVE_FEE_LIMIT_SUN,
+  TRON_DEPOSIT_FEE_LIMIT_SUN,
+  TRON_DEPOSIT_NATIVE_FEE_LIMIT_SUN,
+  TRON_WITHDRAW_FEE_LIMIT_SUN,
+  type TronSender,
+} from "./midrib-tron.js";
 
 // Order-id derivation foundation (pure, framework-agnostic).
 export {
@@ -182,7 +246,7 @@ export {
   type ChainBalanceSlice,
 } from "./balances.js";
 
-// Chain-correct viem clients for EVM reads + the wallet-network guard.
+// Chain-correct viem clients for EVM and Tron reads + the wallet-network guard.
 export {
   publicClientFor,
   walletChainMismatch,

@@ -11,7 +11,24 @@
 
 import { describe, expect, test } from "bun:test";
 import { create, toBinary } from "@bufbuild/protobuf";
-import { normalizeWalletSignature } from "./signing.js";
+import { hashMessage, recoverAddress, type Hex } from "viem";
+import { privateKeyToAccount } from "viem/accounts";
+import vectors from "./tron-vectors.json";
+import {
+  createOrderMessage,
+  normalizeWalletSignature,
+  privateKeyTronAdapter,
+  serializeOrder,
+  signCancelOrder,
+  signOrder,
+  signWithdrawRequest,
+  type CancelSigningData,
+  type OrderSigningData,
+  type SigningAdapter,
+} from "./signing.js";
+import { tronMessageDigest } from "./tron.js";
+import { givingArchitecture } from "./architecture.js";
+import { withdrawRequestMessage } from "./midrib-evm.js";
 import { OrderToCancelSchema, Side } from "./protos/arborter_pb";
 
 describe("normalizeWalletSignature", () => {
@@ -77,5 +94,304 @@ describe("OrderToCancel wire encoding", () => {
       ...Array.from({ length: 32 }, (_, i) => i + 1),
     ]);
     expect(bytes).toEqual(expected);
+  });
+});
+
+// -- per-architecture signing ---------------------------------------------
+
+const PK = vectors.test_only_private_key.private_key as Hex;
+const SIGNER = vectors.test_only_private_key.address_hex;
+const V2 = vectors.sign_message_v2;
+
+/** The fixture's deterministic Order, as the SDK's signing input. */
+const FIXTURE_ORDER: OrderSigningData = {
+  side: "sell", // SIDE_ASK
+  quantity: V2.deterministic.message.fields.quantity,
+  price: V2.deterministic.message.fields.price,
+  marketId: V2.deterministic.message.fields.market_id,
+  baseAccountAddress: V2.deterministic.message.fields.base_account_address,
+  quoteAccountAddress: V2.deterministic.message.fields.quote_account_address,
+  nonce: BigInt(V2.deterministic.message.fields.nonce),
+  session: BigInt(V2.deterministic.message.fields.session),
+};
+
+const FIXTURE_CANCEL: CancelSigningData = {
+  marketId: V2.order_to_cancel.message.fields.market_id,
+  side: "sell", // SIDE_ASK
+  orderId: V2.order_to_cancel.message.fields.order_id,
+};
+
+function toHex(b: Uint8Array): Hex {
+  return ("0x" +
+    Array.from(b, (v) => v.toString(16).padStart(2, "0")).join("")) as Hex;
+}
+
+/** An adapter whose every method records its argument; Tron signing is
+ * delegated to the private-key adapter so signatures are real. */
+function recordingAdapter(opts: { tron: boolean }) {
+  const calls: { method: string; arg: unknown }[] = [];
+  const inner = privateKeyTronAdapter(PK);
+  const evm = privateKeyToAccount(PK);
+  const adapter: SigningAdapter = {
+    async signMessage(hexMessage: string) {
+      calls.push({ method: "signMessage", arg: hexMessage });
+      return evm.signMessage({ message: { raw: hexMessage as Hex } });
+    },
+    async signBytes(bytes: Uint8Array) {
+      calls.push({ method: "signBytes", arg: bytes });
+      throw new Error("signBytes must not be called");
+    },
+  };
+  if (opts.tron) {
+    adapter.signTronMessage = async (text: string) => {
+      calls.push({ method: "signTronMessage", arg: text });
+      return inner.signTronMessage!(text);
+    };
+  }
+  return { adapter, calls };
+}
+
+describe("Order encoding parity with the arborter's prost", () => {
+  test("createOrderMessage reproduces the fixture's Order bytes", () => {
+    expect(toHex(serializeOrder(createOrderMessage(FIXTURE_ORDER)))).toBe(
+      V2.deterministic.message.bytes_hex as Hex,
+    );
+  });
+});
+
+describe("signOrder on a tron leg", () => {
+  test("signOrder on a tron leg uses signTronMessage", async () => {
+    const { adapter, calls } = recordingAdapter({ tron: true });
+    const sig = await signOrder(FIXTURE_ORDER, adapter, "Tron");
+
+    expect(toHex(sig)).toBe(V2.deterministic.signature as Hex);
+    expect(calls.map((c) => c.method)).toEqual(["signTronMessage"]);
+    // Recovers under the TRON prefix to the key, and not under EIP-191
+    // (neither over the text nor over the raw bytes, which is what an EVM
+    // leg signs).
+    const recover = async (hash: Hex) =>
+      (await recoverAddress({ hash, signature: toHex(sig) })).toLowerCase();
+    expect(await recover(tronMessageDigest(V2.deterministic.text))).toBe(
+      SIGNER,
+    );
+    expect(await recover(hashMessage(V2.deterministic.text))).not.toBe(SIGNER);
+    expect(
+      await recover(
+        hashMessage({ raw: V2.deterministic.message.bytes_hex as Hex }),
+      ),
+    ).not.toBe(SIGNER);
+  });
+
+  test("hands the adapter the lowercase hex text, never binary", async () => {
+    const { adapter, calls } = recordingAdapter({ tron: true });
+    await signOrder(FIXTURE_ORDER, adapter, "tron");
+
+    expect(calls).toHaveLength(1);
+    const arg = calls[0]!.arg;
+    expect(typeof arg).toBe("string");
+    expect(arg).toBe(V2.deterministic.text);
+    expect(arg as string).toMatch(/^[0-9a-f]+$/);
+    expect((arg as string).length).toBe(456);
+    expect((arg as string).startsWith("0x")).toBe(false);
+  });
+
+  test("signOrder on a tron leg throws without signTronMessage", async () => {
+    const { adapter, calls } = recordingAdapter({ tron: false });
+    await expect(signOrder(FIXTURE_ORDER, adapter, "tron")).rejects.toThrow(
+      /signTronMessage/,
+    );
+    // It did not fall back to the EIP-191 signer.
+    expect(calls).toEqual([]);
+  });
+
+  test("a Tron leg refuses a signature that is not 65 bytes", async () => {
+    const adapter: SigningAdapter = {
+      signMessage: async () => "0x00",
+      signTronMessage: async () => "0x" + "ab".repeat(64),
+    };
+    await expect(signOrder(FIXTURE_ORDER, adapter, "tron")).rejects.toThrow(
+      /65/,
+    );
+  });
+
+  test("signCancelOrder on a tron leg signs the cancel text", async () => {
+    const { adapter, calls } = recordingAdapter({ tron: true });
+    const sig = await signCancelOrder(FIXTURE_CANCEL, adapter, "tron");
+
+    expect(toHex(sig)).toBe(V2.order_to_cancel.signature as Hex);
+    expect(calls).toEqual([
+      { method: "signTronMessage", arg: V2.order_to_cancel.text },
+    ]);
+  });
+
+  test("signCancelOrder on a tron leg throws without signTronMessage", async () => {
+    const { adapter, calls } = recordingAdapter({ tron: false });
+    await expect(
+      signCancelOrder(FIXTURE_CANCEL, adapter, "tron"),
+    ).rejects.toThrow(/signTronMessage/);
+    expect(calls).toEqual([]);
+  });
+});
+
+describe("signOrder on evm and solana legs is unchanged", () => {
+  test("an EVM leg signs the 0x-hex bytes with signMessage, never the TRON prefix", async () => {
+    const { adapter, calls } = recordingAdapter({ tron: true });
+    const sig = await signOrder(FIXTURE_ORDER, adapter, "EVM");
+
+    expect(calls).toEqual([
+      { method: "signMessage", arg: V2.deterministic.message.bytes_hex },
+    ]);
+    const recovered = await recoverAddress({
+      hash: hashMessage({ raw: V2.deterministic.message.bytes_hex as Hex }),
+      signature: toHex(sig),
+    });
+    expect(recovered.toLowerCase()).toBe(SIGNER);
+    expect(toHex(sig)).not.toBe(V2.deterministic.signature as Hex);
+  });
+
+  test("an empty architecture is an EVM leg", async () => {
+    const { adapter, calls } = recordingAdapter({ tron: true });
+    await signOrder(FIXTURE_ORDER, adapter, "");
+    expect(calls.map((c) => c.method)).toEqual(["signMessage"]);
+  });
+
+  test("a Solana leg goes through signMessage with the 0x-hex bytes", async () => {
+    const calls: string[] = [];
+    const adapter: SigningAdapter = {
+      async signMessage(hexMessage: string) {
+        calls.push(hexMessage);
+        return "0x" + "11".repeat(64);
+      },
+      signTronMessage: async () => {
+        throw new Error("must not be called");
+      },
+    };
+    const sig = await signOrder(FIXTURE_ORDER, adapter, "Solana");
+    expect(sig.length).toBe(64);
+    expect(calls).toEqual([V2.deterministic.message.bytes_hex]);
+  });
+
+  test("an unknown architecture is refused before anything is signed", async () => {
+    const { adapter, calls } = recordingAdapter({ tron: true });
+    await expect(signOrder(FIXTURE_ORDER, adapter, "sui")).rejects.toThrow(
+      /sui/,
+    );
+    await expect(
+      signCancelOrder(FIXTURE_CANCEL, adapter, "sui"),
+    ).rejects.toThrow(/sui/);
+    expect(calls).toEqual([]);
+  });
+});
+
+describe("a cancel of a Tron-giving order", () => {
+  test("never reaches EIP-191, even when the connected wallet is EVM", async () => {
+    // A buy on an EVM-base / Tron-quote market gives quote: the Tron leg.
+    // The wallet that holds the 0x account is an EVM wallet (the same 20
+    // bytes), whose adapter has only signMessage.
+    const market = {
+      baseChainArchitecture: "EVM",
+      quoteChainArchitecture: "Tron",
+    };
+    const calls: string[] = [];
+    const evmWallet: SigningAdapter = {
+      async signMessage(hexMessage: string) {
+        calls.push(hexMessage);
+        return "0x" + "11".repeat(65);
+      },
+    };
+    await expect(
+      signCancelOrder(
+        { ...FIXTURE_CANCEL, side: "buy" },
+        evmWallet,
+        givingArchitecture(market, "buy"),
+      ),
+    ).rejects.toThrow(/signTronMessage/);
+    expect(calls).toEqual([]);
+  });
+});
+
+describe("signWithdrawRequest", () => {
+  const W = V2.withdraw;
+  const TEXT = withdrawRequestMessage({
+    network: W.fields.network,
+    token: W.fields.token,
+    account: W.fields.account,
+    amount: BigInt(W.fields.amount),
+  });
+  const TEXT_HEX = toHex(new TextEncoder().encode(W.text));
+
+  test("the request text built from the fixture's fields is the fixture's", () => {
+    expect(TEXT).toBe(W.text);
+  });
+
+  test("a Tron withdrawal signs the text as is under the TRON prefix", async () => {
+    const { adapter, calls } = recordingAdapter({ tron: true });
+    const sig = await signWithdrawRequest(TEXT, adapter, "Tron");
+
+    expect(toHex(sig)).toBe(W.signature as Hex);
+    expect(calls).toEqual([{ method: "signTronMessage", arg: W.text }]);
+    const recover = async (hash: Hex) =>
+      (await recoverAddress({ hash, signature: toHex(sig) })).toLowerCase();
+    expect(await recover(W.digest as Hex)).toBe(W.signer_hex);
+    expect(await recover(hashMessage(W.text))).not.toBe(W.signer_hex);
+  });
+
+  test("a Tron withdrawal never reaches EIP-191", async () => {
+    // A wallet with both signers: only the TRON-prefixed one is asked.
+    const both = recordingAdapter({ tron: true });
+    const sig = await signWithdrawRequest(TEXT, both.adapter, "tron");
+    expect(both.calls.map((c) => c.method)).toEqual(["signTronMessage"]);
+    expect(toHex(sig)).not.toBe(W.negative_ethereum_prefixed.signature as Hex);
+
+    // An EVM wallet holding the same 20-byte account (signMessage only) is
+    // refused, never handed the request to sign with the Ethereum prefix.
+    const evmOnly = recordingAdapter({ tron: false });
+    await expect(
+      signWithdrawRequest(TEXT, evmOnly.adapter, "TRON"),
+    ).rejects.toThrow(/signTronMessage/);
+    expect(evmOnly.calls).toEqual([]);
+  });
+
+  test("a Tron withdrawal refuses a signature that is not 65 bytes", async () => {
+    const adapter: SigningAdapter = {
+      signMessage: async () => "0x00",
+      signTronMessage: async () => "0x" + "ab".repeat(64),
+    };
+    await expect(signWithdrawRequest(TEXT, adapter, "tron")).rejects.toThrow(
+      /65/,
+    );
+  });
+
+  test("an EVM withdrawal is EIP-191 over the text's bytes, as before", async () => {
+    const { adapter, calls } = recordingAdapter({ tron: true });
+    const sig = await signWithdrawRequest(TEXT, adapter, "EVM");
+
+    expect(calls).toEqual([{ method: "signMessage", arg: TEXT_HEX }]);
+    // The fixture's Ethereum-prefixed signature of the same text, same key.
+    expect(toHex(sig)).toBe(W.negative_ethereum_prefixed.signature as Hex);
+  });
+
+  test("a Solana withdrawal goes through signMessage with the text's bytes", async () => {
+    const calls: string[] = [];
+    const adapter: SigningAdapter = {
+      async signMessage(hexMessage: string) {
+        calls.push(hexMessage);
+        return "0x" + "11".repeat(64);
+      },
+      signTronMessage: async () => {
+        throw new Error("must not be called");
+      },
+    };
+    const sig = await signWithdrawRequest(TEXT, adapter, "Solana");
+    expect(sig.length).toBe(64);
+    expect(calls).toEqual([TEXT_HEX]);
+  });
+
+  test("an unknown architecture is refused before anything is signed", async () => {
+    const { adapter, calls } = recordingAdapter({ tron: true });
+    await expect(signWithdrawRequest(TEXT, adapter, "sui")).rejects.toThrow(
+      /sui/,
+    );
+    expect(calls).toEqual([]);
   });
 });
