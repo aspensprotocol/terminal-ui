@@ -135,7 +135,8 @@ export type DeployContractRequest = Message<"xyz.aspens.arborter_config.v1.Deplo
   /**
    * The signed transaction hash of the createInstance function call.
    * Required for EVM (admin signs+broadcasts the tx locally, then asks
-   * arborter to confirm + register the result). Empty / omitted for Solana,
+   * arborter to confirm + register the result). A Tron chain uses the same
+   * path, and its value is the 64-hex txID. Empty / omitted for Solana,
    * where arborter signs and submits server-side using its own signer
    * (the only key that can satisfy the factory's `has_one = owner` check).
    *
@@ -177,7 +178,7 @@ export const DeployContractRequestSchema: GenMessage<DeployContractRequest> = /*
 export type DeployContractResponse = Message<"xyz.aspens.arborter_config.v1.DeployContractResponse"> & {
   /**
    * The address that the instance is deployed to on the specified chain.
-   * Hex (0x-prefixed) for EVM, base58 for Solana.
+   * Hex (0x-prefixed) for EVM and Tron, base58 for Solana.
    *
    * @generated from field: string contract_address = 1;
    */
@@ -429,7 +430,8 @@ export type SetOperatorFeeRequest = Message<"xyz.aspens.arborter_config.v1.SetOp
   chainNetwork: string;
 
   /**
-   * Operator-fee recipient address (0x-hex for EVM, base58 for Solana).
+   * Operator-fee recipient address (0x-hex for EVM and Tron, base58 for
+   * Solana).
    *
    * @generated from field: string recipient = 2;
    */
@@ -457,7 +459,10 @@ export const SetOperatorFeeRequestSchema: GenMessage<SetOperatorFeeRequest> = /*
 export type SetOperatorFeeResponse = Message<"xyz.aspens.arborter_config.v1.SetOperatorFeeResponse"> & {
   /**
    * On-chain tx hash / signature for the setOperatorFee call (0x-hex EVM,
-   * base58 Solana).
+   * base58 Solana). A Tron chain is refused: the call fails with an error
+   * ("not implemented for this chain yet") and no response is returned, so
+   * the operator fee on a Tron instance is set out-of-band by its
+   * operator admin.
    *
    * @generated from field: string tx_signature = 1;
    */
@@ -483,7 +488,7 @@ export type SetOperatorAdminRequest = Message<"xyz.aspens.arborter_config.v1.Set
   chainNetwork: string;
 
   /**
-   * The new operator_admin key (0x-hex for EVM, base58 for Solana).
+   * The new operator_admin key (0x-hex for EVM and Tron, base58 for Solana).
    *
    * @generated from field: string new_admin = 2;
    */
@@ -597,7 +602,7 @@ export const ConfigurationSchema: GenMessage<Configuration> = /*@__PURE__*/
  */
 export type TradeContract = Message<"xyz.aspens.arborter_config.v1.TradeContract"> & {
   /**
-   * The chain address of the trading instance: 0x-hex for EVM, the
+   * The chain address of the trading instance: 0x-hex for EVM and Tron, the
    * program/instance address in base58 for Solana.
    *
    * @generated from field: string address = 1;
@@ -629,7 +634,8 @@ export type RpcEndpoint = Message<"xyz.aspens.arborter_config.v1.RpcEndpoint"> &
   /**
    * Full URL. MASKED on read paths: query values, userinfo, and every
    * non-empty path segment are replaced with "***" (scheme + host stay
-   * visible; the endpoint's identity survives via label + host).
+   * visible; the endpoint's identity survives via label + host). For a
+   * "tron" chain this is the HTTP base URL, not a JSON-RPC path.
    *
    * @generated from field: string url = 2;
    */
@@ -679,10 +685,13 @@ export const RpcEndpointSchema: GenMessage<RpcEndpoint> = /*@__PURE__*/
  */
 export type Chain = Message<"xyz.aspens.arborter_config.v1.Chain"> & {
   /**
-   * The chain's architecture: exactly "evm" or "solana", lowercase (the
-   * server lowercases on write). Any other string is accepted by SetChain
-   * and only fails later, at deploy or listener start; an empty string is
-   * treated as "evm" on the deploy paths.
+   * The chain's architecture: exactly "evm", "solana" or "tron", lowercase
+   * (the server lowercases on write). An empty string is treated as "evm".
+   * Any other value is refused by SetChain. A "tron" chain uses the EVM
+   * address and contract formats, but its transport is Tron's HTTP API: the
+   * endpoint url (see RpcEndpoint.url) is the HTTP base URL, for example
+   * https://api.trongrid.io, with JSON-RPC at <base>/jsonrpc and the native
+   * API at <base>/wallet and <base>/walletsolidity.
    *
    * @generated from field: string architecture = 1;
    */
