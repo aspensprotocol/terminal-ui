@@ -1,5 +1,5 @@
 /**
- * Deposit / withdraw hooks covering both chain ecosystems.
+ * Deposit / withdraw hooks covering every chain ecosystem.
  *
  *   - EVM deposit: ERC-20.approve (if allowance insufficient) +
  *     MidribV3.deposit via wagmi writeContract; native tokens (the
@@ -20,12 +20,20 @@
  *     the instruction immediately before it. Native SOL (the WSOL mint)
  *     can optionally append a `CloseAccount` to unwrap.
  *
+ *   - Tron deposit / withdraw: the SDK's `tronDeposit` (approve when the
+ *     allowance is short, then deposit), `tronDepositNative` (TRX as call
+ *     value) and `tronWithdraw`, each a transaction the SDK builds and
+ *     MetaMask's Tron account signs. A withdraw first checks the account
+ *     holds the TRX to submit the voucher (`assertTronWithdrawTrx`), then
+ *     signs the request under the TRON message prefix
+ *     (`signWithdrawRequest`), never EIP-191.
+ *
  * Both Solana instructions carry the instance's Termination PDA as their
  * last account (the SDK builders append it); the program refuses either
  * once the instance is terminated, as MidribV3 reverts TERMINATED on EVM.
  *
- * Dispatches on the chain's `architecture` field; errors surface via
- * sonner.
+ * Dispatches on the chain's `architecture` field as a closed match (an
+ * unknown architecture is refused); errors surface via sonner.
  */
 
 import { useCallback, useState } from "react";
@@ -62,14 +70,21 @@ import {
   evmWithdrawCall,
   midribRevertName,
   withdrawRequestMessage,
+  parseArchitecture,
+  TronTxError,
   type RpcUrlMap,
   type RpcResolvableChain,
+  type TronSender,
 } from "@aspensprotocol/sdk-ts";
 import { toast } from "sonner";
 
 import { getWagmiConfig } from "@/lib/web3modal-config";
 import { getSolanaWalletContext } from "@/lib/wallet/solana-adapter";
+import { pickWalletForEcosystem } from "@/lib/wallet/selection";
+import { createSigningAdapterForWallet } from "@/lib/signing-adapter";
+import { useExchangeStore } from "@/lib/store";
 import { useExchangeClient } from "./useExchangeClient";
+import { depositOnTron, withdrawOnTron } from "./tron-transfer";
 import { useRpcUrls } from "../providers/rpc-context";
 
 /**
@@ -156,6 +171,42 @@ async function describeTerminated(
   } catch {
     return `${base} On-chain balances become reclaimable with withdrawTerminated 24h after termination.`;
   }
+}
+
+/**
+ * Who sends a Tron transaction: the connected Tron wallet (MetaMask's Tron
+ * account, signing as its `0x` hex account) through the chain's node.
+ */
+function tronSender(chain: RpcResolvableChain, rpcUrls: RpcUrlMap): TronSender {
+  const { connectedWallets, activeWalletId } = useExchangeStore.getState();
+  const wallet = pickWalletForEcosystem(
+    connectedWallets,
+    activeWalletId,
+    "tron",
+  );
+  if (!wallet) throw new Error("Connect MetaMask (Tron) to continue");
+  const url = resolveRpcUrl(chain, rpcUrls);
+  if (!url) {
+    throw new Error(
+      `No RPC endpoint configured for '${chain.network}'. The arborter masks ` +
+        `rpc_url in GetConfig and this chain has no public fallback — set ` +
+        `CHAIN_RPC_URLS for this deployment.`,
+    );
+  }
+  return {
+    node: { urls: [url] },
+    adapter: createSigningAdapterForWallet(wallet),
+    owner: wallet.address,
+  };
+}
+
+/**
+ * Toast options for a failure: one that may have reached the chain (a Tron
+ * transaction that was broadcast, whose error names its txID) stays on
+ * screen until dismissed, so the txID can be checked before any retry.
+ */
+function failureToastOptions(err: unknown): { duration?: number } {
+  return err instanceof TronTxError && err.sent ? { duration: Infinity } : {};
 }
 
 export interface DepositParams {
@@ -314,7 +365,23 @@ export function useDepositWithdraw(): UseDepositWithdrawResult {
 
       setPending(true);
       try {
-        if (chain.architecture.match(/^solana$/i)) {
+        const architecture = parseArchitecture(chain.architecture);
+        if (architecture === "tron") {
+          const sender = tronSender(chain, rpcUrls);
+          toast.info("Depositing… approve each transaction in MetaMask");
+          await depositOnTron(sender, {
+            network: chain.network,
+            architecture: chain.architecture,
+            contract: midrib,
+            token: token.address,
+            amount: params.amount,
+          });
+          toast.success("Deposit confirmed", {
+            description: `${params.tokenTicker} on ${chain.network}`,
+          });
+          return;
+        }
+        if (architecture === "solana") {
           const wrapSol = isWsolMint(token.address);
           await submitSolanaIxs({
             chainRpcUrl: resolveSolanaRpcUrl(chain, rpcUrls),
@@ -428,6 +495,7 @@ export function useDepositWithdraw(): UseDepositWithdrawResult {
       } catch (err) {
         console.error("[useDepositWithdraw] deposit failed:", err);
         toast.error("Deposit failed", {
+          ...failureToastOptions(err),
           description:
             midribRevertName(err) === "TERMINATED"
               ? await describeTerminated(
@@ -455,7 +523,39 @@ export function useDepositWithdraw(): UseDepositWithdrawResult {
 
       setPending(true);
       try {
-        if (chain.architecture.match(/^solana$/i)) {
+        const architecture = parseArchitecture(chain.architecture);
+        if (architecture === "tron") {
+          // The same TEE voucher flow as EVM, sent as Tron transactions;
+          // the steps and their order are in `withdrawOnTron`.
+          const sender = tronSender(chain, rpcUrls);
+          await withdrawOnTron(
+            sender,
+            {
+              network: chain.network,
+              architecture: chain.architecture,
+              contract: midrib,
+              token: token.address,
+              amount: params.amount,
+            },
+            {
+              requestVoucher: (request) =>
+                client.requestWithdrawVoucher(request),
+              notify: (step) =>
+                toast.info(
+                  step === "sign"
+                    ? "Sign the withdrawal request in MetaMask…"
+                    : step === "voucher"
+                      ? "Requesting withdrawal voucher…"
+                      : "Withdrawing… approve the transaction in MetaMask",
+                ),
+            },
+          );
+          toast.success("Withdraw confirmed", {
+            description: `${params.tokenTicker} on ${chain.network}`,
+          });
+          return;
+        }
+        if (architecture === "solana") {
           // The midrib program has no permissionless `withdraw` — it let a
           // user drain the collateral backing a resting order, because
           // reservations live off-chain in the optimistic shadow ledger and
@@ -630,6 +730,7 @@ export function useDepositWithdraw(): UseDepositWithdrawResult {
       } catch (err) {
         console.error("[useDepositWithdraw] withdraw failed:", err);
         toast.error("Withdraw failed", {
+          ...failureToastOptions(err),
           description:
             midribRevertName(err) === "TERMINATED"
               ? await describeTerminated(
