@@ -4,6 +4,7 @@ import { WagmiProvider as WagmiProviderBase } from "wagmi";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { getWagmiConfig } from "../web3modal-config";
 import { SolanaProvider } from "./solana-provider";
+import { TronProvider } from "./tron-provider";
 import { WalletSync } from "./wallet-sync";
 import { useState, useEffect, type ReactNode } from "react";
 import type { Config } from "wagmi";
@@ -47,8 +48,10 @@ export function WagmiProvider({ children }: WagmiProviderProps) {
     <WagmiProviderBase config={config}>
       <QueryClientProvider client={queryClient}>
         <SolanaProvider>
-          <WalletSync />
-          {children}
+          <TronProvider>
+            <WalletSync />
+            {children}
+          </TronProvider>
         </SolanaProvider>
       </QueryClientProvider>
     </WagmiProviderBase>

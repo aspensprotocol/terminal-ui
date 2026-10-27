@@ -10,6 +10,7 @@
 import { useMemo } from "react";
 import { useExchangeStore } from "@/lib/store";
 import { useWalletPickerStore } from "@/lib/wallet/picker-store";
+import { displayAddress } from "@/lib/wallet";
 import { Button } from "@/components/ui/button";
 import { Wallet, ChevronDown } from "lucide-react";
 import {
@@ -53,7 +54,9 @@ export function WalletManager() {
             {ecosystemLabel(activeWallet.ecosystem)}
           </span>
           <span className="font-mono text-xs">
-            {shortenAddress(activeWallet.address)}
+            {shortenAddress(
+              displayAddress(activeWallet.ecosystem, activeWallet.address),
+            )}
           </span>
           {count > 1 && (
             <span className="rounded-full bg-primary/15 px-1.5 text-[10px] font-semibold text-primary">

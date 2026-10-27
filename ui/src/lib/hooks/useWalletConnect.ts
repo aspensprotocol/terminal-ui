@@ -2,9 +2,10 @@
  * Shared wallet-connection entry points.
  *
  * `openPicker` shows the unified picker dialog (optionally narrowed to one
- * ecosystem) and is what buttons outside the dialog call. `connectEvm` and
- * `connectSolana` are what the picker's rows call once the user has chosen a
- * provider; they drive wagmi and the Solana wallet-adapter directly.
+ * ecosystem) and is what buttons outside the dialog call. `connectEvm`,
+ * `connectSolana` and `connectTron` are what the picker's rows call once the
+ * user has chosen a provider; they drive wagmi, the Solana wallet-adapter and
+ * MetaMask's Tron account directly.
  */
 
 import { useCallback } from "react";
@@ -12,11 +13,13 @@ import { useConnect } from "wagmi";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { toast } from "sonner";
 import { useWalletPickerStore } from "@/lib/wallet/picker-store";
+import { useTronWallet } from "@/lib/providers/tron-provider";
 
 export function useWalletConnect() {
   const openPicker = useWalletPickerStore((s) => s.open);
   const { connectAsync, connectors } = useConnect();
   const { select } = useWallet();
+  const { connect: connectTron } = useTronWallet();
 
   const connectEvm = useCallback(
     async (connectorId: string) => {
@@ -51,5 +54,5 @@ export function useWalletConnect() {
     [select],
   );
 
-  return { openPicker, connectEvm, connectSolana };
+  return { openPicker, connectEvm, connectSolana, connectTron };
 }

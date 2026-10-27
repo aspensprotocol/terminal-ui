@@ -3,7 +3,9 @@
 /**
  * The one wallet pane: every connected wallet across ecosystems on top, and
  * below it one row per wallet product with a chain mark per leg it supports.
- * Phantom is a single row with EVM and Solana marks, not two rows.
+ * Phantom is a single row with EVM and Solana marks, not two rows; MetaMask
+ * is a single row with EVM and (when the venue lists a Tron chain) Tron
+ * marks.
  *
  * Opened through `useWalletPickerStore`; the header trigger and the trade
  * panel's missing-wallet CTA both route here.
@@ -22,7 +24,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useExchangeStore } from "@/lib/store";
-import { walletRegistry } from "@/lib/wallet";
+import {
+  displayAddress,
+  TRON_WALLET_NAME,
+  walletPhrase,
+  walletRegistry,
+} from "@/lib/wallet";
+import { unreachableEcosystem } from "@/lib/wallet/ecosystem";
 import { useWalletPickerStore } from "@/lib/wallet/picker-store";
 import {
   mergeWalletProviders,
@@ -30,6 +38,7 @@ import {
   type WalletProviderRow,
 } from "@/lib/wallet/providers";
 import { useWalletConnect } from "@/lib/hooks/useWalletConnect";
+import { useTronWallet } from "@/lib/providers/tron-provider";
 import type { ChainEcosystem, ConnectedWallet } from "@/lib/wallet/types";
 
 export function shortenAddress(address: string): string {
@@ -43,8 +52,10 @@ export function ecosystemLabel(ecosystem: ChainEcosystem): string {
       return "EVM";
     case "solana":
       return "SOL";
+    case "tron":
+      return "TRON";
     default:
-      return ecosystem;
+      return unreachableEcosystem(ecosystem);
   }
 }
 
@@ -52,6 +63,7 @@ export function ecosystemLabel(ecosystem: ChainEcosystem): string {
 const ECOSYSTEM_MARK: Record<ChainEcosystem, string> = {
   evm: "/chain-logos/1-dark.png",
   solana: "/chain-logos/solana-dark.png",
+  tron: "/chain-logos/728126428-dark.png",
 };
 
 function EcosystemMark({
@@ -112,10 +124,12 @@ function ConnectedRow({
   onDisconnect: () => void;
 }) {
   const [copied, setCopied] = useState(false);
+  // A Tron account is kept as hex but read and pasted as `T…`.
+  const shown = displayAddress(wallet.ecosystem, wallet.address);
   const copy = async (e: React.MouseEvent) => {
     e.stopPropagation();
     try {
-      await navigator.clipboard.writeText(wallet.address);
+      await navigator.clipboard.writeText(shown);
       setCopied(true);
       toast.success("Address copied!");
       setTimeout(() => setCopied(false), 2000);
@@ -154,7 +168,7 @@ function ConnectedRow({
             <span className="text-[10px] font-semibold uppercase text-primary/60">
               {ecosystemLabel(wallet.ecosystem)}
             </span>
-            {shortenAddress(wallet.address)}
+            <span title={shown}>{shortenAddress(shown)}</span>
           </span>
         </div>
       </div>
@@ -204,6 +218,7 @@ function ProviderRow({
   const legs: ChainEcosystem[] = [];
   if (row.evm) legs.push("evm");
   if (row.solana) legs.push("solana");
+  if (row.tron) legs.push("tron");
   const single = legs.length === 1 ? legs[0] : undefined;
 
   const notInstalledSolana =
@@ -264,7 +279,8 @@ export function WalletPickerDialog() {
 
   const connectors = useConnectors();
   const { wallets: solanaWallets } = useWallet();
-  const { connectEvm, connectSolana } = useWalletConnect();
+  const { connectEvm, connectSolana, connectTron } = useWalletConnect();
+  const tron = useTronWallet();
 
   const connectedWallets = useExchangeStore((s) => s.connectedWallets);
   const activeWalletId = useExchangeStore((s) => s.activeWalletId);
@@ -290,9 +306,26 @@ export function WalletPickerDialog() {
           filter,
           hasInjectedProvider:
             typeof window !== "undefined" && "ethereum" in window,
+          // Offered only when the venue lists a Tron chain.
+          tronWallets: tron.available
+            ? [
+                {
+                  name: TRON_WALLET_NAME,
+                  icon: tron.icon,
+                  installed: tron.installed,
+                },
+              ]
+            : [],
         },
       ),
-    [connectors, solanaWallets, filter],
+    [
+      connectors,
+      solanaWallets,
+      filter,
+      tron.available,
+      tron.icon,
+      tron.installed,
+    ],
   );
 
   const handleConnect = (row: WalletProviderRow, ecosystem: ChainEcosystem) => {
@@ -301,6 +334,8 @@ export function WalletPickerDialog() {
       void connectEvm(row.evm.connectorId);
     } else if (ecosystem === "solana" && row.solana) {
       connectSolana(row.solana.walletName);
+    } else if (ecosystem === "tron" && row.tron) {
+      void connectTron();
     }
   };
 
@@ -323,9 +358,7 @@ export function WalletPickerDialog() {
     toast.success("Switched active wallet");
   };
 
-  const title = filter
-    ? `Connect a ${filter === "solana" ? "Solana" : "EVM"} wallet`
-    : "Wallets";
+  const title = filter ? `Connect ${walletPhrase(filter)}` : "Wallets";
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && close()}>

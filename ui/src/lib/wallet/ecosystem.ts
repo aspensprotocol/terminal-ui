@@ -6,19 +6,20 @@
  * wallet `ChainEcosystem` values the UI understands.
  */
 
-import type { Market } from "@aspensprotocol/sdk-ts";
+import { parseArchitecture, type Market } from "@aspensprotocol/sdk-ts";
 import type { ChainEcosystem } from "./types";
 
 /**
- * Map a `Chain.architecture` string (from the gRPC config) to a wallet ecosystem.
- * Returns `null` for architectures we don't yet have a wallet adapter for.
+ * Map a `Chain.architecture` string (from the gRPC config) to a wallet
+ * ecosystem, as a closed match: "EVM", "Solana" and "Tron" (any case; the
+ * empty proto default is EVM) each map to their own ecosystem, and anything
+ * else throws. An unknown architecture must never fall through to another
+ * chain's signing path. `undefined` (a market whose chain config is not
+ * joined yet) has no ecosystem and returns `null`.
  */
 export function architectureToEcosystem(arch?: string): ChainEcosystem | null {
-  if (!arch) return null;
-  const normalized = arch.toUpperCase();
-  if (normalized === "EVM") return "evm";
-  if (normalized === "SOLANA") return "solana";
-  return null;
+  if (arch === undefined) return null;
+  return parseArchitecture(arch);
 }
 
 /**
@@ -26,7 +27,7 @@ export function architectureToEcosystem(arch?: string): ChainEcosystem | null {
  *
  * For same-ecosystem markets, returns that ecosystem.
  * Returns `null` if the market spans two different ecosystems or if neither
- * chain has a known architecture. Order placement does NOT use this — it is
+ * chain's architecture is joined in. Order placement does NOT use this — it is
  * side-aware via `sideLegs` below, which is what makes cross-ecosystem
  * markets signable. This remains for surfaces that genuinely need one
  * ecosystem for the whole market.
@@ -46,11 +47,12 @@ export interface SideLegs {
   /** The leg this order RECEIVES: where fill proceeds settle. */
   receivingLeg: "base" | "quote";
   /** Ecosystem whose wallet must SIGN this order — the giving leg's chain.
-   * `null` when that chain's architecture has no wallet adapter. */
+   * `null` when that chain's architecture is not joined into the market. */
   signingEcosystem: ChainEcosystem | null;
   /** Ecosystem of the receiving leg's chain — the wallet whose address is
-   * the default settlement destination. `null` when no adapter exists;
-   * settlement is still possible by entering an address. */
+   * the default settlement destination. `null` when that chain's
+   * architecture is not joined into the market; settlement is still
+   * possible by entering an address. */
   receivingEcosystem: ChainEcosystem | null;
 }
 
@@ -73,4 +75,27 @@ export function sideLegs(market: Market, side: "buy" | "sell"): SideLegs {
     signingEcosystem: givingLeg === "quote" ? quote : base,
     receivingEcosystem: givingLeg === "quote" ? base : quote,
   };
+}
+
+/** "an EVM wallet", "a Solana wallet", "a Tron wallet": for messages. */
+export function walletPhrase(ecosystem: ChainEcosystem): string {
+  switch (ecosystem) {
+    case "evm":
+      return "an EVM wallet";
+    case "solana":
+      return "a Solana wallet";
+    case "tron":
+      return "a Tron wallet";
+    default:
+      return unreachableEcosystem(ecosystem);
+  }
+}
+
+/**
+ * The `default` arm of an exhaustive `switch` over {@link ChainEcosystem}: a
+ * compile error when a case is missing, and a throw if a value outside the
+ * type reaches it at runtime anyway.
+ */
+export function unreachableEcosystem(ecosystem: never): never {
+  throw new Error(`unhandled wallet ecosystem "${String(ecosystem)}"`);
 }

@@ -1,13 +1,22 @@
-import type { SigningAdapter } from "@aspensprotocol/sdk-ts";
+import type { Architecture, SigningAdapter } from "@aspensprotocol/sdk-ts";
 
-export type ChainEcosystem = "evm" | "solana";
+/**
+ * The wallet family a chain is signed with: one per chain architecture the
+ * venue runs on (`"evm" | "solana" | "tron"`), so a `switch` over it is
+ * exhaustive exactly when one over the SDK's `Architecture` is.
+ */
+export type ChainEcosystem = Architecture;
 
 export interface ConnectedWallet {
   /** Unique identifier: "${ecosystem}:${address}" */
   id: string;
   /** Display name of the wallet (e.g. "MetaMask", "Phantom") */
   name: string;
-  /** Wallet address (hex for EVM, base58 for Solana) */
+  /**
+   * Wallet address as the venue keys it: `0x` hex for EVM and Tron (a Tron
+   * wallet's `T…` address is converted on connect, and shown with
+   * `hexToTron`), base58 for Solana.
+   */
   address: string;
   /** Chain ecosystem */
   ecosystem: ChainEcosystem;
