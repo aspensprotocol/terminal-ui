@@ -239,7 +239,7 @@ less than flooring their sum.
 2. Tag the merge commit and push the tag:
 
    ```bash
-   git tag sdk-v0.4.2 && git push origin sdk-v0.4.2
+   git tag sdk-v0.5.0 && git push origin sdk-v0.5.0
    ```
 
 `.github/workflows/publish-sdk.yml` checks that the tag matches `package.json`, runs the tests,
