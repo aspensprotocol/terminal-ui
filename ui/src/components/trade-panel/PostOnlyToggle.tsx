@@ -1,9 +1,10 @@
 /**
- * Post-only toggle for the trade panel.
+ * GTC / Post-Only toggle for the trade panel.
  *
- * Renders a small inline checkbox + label. When the user checks it, the
- * order submission tells arborter to reject the order if it would cross
- * at submission (FAILED_PRECONDITION, no on-chain lock, no gas spent).
+ * Two segments over one boolean. "GTC" (the default) is an ordinary limit
+ * order: it takes whatever crosses and rests the remainder until filled or
+ * cancelled. "Post-Only" tells arborter to reject the order if it would
+ * cross at submission (FAILED_PRECONDITION, no on-chain lock, no gas spent).
  *
  * Only meaningful for limit orders — the parent (`TradePanel`) gates
  * rendering on `orderType === "limit"` and resets the value to `false`
@@ -11,24 +12,49 @@
  * controlled and makes no assumptions about the parent's state.
  */
 
+import { Button } from "@/components/ui/button";
+
 interface PostOnlyToggleProps {
   value: boolean;
   onChange: (value: boolean) => void;
 }
 
+const SEGMENTS = [
+  {
+    postOnly: false,
+    label: "GTC",
+    title: "Good 'til cancelled: fills what crosses, rests the rest.",
+  },
+  {
+    postOnly: true,
+    label: "Post-Only",
+    title:
+      "Reject the order if it would cross at submission (maker-only). No on-chain lock is performed on rejection.",
+  },
+] as const;
+
 export function PostOnlyToggle({ value, onChange }: PostOnlyToggleProps) {
   return (
-    <label
-      className="flex items-center gap-2 cursor-pointer select-none text-xs text-muted-foreground hover:text-foreground transition-colors"
-      title="Reject the order if it would cross at submission (maker-only). No on-chain lock is performed on rejection."
-    >
-      <input
-        type="checkbox"
-        checked={value}
-        onChange={(e) => onChange(e.target.checked)}
-        className="h-3.5 w-3.5 rounded border border-border bg-background text-primary focus:ring-1 focus:ring-primary focus:ring-offset-0 cursor-pointer"
-      />
-      <span>Post-only</span>
-    </label>
+    <div className="grid grid-cols-2 gap-1.5" role="radiogroup">
+      {SEGMENTS.map(({ postOnly, label, title }) => (
+        <Button
+          key={label}
+          type="button"
+          role="radio"
+          aria-checked={value === postOnly}
+          variant="outline"
+          size="sm"
+          onClick={() => onChange(postOnly)}
+          title={title}
+          className={`h-7 text-xs font-medium ${
+            value === postOnly
+              ? "border-primary/60 bg-primary/10 text-primary hover:bg-primary/15"
+              : "text-muted-foreground"
+          }`}
+        >
+          {label}
+        </Button>
+      ))}
+    </div>
   );
 }

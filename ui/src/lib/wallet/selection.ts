@@ -12,7 +12,12 @@
 
 import type { EnhancedOrder, Market } from "@aspensprotocol/sdk-ts";
 import type { ChainEcosystem, ConnectedWallet } from "./types";
-import { sideLegs, type SideLegs } from "./ecosystem";
+import {
+  sideLegs,
+  unreachableEcosystem,
+  walletPhrase,
+  type SideLegs,
+} from "./ecosystem";
 
 /**
  * The connected wallet to use for `ecosystem`: the ACTIVE wallet when it
@@ -76,14 +81,20 @@ export type CancelTarget = Pick<
 
 /**
  * Does `wallet` hold `address`, under that wallet's own address rules?
- * EVM addresses are one key however they are cased (the venue publishes
- * lowercase, wallets report checksummed); base58 is byte-exact — two
- * strings differing in case are two different keys.
+ * EVM and Tron addresses are hex, one key however they are cased (the venue
+ * publishes lowercase, EVM wallets report checksummed); base58 is
+ * byte-exact — two strings differing in case are two different keys.
  */
 function walletHolds(wallet: ConnectedWallet, address: string): boolean {
-  return wallet.ecosystem === "evm"
-    ? wallet.address.toLowerCase() === address.toLowerCase()
-    : wallet.address === address;
+  switch (wallet.ecosystem) {
+    case "evm":
+    case "tron":
+      return wallet.address.toLowerCase() === address.toLowerCase();
+    case "solana":
+      return wallet.address === address;
+    default:
+      return unreachableEcosystem(wallet.ecosystem);
+  }
 }
 
 /**
@@ -98,7 +109,10 @@ function walletHolds(wallet: ConnectedWallet, address: string): boolean {
  *
  * When the order carries its account addresses (every orderbook read
  * does), the wallet is picked by that exact address, so two connected
- * wallets of one ecosystem cannot be confused either. When it does not
+ * wallets of one ecosystem cannot be confused either. With the market
+ * known it must also be of the lock leg's ecosystem: a Tron account is the
+ * same 20 bytes as an EVM one, so an EVM wallet can hold the address of a
+ * Tron-leg order without being able to sign for it. When it does not
  * (the FCE state read), the fallback is the lock leg's ecosystem from
  * `market`, resolved the same way order placement resolves its signer.
  *
@@ -119,13 +133,21 @@ export function cancelSigningWallet(
   )?.trim();
 
   if (expected) {
-    const match = Object.values(connectedWallets).find((w) =>
-      walletHolds(w, expected),
+    const lockEcosystem = market
+      ? sideLegs(market, order.side).signingEcosystem
+      : null;
+    const match = Object.values(connectedWallets).find(
+      (w) =>
+        walletHolds(w, expected) &&
+        (lockEcosystem === null || w.ecosystem === lockEcosystem),
     );
     if (match) return match;
+    const which = lockEcosystem
+      ? `${walletPhrase(lockEcosystem)} on its ${lockLeg} chain`
+      : `its ${lockLeg}-chain wallet`;
     throw new Error(
       `Cancelling this ${order.side} order needs the wallet that placed it ` +
-        `(${expected}, its ${lockLeg}-chain wallet). Connect that wallet and retry.`,
+        `(${expected}, ${which}). Connect that wallet and retry.`,
     );
   }
 
@@ -139,7 +161,7 @@ export function cancelSigningWallet(
   if (!ecosystem) {
     throw new Error(
       `Cannot tell which wallet placed this order: its ${lockLeg}-chain ` +
-        "architecture has no wallet adapter.",
+        "architecture is not in the market's config.",
     );
   }
   const wallet = pickWalletForEcosystem(
@@ -149,8 +171,7 @@ export function cancelSigningWallet(
   );
   if (wallet) return wallet;
   throw new Error(
-    `Cancelling this ${order.side} order needs ${
-      ecosystem === "solana" ? "a Solana" : "an EVM"
-    } wallet (the order's ${lockLeg}-chain side). Connect one and retry.`,
+    `Cancelling this ${order.side} order needs ${walletPhrase(ecosystem)} ` +
+      `(the order's ${lockLeg}-chain side). Connect one and retry.`,
   );
 }

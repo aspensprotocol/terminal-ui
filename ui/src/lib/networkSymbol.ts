@@ -12,6 +12,8 @@ const NETWORK_SYMBOLS: Record<string, string> = {
   "hyperevm-testnet": "HL",
   "ethereum-sepolia": "SEP",
   "solana-devnet": "SOL",
+  tron: "TRX",
+  "tron-nile": "NILE",
 };
 
 export function networkSymbol(network: string): string {

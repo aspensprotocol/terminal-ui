@@ -2,10 +2,11 @@
  * The wallet picker's row model: ONE row per wallet product, merged across
  * ecosystems. Phantom ships both an EVM provider (discovered by wagmi via
  * EIP-6963) and a Solana wallet-standard adapter; the user sees one
- * "Phantom" row with a chain mark per leg, not two rows.
+ * "Phantom" row with a chain mark per leg, not two rows. MetaMask's Tron
+ * account joins its EVM row the same way.
  *
- * Pure: takes plain shapes of wagmi connectors and Solana wallet adapters so
- * the rules test without either library.
+ * Pure: takes plain shapes of wagmi connectors, Solana wallet adapters and
+ * Tron wallets so the rules test without any of the libraries.
  */
 
 import type { ChainEcosystem } from "./types";
@@ -36,6 +37,14 @@ export interface SolanaWalletLike {
   readyState: SolanaReadyState;
 }
 
+/** A Tron wallet the picker can offer (today: MetaMask's Tron account). */
+export interface TronWalletLike {
+  name: string;
+  icon?: string;
+  /** The wallet's extension was detected on this page. */
+  installed: boolean;
+}
+
 export interface WalletProviderRow {
   /** Normalised name; stable React key. */
   key: string;
@@ -45,6 +54,7 @@ export interface WalletProviderRow {
   installed: boolean;
   evm?: { connectorId: string };
   solana?: { walletName: string; readyState: SolanaReadyState; url: string };
+  tron?: { walletName: string };
 }
 
 /** wagmi's catch-all `injected()` connector id. */
@@ -65,7 +75,7 @@ function normalise(name: string): string {
  * - `Unsupported` Solana wallets are dropped.
  * - Rows merge on the case-insensitive product name.
  * - Installed rows sort first; ties break by name.
- * - `filter` keeps only rows with that ecosystem's leg and strips the other.
+ * - `filter` keeps only rows with that ecosystem's leg and strips the others.
  */
 export interface MergeOptions {
   /** Show only this ecosystem's legs. */
@@ -76,12 +86,17 @@ export interface MergeOptions {
    * this the picker would offer a "Browser Wallet" that cannot connect.
    */
   hasInjectedProvider: boolean;
+  /**
+   * Tron wallets to offer. Empty (the default) when the venue lists no Tron
+   * chain, so no Tron leg is shown.
+   */
+  tronWallets?: readonly TronWalletLike[];
 }
 
 export function mergeWalletProviders(
   evmConnectors: readonly EvmConnectorLike[],
   solanaWallets: readonly SolanaWalletLike[],
-  { filter = null, hasInjectedProvider }: MergeOptions,
+  { filter = null, hasInjectedProvider, tronWallets = [] }: MergeOptions,
 ): WalletProviderRow[] {
   const rows = new Map<string, WalletProviderRow>();
 
@@ -95,7 +110,10 @@ export function mergeWalletProviders(
     return row;
   };
 
-  if (filter !== "solana") {
+  const wants = (ecosystem: ChainEcosystem) =>
+    filter === null || filter === ecosystem;
+
+  if (wants("evm")) {
     const discovered = evmConnectors.some(
       (c) => c.type === "injected" && c.id !== GENERIC_INJECTED_ID,
     );
@@ -109,7 +127,7 @@ export function mergeWalletProviders(
     }
   }
 
-  if (filter !== "evm") {
+  if (wants("solana")) {
     for (const w of solanaWallets) {
       if (w.readyState === "Unsupported") continue;
       const row = upsert(w.name);
@@ -122,6 +140,15 @@ export function mergeWalletProviders(
       // The Solana adapter's icon wins: it is the product's own mark, whereas
       // an EVM leg may carry a generic or lower-resolution one.
       if (w.icon) row.icon = w.icon;
+    }
+  }
+
+  if (wants("tron")) {
+    for (const w of tronWallets) {
+      const row = upsert(w.name);
+      row.tron = { walletName: w.name };
+      if (w.installed) row.installed = true;
+      if (w.icon && !row.icon) row.icon = w.icon;
     }
   }
 

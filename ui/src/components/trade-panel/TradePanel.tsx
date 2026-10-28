@@ -250,13 +250,31 @@ export function TradePanel() {
 
           {/* Price - Only for limit orders */}
           {formData.orderType === "limit" && (
+            <PriceInput
+              value={formData.price}
+              onChange={(value) => setValue("price", value)}
+              market={selectedMarket}
+              quoteToken={quoteToken}
+            />
+          )}
+
+          {/* Size */}
+          <SizeInput
+            value={formData.size}
+            onChange={(value) => setValue("size", value)}
+            market={selectedMarket}
+            baseToken={baseToken}
+            quoteToken={quoteToken}
+            side={formData.side}
+            availableBase={availableBase}
+            availableQuote={availableQuote}
+            currentPrice={currentPrice}
+            isAuthenticated={isAuthenticated}
+          />
+
+          {/* GTC / Post-Only and fill-by-order-id - Only for limit orders */}
+          {formData.orderType === "limit" && (
             <>
-              <PriceInput
-                value={formData.price}
-                onChange={(value) => setValue("price", value)}
-                market={selectedMarket}
-                quoteToken={quoteToken}
-              />
               <PostOnlyToggle
                 value={formData.postOnly}
                 onChange={(value) => setValue("postOnly", value)}
@@ -275,20 +293,6 @@ export function TradePanel() {
           <HiddenToggle
             value={formData.hidden}
             onChange={(value) => setValue("hidden", value)}
-          />
-
-          {/* Size */}
-          <SizeInput
-            value={formData.size}
-            onChange={(value) => setValue("size", value)}
-            market={selectedMarket}
-            baseToken={baseToken}
-            quoteToken={quoteToken}
-            side={formData.side}
-            availableBase={availableBase}
-            availableQuote={availableQuote}
-            currentPrice={currentPrice}
-            isAuthenticated={isAuthenticated}
           />
 
           {/* Settlement — where each leg of this order settles, and the

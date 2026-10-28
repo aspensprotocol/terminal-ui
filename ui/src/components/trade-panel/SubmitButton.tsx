@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import type { Token } from "@/lib/types/exchange";
 import type { ChainEcosystem } from "@/lib/wallet/types";
+import { unreachableEcosystem } from "@/lib/wallet/ecosystem";
 import type { OrderSide } from "./types";
 
 interface SubmitButtonProps {
@@ -26,10 +27,7 @@ export function SubmitButton({
 }: SubmitButtonProps) {
   // Missing-wallet CTA takes precedence over the normal submit flow.
   if (isAuthenticated && missingEcosystem) {
-    const label =
-      missingEcosystem === "solana"
-        ? "Connect Solana Wallet"
-        : "Connect EVM Wallet";
+    const label = connectLabel(missingEcosystem);
     return (
       <Button
         type="button"
@@ -62,4 +60,17 @@ export function SubmitButton({
       {getButtonText()}
     </Button>
   );
+}
+
+function connectLabel(ecosystem: ChainEcosystem): string {
+  switch (ecosystem) {
+    case "evm":
+      return "Connect EVM Wallet";
+    case "solana":
+      return "Connect Solana Wallet";
+    case "tron":
+      return "Connect Tron Wallet";
+    default:
+      return unreachableEcosystem(ecosystem);
+  }
 }

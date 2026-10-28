@@ -45,7 +45,7 @@ export function useUserBalances() {
     () =>
       Object.values(connectedWallets).map((w) => ({
         address: w.address,
-        ecosystem: w.ecosystem as WalletBinding["ecosystem"],
+        ecosystem: w.ecosystem,
       })),
     [connectedWallets],
   );

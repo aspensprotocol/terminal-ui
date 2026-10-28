@@ -30,6 +30,22 @@ const SOL_S: ConnectedWallet = {
   ecosystem: "solana",
 };
 
+// One 20-byte account held twice: as an EVM wallet (checksummed) and as a
+// Tron wallet (lowercase hex, its T-form converted on connect).
+const SHARED_HEX = "0xcf7d5ed79ca1fb60e040cde086c0be1b25289c7a";
+const EVM_SHARED: ConnectedWallet = {
+  id: "evm:0xCf7D5eD79CA1FB60E040cDe086C0BE1B25289C7A",
+  name: "Rabby",
+  address: "0xCf7D5eD79CA1FB60E040cDe086C0BE1B25289C7A",
+  ecosystem: "evm",
+};
+const TRON_SHARED: ConnectedWallet = {
+  id: `tron:${SHARED_HEX}`,
+  name: "MetaMask",
+  address: SHARED_HEX,
+  ecosystem: "tron",
+};
+
 const wallets = (...ws: ConnectedWallet[]) =>
   Object.fromEntries(ws.map((w) => [w.id, w]));
 
@@ -44,6 +60,13 @@ const crossEco: Market = {
   taker_fee_bps: 0,
   baseChainArchitecture: "EVM",
   quoteChainArchitecture: "Solana",
+};
+
+const tronEvm: Market = {
+  ...crossEco,
+  id: "tron::0xbase::base-sepolia::0xquote",
+  baseChainArchitecture: "Tron",
+  quoteChainArchitecture: "EVM",
 };
 
 describe("cancelSigningWallet — the order's lock-leg wallet signs", () => {
@@ -147,5 +170,54 @@ describe("cancelSigningWallet — the order's lock-leg wallet signs", () => {
     expect(() =>
       cancelSigningWallet({ side: "buy" }, crossEco, wallets(EVM_A), EVM_A.id),
     ).toThrow(/Solana/);
+  });
+
+  test("a Tron-leg order is cancelled by the Tron wallet, not an EVM wallet holding the same bytes", () => {
+    // The EVM wallet is first, active and holds the same 20 bytes; only
+    // the Tron wallet can sign under the TRON prefix the venue verifies.
+    const picked = cancelSigningWallet(
+      {
+        side: "sell",
+        base_account_address: SHARED_HEX,
+        quote_account_address: EVM_A.address.toLowerCase(),
+      },
+      tronEvm,
+      wallets(EVM_SHARED, EVM_A, TRON_SHARED),
+      EVM_SHARED.id,
+    );
+    expect(picked).toBe(TRON_SHARED);
+  });
+
+  test("an EVM-leg order on the same market is cancelled by the EVM wallet, not the Tron one", () => {
+    const picked = cancelSigningWallet(
+      {
+        side: "buy",
+        base_account_address: SHARED_HEX,
+        quote_account_address: SHARED_HEX,
+      },
+      tronEvm,
+      wallets(TRON_SHARED, EVM_SHARED),
+      TRON_SHARED.id,
+    );
+    expect(picked).toBe(EVM_SHARED);
+  });
+
+  test("Tron hex compares case-insensitively", () => {
+    const picked = cancelSigningWallet(
+      {
+        side: "sell",
+        base_account_address: SHARED_HEX.toUpperCase().replace("0X", "0x"),
+      },
+      tronEvm,
+      wallets(TRON_SHARED),
+      null,
+    );
+    expect(picked).toBe(TRON_SHARED);
+  });
+
+  test("no addresses, a Tron lock leg, no Tron wallet: refuses naming Tron", () => {
+    expect(() =>
+      cancelSigningWallet({ side: "sell" }, tronEvm, wallets(EVM_A), EVM_A.id),
+    ).toThrow(/a Tron wallet/);
   });
 });

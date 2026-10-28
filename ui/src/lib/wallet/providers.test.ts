@@ -10,6 +10,7 @@ import {
   mergeWalletProviders,
   type EvmConnectorLike,
   type SolanaWalletLike,
+  type TronWalletLike,
 } from "./providers";
 
 const GENERIC_INJECTED: EvmConnectorLike = {
@@ -47,6 +48,12 @@ const BACKPACK: SolanaWalletLike = {
   icon: "data:backpack",
   url: "https://backpack.app",
   readyState: "NotDetected",
+};
+
+const METAMASK_TRON: TronWalletLike = {
+  name: "MetaMask",
+  icon: "data:mm-tron",
+  installed: true,
 };
 
 /** A page with `window.ethereum`, as every browser with an EVM wallet has. */
@@ -171,5 +178,70 @@ describe("mergeWalletProviders", () => {
     expect(rows[0]?.icon).toBe("data:phantom-sol");
     const evmOnly = mergeWalletProviders([PHANTOM_EVM], [], PRESENT);
     expect(evmOnly[0]?.icon).toBe("data:phantom-evm");
+  });
+
+  test("picker row merges the MetaMask tron leg", () => {
+    // One MetaMask row carrying both legs; a merge that ignored the Tron
+    // leg's name would show two MetaMask rows.
+    const rows = mergeWalletProviders([METAMASK], [PHANTOM_SOL], {
+      ...PRESENT,
+      tronWallets: [METAMASK_TRON],
+    });
+    expect(names(rows)).toEqual(["MetaMask", "Phantom"]);
+    const mm = rows[0];
+    expect(mm?.evm?.connectorId).toBe("io.metamask");
+    expect(mm?.tron?.walletName).toBe("MetaMask");
+    expect(mm?.solana).toBeUndefined();
+    // The Tron leg does not leak onto another product's row.
+    expect(rows[1]?.tron).toBeUndefined();
+  });
+
+  test("no Tron leg is offered when the venue lists no Tron chain", () => {
+    const rows = mergeWalletProviders([METAMASK], [], PRESENT);
+    expect(rows[0]?.tron).toBeUndefined();
+  });
+
+  test("a tron filter keeps only Tron legs", () => {
+    const rows = mergeWalletProviders(
+      [PHANTOM_EVM, METAMASK],
+      [PHANTOM_SOL, BACKPACK],
+      { ...PRESENT, filter: "tron", tronWallets: [METAMASK_TRON] },
+    );
+    expect(names(rows)).toEqual(["MetaMask"]);
+    expect(rows[0]?.tron).toBeDefined();
+    expect(rows[0]?.evm).toBeUndefined();
+    expect(rows[0]?.solana).toBeUndefined();
+  });
+
+  test("an evm or solana filter strips the Tron leg", () => {
+    const evm = mergeWalletProviders([METAMASK], [], {
+      ...PRESENT,
+      filter: "evm",
+      tronWallets: [METAMASK_TRON],
+    });
+    expect(names(evm)).toEqual(["MetaMask"]);
+    expect(evm[0]?.tron).toBeUndefined();
+    const sol = mergeWalletProviders([METAMASK], [PHANTOM_SOL], {
+      ...PRESENT,
+      filter: "solana",
+      tronWallets: [METAMASK_TRON],
+    });
+    expect(names(sol)).toEqual(["Phantom"]);
+  });
+
+  test("an installed Tron leg alone marks its row installed", () => {
+    // Alphabetical order would put Backpack first; installed-first puts
+    // the Tron-only MetaMask row ahead of it.
+    const rows = mergeWalletProviders([], [BACKPACK], {
+      ...PRESENT,
+      tronWallets: [METAMASK_TRON],
+    });
+    expect(names(rows)).toEqual(["MetaMask", "Backpack"]);
+    expect(rows[0]?.installed).toBe(true);
+    const absent = mergeWalletProviders([], [], {
+      ...PRESENT,
+      tronWallets: [{ ...METAMASK_TRON, installed: false }],
+    });
+    expect(absent[0]?.installed).toBe(false);
   });
 });

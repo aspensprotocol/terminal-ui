@@ -15,7 +15,12 @@ import {
 } from "@aspensprotocol/sdk-ts";
 import { createActiveSigningAdapter } from "@/lib/signing-adapter";
 import { useFceEnabled } from "@/lib/providers/fce-context";
-import { settlementWallets, sideLegs } from "@/lib/wallet";
+import {
+  settleOverrideAddress,
+  settlementWallets,
+  sideLegs,
+  walletPhrase,
+} from "@/lib/wallet";
 import { hasSameAddressAck, recordSameAddressAck } from "@/lib/settlement-ack";
 import type { Market, Token } from "@/lib/types/exchange";
 import type { TradeFormData } from "../types";
@@ -159,9 +164,7 @@ export function useTradeFormSubmit({
       );
       if (!signingWallet) {
         setError(
-          requiredEcosystem === "solana"
-            ? "Connect a Solana wallet to trade this market"
-            : "Connect an EVM wallet to trade this market",
+          `Connect ${walletPhrase(requiredEcosystem)} to trade this market`,
         );
         return;
       }
@@ -171,16 +174,33 @@ export function useTradeFormSubmit({
         setActiveWallet(signingWallet.id);
       }
 
+      const baseArchitecture = selectedMarket.baseChainArchitecture ?? "";
+      const quoteArchitecture = selectedMarket.quoteChainArchitecture ?? "";
+      const receiveArchitecture =
+        legs.receivingLeg === "base" ? baseArchitecture : quoteArchitecture;
+
       // The receiving-leg override: only honored when the user opted in
       // (`settleToDifferent`), or when there is no receiving wallet and an
       // entered address is the only way to settle at all. A leftover
-      // string with the toggle off must never redirect an order.
+      // string with the toggle off must never redirect an order. It is
+      // signed in the form the venue keys: a Tron `T…` address is converted
+      // to `0x` hex here, the same conversion the settlement section shows.
       const overrideRaw = data.settleAddress.trim();
-      const overrideInPlay =
+      let overrideInPlay: string | undefined;
+      if (
         (data.settleToDifferent || receivingWallet === null) &&
         overrideRaw !== ""
-          ? overrideRaw
-          : undefined;
+      ) {
+        const override = settleOverrideAddress(
+          receiveArchitecture,
+          overrideRaw,
+        );
+        if (override.error !== null) {
+          setError(`Settlement address rejected: ${override.error}`);
+          return;
+        }
+        overrideInPlay = override.address;
+      }
 
       // The FCE direct-action wire CAN carry both account addresses (the
       // ext-proxy adapter forwards them verbatim into the Order it
@@ -200,9 +220,9 @@ export function useTradeFormSubmit({
       // there.
       if (fceEnabled && receivingWallet === null) {
         setError(
-          legs.receivingEcosystem === "solana"
-            ? "Connect a Solana wallet to receive funds"
-            : "Connect an EVM wallet to receive funds",
+          legs.receivingEcosystem
+            ? `Connect ${walletPhrase(legs.receivingEcosystem)} to receive funds`
+            : "Connect a wallet on the receiving chain to receive funds",
         );
         return;
       }
@@ -211,15 +231,13 @@ export function useTradeFormSubmit({
       // leg is the signing wallet by construction; the receiving leg is
       // the connected wallet on that chain or the validated override.
       //
-      // A missing architecture string falls back to "" and is validated
-      // under the EVM rules (`validateSettleAddress` treats everything
-      // non-Solana as EVM). That cannot happen for a SIGNABLE order —
-      // `sideLegs` already returned a real ecosystem for the giving leg,
-      // and the receiving arch comes from the same config join — but it
-      // is the failure shape if config ever ships a market without chain
-      // metadata: an address validated under the wrong chain's rules.
-      const baseArchitecture = selectedMarket.baseChainArchitecture ?? "";
-      const quoteArchitecture = selectedMarket.quoteChainArchitecture ?? "";
+      // A missing architecture string falls back to "", which the SDK reads
+      // as EVM (the proto default); an unknown one throws. A missing one
+      // cannot happen for a SIGNABLE order — `sideLegs` already returned a
+      // real ecosystem for the giving leg, and the receiving arch comes from
+      // the same config join — but it is the failure shape if config ever
+      // ships a market without chain metadata: an address validated under
+      // the wrong chain's rules.
       let legAddresses: { baseAddress: string; quoteAddress: string };
       try {
         legAddresses = resolveLegAddresses({
@@ -246,8 +264,6 @@ export function useTradeFormSubmit({
       // A REDIRECT (settling somewhere other than a connected wallet)
       // needs its per-order acknowledgement: nothing can verify anyone
       // holds the redirected address's key.
-      const receiveArchitecture =
-        legs.receivingLeg === "base" ? baseArchitecture : quoteArchitecture;
       const isRedirect =
         overrideInPlay !== undefined &&
         (receivingWallet === null ||

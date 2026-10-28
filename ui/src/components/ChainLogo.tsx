@@ -4,7 +4,7 @@
  * The chain mark for a market leg, in place of the network's name.
  *
  * The logo is resolved by, in order: (1) an explicit per-network override —
- * Sepolia borrows the Ethereum-mainnet mark; (2) a shared Solana mark for any
+ * Sepolia borrows the Ethereum-mainnet mark, Nile the Tron-mainnet one; (2) a shared Solana mark for any
  * Solana network, whose on-chain id is nominal/null and so useless as a key;
  * (3) the chain's numeric id. A network with no resolvable mark falls back to
  * its short `networkSymbol` (e.g. "SEP"), never the full hyphenated id. The
@@ -31,10 +31,12 @@ const THEME = "dark";
 
 /**
  * Networks that borrow another chain's mark. A testnet has no icon of its own,
- * so it shows its mainnet's — Sepolia → Ethereum mainnet (chainId 1).
+ * so it shows its mainnet's — Sepolia → Ethereum mainnet (chainId 1), Nile →
+ * Tron mainnet (chainId 728126428).
  */
 const LOGO_OVERRIDE: Record<string, string> = {
   "ethereum-sepolia": "1",
+  "tron-nile": "728126428",
 };
 
 /** The `/chain-logos/<slug>-<theme>.png` slug for a network, or undefined. */

@@ -6,7 +6,8 @@
  * Single entry point for moving tokens between the user's wallet and
  * the arborter's trade contract. The underlying hook dispatches on
  * chain architecture (EVM: wagmi + MidribV3 calls, Solana: web3.js +
- * Midrib program instructions), so the dialog itself is
+ * Midrib program instructions, Tron: the SDK's Tron transactions signed in
+ * MetaMask), so the dialog itself is
  * ecosystem-agnostic — the (chain, token) picker simply enumerates
  * every chain the arborter exposes.
  *
@@ -106,8 +107,7 @@ export function TransferDialog({
     const out: TokenChoice[] = [];
     for (const chain of config.chains) {
       // Only list chains whose architecture we can actually drive.
-      // Hedera (and anything else) doesn't have a Transfer wire-up yet.
-      if (!chain.architecture.match(/^(evm|solana)$/i)) continue;
+      if (!chain.architecture.match(/^(evm|solana|tron)$/i)) continue;
       for (const [ticker, token] of Object.entries(chain.tokens)) {
         out.push({
           chainNetwork: chain.network,
