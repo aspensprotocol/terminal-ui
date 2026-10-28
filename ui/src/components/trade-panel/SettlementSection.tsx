@@ -152,22 +152,13 @@ export function SettlementSection({
   const sameAddressAlreadyAcked =
     signingWallet !== null && hasSameAddressAck(signingWallet.address);
 
-  // Keyed by leg role, not network — a single-chain market has the same
-  // network on both legs, which would collide as a React key.
-  const summary = [
-    {
-      leg: "give",
-      network: giveNetwork,
-      address: signingShown ?? "—",
-    },
-    { leg: "receive", network: receiveNetwork, address: receiveShown || "—" },
-  ];
-
+  // Collapsed, the header names the section and nothing else: the
+  // addresses appear only once it is expanded.
   return (
     <div className="rounded-md border border-border/40">
       <button
         type="button"
-        className="w-full flex items-center justify-between px-3 py-2 text-sm"
+        className="w-full flex items-center px-3 py-2 text-sm"
         onClick={() => setExpanded((e) => !e)}
         aria-expanded={expanded}
       >
@@ -179,18 +170,6 @@ export function SettlementSection({
           )}
           Settlement
         </span>
-        {!expanded && (
-          <span className="flex items-center gap-2 text-xs text-muted-foreground">
-            {summary.map(({ leg, network, address }) => (
-              <span key={leg} className="flex items-center gap-1">
-                <ChainLogo network={network} />
-                <span title={address}>
-                  {address === "—" ? "—" : shortenAddress(address)}
-                </span>
-              </span>
-            ))}
-          </span>
-        )}
       </button>
 
       {expanded && (
