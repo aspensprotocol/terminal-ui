@@ -3,8 +3,7 @@
 import { useState } from "react";
 import { useExchangeStore, selectSelectedMarket } from "@/lib/store";
 import { useMarkets } from "@/lib/hooks";
-import { WalletManager } from "@/components/WalletManager";
-import { TransferDialog } from "@/components/TransferDialog";
+import { SiteHeader } from "@/components/SiteHeader";
 import { AttestationDialog } from "@/components/AttestationDialog";
 import { ChainLogo } from "@/components/ChainLogo";
 import {
@@ -14,8 +13,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import Image from "next/image";
-import Link from "next/link";
 
 export function MarketHeader() {
   const [attestationOpen, setAttestationOpen] = useState(false);
@@ -31,31 +28,7 @@ export function MarketHeader() {
 
   return (
     <>
-      {/* Header */}
-      <div className="mb-4 md:mb-6">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          {/* Logo — links to the site home ('/'), not the source repo. */}
-          <Link
-            href="/"
-            className="flex items-center gap-3 group select-none cursor-pointer"
-          >
-            <Image
-              src="/logo3.png"
-              alt="Exchange Logo"
-              width={48}
-              height={48}
-              className="h-12 w-12 transition-all duration-200 group-hover:brightness-120"
-              priority
-            />
-          </Link>
-
-          {/* Actions */}
-          <div className="flex items-center gap-2">
-            <TransferDialog />
-            <WalletManager />
-          </div>
-        </div>
-      </div>
+      <SiteHeader />
 
       {/* Market Selector and Stats */}
       <div className="mb-3">

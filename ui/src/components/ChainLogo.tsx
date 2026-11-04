@@ -47,23 +47,27 @@ function logoSlug(network: string, chainId?: number): string | undefined {
   return chainId != null ? String(chainId) : undefined;
 }
 
-export function ChainLogo({ network }: { network?: string }) {
+/** The chain mark's image path for `network`, or undefined when it has none. */
+export function useChainLogoSrc(network?: string): string | undefined {
   const client = useExchangeClient();
+  if (!network) return undefined;
+  const chainId =
+    client.cache.getConfig()?.chains.find((c) => c.network === network)
+      ?.chainId ?? undefined;
+  const slug = logoSlug(network, chainId);
+  return slug ? `/chain-logos/${slug}-${THEME}.png` : undefined;
+}
 
+export function ChainLogo({ network }: { network?: string }) {
   // Track the SRC that failed, not a bare boolean. A boolean persists across
   // `network` prop changes (React reuses this instance as the selected market
   // cycles), so a single 404 on a logo-less leg would poison every later
   // market — the mark would silently drop back to text even for chains that
   // do have one. Keyed by src, a new network re-attempts cleanly.
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
+  const src = useChainLogoSrc(network);
 
   if (!network) return null;
-
-  const chainId =
-    client.cache.getConfig()?.chains.find((c) => c.network === network)
-      ?.chainId ?? undefined;
-  const slug = logoSlug(network, chainId);
-  const src = slug ? `/chain-logos/${slug}-${THEME}.png` : undefined;
 
   if (!src || failedSrc === src) {
     return (
