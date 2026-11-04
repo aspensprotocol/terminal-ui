@@ -62,7 +62,7 @@ export function SubmitButton({
   );
 }
 
-function connectLabel(ecosystem: ChainEcosystem): string {
+export function connectLabel(ecosystem: ChainEcosystem): string {
   switch (ecosystem) {
     case "evm":
       return "Connect EVM Wallet";
