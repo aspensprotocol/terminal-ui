@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file arborter.proto.
  */
 export const file_arborter: GenFile = /*@__PURE__*/
-  fileDesc("Cg5hcmJvcnRlci5wcm90bxIWeHl6LmFzcGVucy5hcmJvcnRlci52MSJlCg9XaXRoZHJhd1JlcXVlc3QSDwoHbmV0d29yaxgBIAEoCRINCgV0b2tlbhgCIAEoCRIPCgdhY2NvdW50GAMgASgJEg4KBmFtb3VudBgEIAEoCRIRCglzaWduYXR1cmUYBSABKAwidAoQV2l0aGRyYXdSZXNwb25zZRIPCgdhY2NvdW50GAEgASgJEg0KBXRva2VuGAIgASgJEg4KBmFtb3VudBgDIAEoCRINCgVub25jZRgEIAEoBBIOCgZleHBpcnkYBSABKAQSEQoJc2lnbmF0dXJlGAYgASgMImIKEkNhbmNlbE9yZGVyUmVxdWVzdBI0CgVvcmRlchgBIAEoCzIlLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuT3JkZXJUb0NhbmNlbBIWCg5zaWduYXR1cmVfaGFzaBgCIAEoDCItChNDYW5jZWxPcmRlclJlc3BvbnNlEhYKDm9yZGVyX2NhbmNlbGVkGAEgASgIIpkBChBPcmRlcmJvb2tSZXF1ZXN0EhEKCW1hcmtldF9pZBgBIAEoCRIjChZoaXN0b3JpY2FsX29wZW5fb3JkZXJzGAIgASgISACIAQESHQoQZmlsdGVyX2J5X3RyYWRlchgDIAEoCUgBiAEBQhkKF19oaXN0b3JpY2FsX29wZW5fb3JkZXJzQhMKEV9maWx0ZXJfYnlfdHJhZGVyIpkBCgxUcmFkZVJlcXVlc3QSEQoJbWFya2V0X2lkGAEgASgJEiUKGGhpc3RvcmljYWxfY2xvc2VkX3RyYWRlcxgCIAEoCEgAiAEBEh0KEGZpbHRlcl9ieV90cmFkZXIYAyABKAlIAYgBAUIbChlfaGlzdG9yaWNhbF9jbG9zZWRfdHJhZGVzQhMKEV9maWx0ZXJfYnlfdHJhZGVyIlgKEFNlbmRPcmRlclJlcXVlc3QSLAoFb3JkZXIYASABKAsyHS54eXouYXNwZW5zLmFyYm9ydGVyLnYxLk9yZGVyEhYKDnNpZ25hdHVyZV9oYXNoGAIgASgMIv0CCgVPcmRlchIqCgRzaWRlGAEgASgOMhwueHl6LmFzcGVucy5hcmJvcnRlci52MS5TaWRlEhAKCHF1YW50aXR5GAIgASgJEhIKBXByaWNlGAMgASgJSACIAQESEQoJbWFya2V0X2lkGAQgASgJEhwKFGJhc2VfYWNjb3VudF9hZGRyZXNzGAUgASgJEh0KFXF1b3RlX2FjY291bnRfYWRkcmVzcxgGIAEoCRI9Cg5leGVjdXRpb25fdHlwZRgHIAEoDjIlLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuRXhlY3V0aW9uVHlwZRIaChJtYXRjaGluZ19vcmRlcl9pZHMYCCADKAwSEQoJcG9zdF9vbmx5GAkgASgIEg4KBmhpZGRlbhgKIAEoCBIZCgxxdW90ZV9idWRnZXQYCyABKAlIAYgBARINCgVub25jZRgMIAEoBBIPCgdzZXNzaW9uGA0gASgEQggKBl9wcmljZUIPCg1fcXVvdGVfYnVkZ2V0IrkCCgVUcmFkZRIRCgl0aW1lc3RhbXAYASABKAQSDQoFcHJpY2UYAiABKAkSCwoDcXR5GAMgASgJEhoKEm1ha2VyX2Jhc2VfYWRkcmVzcxgEIAEoCRIbChNtYWtlcl9xdW90ZV9hZGRyZXNzGAUgASgJEhoKEnRha2VyX2Jhc2VfYWRkcmVzcxgGIAEoCRIbChN0YWtlcl9xdW90ZV9hZGRyZXNzGAcgASgJEjMKCGJ1eWVyX2lzGAggASgOMiEueHl6LmFzcGVucy5hcmJvcnRlci52MS5UcmFkZVJvbGUSNAoJc2VsbGVyX2lzGAkgASgOMiEueHl6LmFzcGVucy5hcmJvcnRlci52MS5UcmFkZVJvbGUSEQoJb3JkZXJfaGl0GAogASgMEhEKCW1hcmtldF9pZBgLIAEoCSKoAQoRU2VuZE9yZGVyUmVzcG9uc2USFQoNb3JkZXJfaW5fYm9vaxgBIAEoCBIxCgVvcmRlchgCIAEoCzIdLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuT3JkZXJIAIgBARItCgZ0cmFkZXMYAyADKAsyHS54eXouYXNwZW5zLmFyYm9ydGVyLnYxLlRyYWRlEhAKCG9yZGVyX2lkGAQgASgMQggKBl9vcmRlciJgCg1PcmRlclRvQ2FuY2VsEhEKCW1hcmtldF9pZBgBIAEoCRIqCgRzaWRlGAIgASgOMhwueHl6LmFzcGVucy5hcmJvcnRlci52MS5TaWRlEhAKCG9yZGVyX2lkGAMgASgMIoECCg5PcmRlcmJvb2tFbnRyeRIRCgl0aW1lc3RhbXAYASABKAQSEAoIb3JkZXJfaWQYAiABKAwSDQoFcHJpY2UYAyABKAkSEAoIcXVhbnRpdHkYBCABKAkSKgoEc2lkZRgFIAEoDjIcLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuU2lkZRIaChJtYWtlcl9iYXNlX2FkZHJlc3MYBiABKAkSGwoTbWFrZXJfcXVvdGVfYWRkcmVzcxgHIAEoCRIRCgltYXJrZXRfaWQYCCABKAkSMQoFc3RhdGUYCSABKA4yIi54eXouYXNwZW5zLmFyYm9ydGVyLnYxLk9yZGVyU3RhdGUqOAoEU2lkZRIUChBTSURFX1VOU1BFQ0lGSUVEEAASDAoIU0lERV9CSUQQARIMCghTSURFX0FTSxACKlEKDUV4ZWN1dGlvblR5cGUSHgoaRVhFQ1VUSU9OX1RZUEVfVU5TUEVDSUZJRUQQABIgChxFWEVDVVRJT05fVFlQRV9ESVNDUkVUSU9OQVJZEAEqdwoKT3JkZXJTdGF0ZRIbChdPUkRFUl9TVEFURV9VTlNQRUNJRklFRBAAEhkKFU9SREVSX1NUQVRFX0NPTkZJUk1FRBACEhcKE09SREVSX1NUQVRFX01BVENIRUQQAxIYChRPUkRFUl9TVEFURV9DQU5DRUxFRBAEKj0KCVRyYWRlUm9sZRIaChZUUkFERV9ST0xFX1VOU1BFQ0lGSUVEEAASCQoFTUFLRVIQARIJCgVUQUtFUhACMvYDCg9BcmJvcnRlclNlcnZpY2USYgoJU2VuZE9yZGVyEigueHl6LmFzcGVucy5hcmJvcnRlci52MS5TZW5kT3JkZXJSZXF1ZXN0GikueHl6LmFzcGVucy5hcmJvcnRlci52MS5TZW5kT3JkZXJSZXNwb25zZSIAEmgKC0NhbmNlbE9yZGVyEioueHl6LmFzcGVucy5hcmJvcnRlci52MS5DYW5jZWxPcmRlclJlcXVlc3QaKy54eXouYXNwZW5zLmFyYm9ydGVyLnYxLkNhbmNlbE9yZGVyUmVzcG9uc2UiABJRCgZUcmFkZXMSJC54eXouYXNwZW5zLmFyYm9ydGVyLnYxLlRyYWRlUmVxdWVzdBodLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuVHJhZGUiADABEmEKCU9yZGVyYm9vaxIoLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuT3JkZXJib29rUmVxdWVzdBomLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuT3JkZXJib29rRW50cnkiADABEl8KCFdpdGhkcmF3EicueHl6LmFzcGVucy5hcmJvcnRlci52MS5XaXRoZHJhd1JlcXVlc3QaKC54eXouYXNwZW5zLmFyYm9ydGVyLnYxLldpdGhkcmF3UmVzcG9uc2UiAEICSAFiBnByb3RvMw");
+  fileDesc("Cg5hcmJvcnRlci5wcm90bxIWeHl6LmFzcGVucy5hcmJvcnRlci52MSJlCg9XaXRoZHJhd1JlcXVlc3QSDwoHbmV0d29yaxgBIAEoCRINCgV0b2tlbhgCIAEoCRIPCgdhY2NvdW50GAMgASgJEg4KBmFtb3VudBgEIAEoCRIRCglzaWduYXR1cmUYBSABKAwidAoQV2l0aGRyYXdSZXNwb25zZRIPCgdhY2NvdW50GAEgASgJEg0KBXRva2VuGAIgASgJEg4KBmFtb3VudBgDIAEoCRINCgVub25jZRgEIAEoBBIOCgZleHBpcnkYBSABKAQSEQoJc2lnbmF0dXJlGAYgASgMImIKEkNhbmNlbE9yZGVyUmVxdWVzdBI0CgVvcmRlchgBIAEoCzIlLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuT3JkZXJUb0NhbmNlbBIWCg5zaWduYXR1cmVfaGFzaBgCIAEoDCItChNDYW5jZWxPcmRlclJlc3BvbnNlEhYKDm9yZGVyX2NhbmNlbGVkGAEgASgIIpkBChBPcmRlcmJvb2tSZXF1ZXN0EhEKCW1hcmtldF9pZBgBIAEoCRIjChZoaXN0b3JpY2FsX29wZW5fb3JkZXJzGAIgASgISACIAQESHQoQZmlsdGVyX2J5X3RyYWRlchgDIAEoCUgBiAEBQhkKF19oaXN0b3JpY2FsX29wZW5fb3JkZXJzQhMKEV9maWx0ZXJfYnlfdHJhZGVyIpkBCgxUcmFkZVJlcXVlc3QSEQoJbWFya2V0X2lkGAEgASgJEiUKGGhpc3RvcmljYWxfY2xvc2VkX3RyYWRlcxgCIAEoCEgAiAEBEh0KEGZpbHRlcl9ieV90cmFkZXIYAyABKAlIAYgBAUIbChlfaGlzdG9yaWNhbF9jbG9zZWRfdHJhZGVzQhMKEV9maWx0ZXJfYnlfdHJhZGVyIlgKEFNlbmRPcmRlclJlcXVlc3QSLAoFb3JkZXIYASABKAsyHS54eXouYXNwZW5zLmFyYm9ydGVyLnYxLk9yZGVyEhYKDnNpZ25hdHVyZV9oYXNoGAIgASgMIv0CCgVPcmRlchIqCgRzaWRlGAEgASgOMhwueHl6LmFzcGVucy5hcmJvcnRlci52MS5TaWRlEhAKCHF1YW50aXR5GAIgASgJEhIKBXByaWNlGAMgASgJSACIAQESEQoJbWFya2V0X2lkGAQgASgJEhwKFGJhc2VfYWNjb3VudF9hZGRyZXNzGAUgASgJEh0KFXF1b3RlX2FjY291bnRfYWRkcmVzcxgGIAEoCRI9Cg5leGVjdXRpb25fdHlwZRgHIAEoDjIlLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuRXhlY3V0aW9uVHlwZRIaChJtYXRjaGluZ19vcmRlcl9pZHMYCCADKAwSEQoJcG9zdF9vbmx5GAkgASgIEg4KBmhpZGRlbhgKIAEoCBIZCgxxdW90ZV9idWRnZXQYCyABKAlIAYgBARINCgVub25jZRgMIAEoBBIPCgdzZXNzaW9uGA0gASgEQggKBl9wcmljZUIPCg1fcXVvdGVfYnVkZ2V0IrkCCgVUcmFkZRIRCgl0aW1lc3RhbXAYASABKAQSDQoFcHJpY2UYAiABKAkSCwoDcXR5GAMgASgJEhoKEm1ha2VyX2Jhc2VfYWRkcmVzcxgEIAEoCRIbChNtYWtlcl9xdW90ZV9hZGRyZXNzGAUgASgJEhoKEnRha2VyX2Jhc2VfYWRkcmVzcxgGIAEoCRIbChN0YWtlcl9xdW90ZV9hZGRyZXNzGAcgASgJEjMKCGJ1eWVyX2lzGAggASgOMiEueHl6LmFzcGVucy5hcmJvcnRlci52MS5UcmFkZVJvbGUSNAoJc2VsbGVyX2lzGAkgASgOMiEueHl6LmFzcGVucy5hcmJvcnRlci52MS5UcmFkZVJvbGUSEQoJb3JkZXJfaGl0GAogASgMEhEKCW1hcmtldF9pZBgLIAEoCSKoAQoRU2VuZE9yZGVyUmVzcG9uc2USFQoNb3JkZXJfaW5fYm9vaxgBIAEoCBIxCgVvcmRlchgCIAEoCzIdLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuT3JkZXJIAIgBARItCgZ0cmFkZXMYAyADKAsyHS54eXouYXNwZW5zLmFyYm9ydGVyLnYxLlRyYWRlEhAKCG9yZGVyX2lkGAQgASgMQggKBl9vcmRlciJgCg1PcmRlclRvQ2FuY2VsEhEKCW1hcmtldF9pZBgBIAEoCRIqCgRzaWRlGAIgASgOMhwueHl6LmFzcGVucy5hcmJvcnRlci52MS5TaWRlEhAKCG9yZGVyX2lkGAMgASgMIoECCg5PcmRlcmJvb2tFbnRyeRIRCgl0aW1lc3RhbXAYASABKAQSEAoIb3JkZXJfaWQYAiABKAwSDQoFcHJpY2UYAyABKAkSEAoIcXVhbnRpdHkYBCABKAkSKgoEc2lkZRgFIAEoDjIcLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuU2lkZRIaChJtYWtlcl9iYXNlX2FkZHJlc3MYBiABKAkSGwoTbWFrZXJfcXVvdGVfYWRkcmVzcxgHIAEoCRIRCgltYXJrZXRfaWQYCCABKAkSMQoFc3RhdGUYCSABKA4yIi54eXouYXNwZW5zLmFyYm9ydGVyLnYxLk9yZGVyU3RhdGUigwEKDlJlYWREZWxlZ2F0aW9uEhUKDW93bmVyX25ldHdvcmsYASABKAkSDQoFb3duZXIYAiABKAkSFwoPZGVsZWdhdGVfcHVia2V5GAMgASgMEg4KBmlzc3VlZBgEIAEoBBIPCgdleHBpcmVzGAUgASgEEhEKCXNpZ25hdHVyZRgGIAEoDCKRAQoNTXlPcmRlcnNRdWVyeRIUCgx0aW1lc3RhbXBfbXMYASABKAQSDQoFbm9uY2UYAiABKAwSEQoJb3JkZXJfaWRzGAMgAygMEhEKCW1hcmtldF9pZBgEIAEoCRIWCg5pbmNsdWRlX2Nsb3NlZBgFIAEoCBIOCgZjdXJzb3IYBiABKAwSDQoFbGltaXQYByABKA0inQEKD015T3JkZXJzUmVxdWVzdBI7CgtkZWxlZ2F0aW9ucxgBIAMoCzImLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuUmVhZERlbGVnYXRpb24SNAoFcXVlcnkYAiABKAsyJS54eXouYXNwZW5zLmFyYm9ydGVyLnYxLk15T3JkZXJzUXVlcnkSFwoPcXVlcnlfc2lnbmF0dXJlGAMgASgMInoKBk15RmlsbBIPCgdmaWxsX2lkGAEgASgMEg0KBXByaWNlGAIgASgJEgsKA3F0eRgDIAEoCRITCgttYXRjaF90c19tcxgEIAEoBBIuCgRyb2xlGAUgASgOMiAueHl6LmFzcGVucy5hcmJvcnRlci52MS5GaWxsUm9sZSLtAwoHTXlPcmRlchIQCghvcmRlcl9pZBgBIAEoDBINCgVmb3VuZBgCIAEoCBIRCgltYXJrZXRfaWQYAyABKAkSKgoEc2lkZRgEIAEoDjIcLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuU2lkZRIxCgRraW5kGAUgASgOMiMueHl6LmFzcGVucy5hcmJvcnRlci52MS5NeU9yZGVyS2luZBIRCglpc19oaWRkZW4YBiABKAgSFAoMaXNfcG9zdF9vbmx5GAcgASgIEg0KBXByaWNlGAggASgJEhkKEWluaXRpYWxfcXR5X2tub3duGAkgASgIEhMKC2luaXRpYWxfcXR5GAogASgJEhIKCmZpbGxlZF9xdHkYCyABKAkSFQoNcmVtYWluaW5nX3F0eRgMIAEoCRIzCgVzdGF0ZRgNIAEoDjIkLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuTXlPcmRlclN0YXRlEhUKDWNyZWF0ZWRfYXRfbXMYDiABKAQSFAoMY2xvc2VkX2F0X21zGA8gASgEEhQKDGJhc2VfYWRkcmVzcxgQIAEoCRIVCg1xdW90ZV9hZGRyZXNzGBEgASgJEi0KBWZpbGxzGBIgAygLMh4ueHl6LmFzcGVucy5hcmJvcnRlci52MS5NeUZpbGwiWAoQTXlPcmRlcnNSZXNwb25zZRIvCgZvcmRlcnMYASADKAsyHy54eXouYXNwZW5zLmFyYm9ydGVyLnYxLk15T3JkZXISEwoLbmV4dF9jdXJzb3IYAiABKAwqOAoEU2lkZRIUChBTSURFX1VOU1BFQ0lGSUVEEAASDAoIU0lERV9CSUQQARIMCghTSURFX0FTSxACKlEKDUV4ZWN1dGlvblR5cGUSHgoaRVhFQ1VUSU9OX1RZUEVfVU5TUEVDSUZJRUQQABIgChxFWEVDVVRJT05fVFlQRV9ESVNDUkVUSU9OQVJZEAEqdwoKT3JkZXJTdGF0ZRIbChdPUkRFUl9TVEFURV9VTlNQRUNJRklFRBAAEhkKFU9SREVSX1NUQVRFX0NPTkZJUk1FRBACEhcKE09SREVSX1NUQVRFX01BVENIRUQQAxIYChRPUkRFUl9TVEFURV9DQU5DRUxFRBAEKj0KCVRyYWRlUm9sZRIaChZUUkFERV9ST0xFX1VOU1BFQ0lGSUVEEAASCQoFTUFLRVIQARIJCgVUQUtFUhACKoMCCgxNeU9yZGVyU3RhdGUSHgoaTVlfT1JERVJfU1RBVEVfVU5TUEVDSUZJRUQQABIXChNNWV9PUkRFUl9TVEFURV9PUEVOEAESIwofTVlfT1JERVJfU1RBVEVfUEFSVElBTExZX0ZJTExFRBACEhkKFU1ZX09SREVSX1NUQVRFX0ZJTExFRBADEhwKGE1ZX09SREVSX1NUQVRFX0NBTkNFTExFRBAEEhoKFk1ZX09SREVSX1NUQVRFX0VYUElSRUQQBRIlCiFNWV9PUkRFUl9TVEFURV9EUk9QUEVEX0JZX1JFU1RBUlQQBhIZChVNWV9PUkRFUl9TVEFURV9UUkFERUQQByqAAQoLTXlPcmRlcktpbmQSHQoZTVlfT1JERVJfS0lORF9VTlNQRUNJRklFRBAAEhcKE01ZX09SREVSX0tJTkRfTElNSVQQARIYChRNWV9PUkRFUl9LSU5EX01BUktFVBACEh8KG01ZX09SREVSX0tJTkRfRElTQ1JFVElPTkFSWRADKk8KCEZpbGxSb2xlEhkKFUZJTExfUk9MRV9VTlNQRUNJRklFRBAAEhMKD0ZJTExfUk9MRV9NQUtFUhABEhMKD0ZJTExfUk9MRV9UQUtFUhACMrsFCg9BcmJvcnRlclNlcnZpY2USYgoJU2VuZE9yZGVyEigueHl6LmFzcGVucy5hcmJvcnRlci52MS5TZW5kT3JkZXJSZXF1ZXN0GikueHl6LmFzcGVucy5hcmJvcnRlci52MS5TZW5kT3JkZXJSZXNwb25zZSIAEmgKC0NhbmNlbE9yZGVyEioueHl6LmFzcGVucy5hcmJvcnRlci52MS5DYW5jZWxPcmRlclJlcXVlc3QaKy54eXouYXNwZW5zLmFyYm9ydGVyLnYxLkNhbmNlbE9yZGVyUmVzcG9uc2UiABJRCgZUcmFkZXMSJC54eXouYXNwZW5zLmFyYm9ydGVyLnYxLlRyYWRlUmVxdWVzdBodLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuVHJhZGUiADABEmEKCU9yZGVyYm9vaxIoLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuT3JkZXJib29rUmVxdWVzdBomLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuT3JkZXJib29rRW50cnkiADABEl8KCFdpdGhkcmF3EicueHl6LmFzcGVucy5hcmJvcnRlci52MS5XaXRoZHJhd1JlcXVlc3QaKC54eXouYXNwZW5zLmFyYm9ydGVyLnYxLldpdGhkcmF3UmVzcG9uc2UiABJgCgtHZXRNeU9yZGVycxInLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuTXlPcmRlcnNSZXF1ZXN0GigueHl6LmFzcGVucy5hcmJvcnRlci52MS5NeU9yZGVyc1Jlc3BvbnNlEmEKDExpc3RNeU9yZGVycxInLnh5ei5hc3BlbnMuYXJib3J0ZXIudjEuTXlPcmRlcnNSZXF1ZXN0GigueHl6LmFzcGVucy5hcmJvcnRlci52MS5NeU9yZGVyc1Jlc3BvbnNlQgJIAWIGcHJvdG8z");
 
 /**
  * rpc: Withdraw 
@@ -814,6 +814,369 @@ export const OrderbookEntrySchema: GenMessage<OrderbookEntry> = /*@__PURE__*/
   messageDesc(file_arborter, 11);
 
 /**
+ * A read-only delegation: the owner authorizes `delegate_pubkey` to read
+ * their order status for a bounded time, by signing the delegation text.
+ *
+ * @generated from message xyz.aspens.arborter.v1.ReadDelegation
+ */
+export type ReadDelegation = Message<"xyz.aspens.arborter.v1.ReadDelegation"> & {
+  /**
+   * A configured network name; selects the signature scheme.
+   *
+   * @generated from field: string owner_network = 1;
+   */
+  ownerNetwork: string;
+
+  /**
+   * EVM/Tron 0x-hex, Solana base58.
+   *
+   * @generated from field: string owner = 2;
+   */
+  owner: string;
+
+  /**
+   * 32-byte Ed25519 public key of the delegate.
+   *
+   * @generated from field: bytes delegate_pubkey = 3;
+   */
+  delegatePubkey: Uint8Array;
+
+  /**
+   * Unix seconds.
+   *
+   * @generated from field: uint64 issued = 4;
+   */
+  issued: bigint;
+
+  /**
+   * Unix seconds.
+   *
+   * @generated from field: uint64 expires = 5;
+   */
+  expires: bigint;
+
+  /**
+   * The owner's signature over the delegation text.
+   *
+   * @generated from field: bytes signature = 6;
+   */
+  signature: Uint8Array;
+};
+
+/**
+ * Describes the message xyz.aspens.arborter.v1.ReadDelegation.
+ * Use `create(ReadDelegationSchema)` to create a new message.
+ */
+export const ReadDelegationSchema: GenMessage<ReadDelegation> = /*@__PURE__*/
+  messageDesc(file_arborter, 12);
+
+/**
+ * The query the delegate signs. The signature covers exactly the prost
+ * encoding of this message.
+ *
+ * @generated from message xyz.aspens.arborter.v1.MyOrdersQuery
+ */
+export type MyOrdersQuery = Message<"xyz.aspens.arborter.v1.MyOrdersQuery"> & {
+  /**
+   * Unix milliseconds; must be fresh (see the server's timestamp window).
+   *
+   * @generated from field: uint64 timestamp_ms = 1;
+   */
+  timestampMs: bigint;
+
+  /**
+   * Exactly 16 bytes, unique per query.
+   *
+   * @generated from field: bytes nonce = 2;
+   */
+  nonce: Uint8Array;
+
+  /**
+   * Order ids to fetch (`GetMyOrders`, 1 to 100 ids).
+   *
+   * @generated from field: repeated bytes order_ids = 3;
+   */
+  orderIds: Uint8Array[];
+
+  /**
+   * Restrict the listing to one market; empty means all markets.
+   *
+   * @generated from field: string market_id = 4;
+   */
+  marketId: string;
+
+  /**
+   * Include orders that have closed (`ListMyOrders`).
+   *
+   * @generated from field: bool include_closed = 5;
+   */
+  includeClosed: boolean;
+
+  /**
+   * Opaque page cursor from a previous `next_cursor`; empty for the first page.
+   *
+   * @generated from field: bytes cursor = 6;
+   */
+  cursor: Uint8Array;
+
+  /**
+   * Page size for `ListMyOrders`; 0 means the default of 100, maximum 500.
+   *
+   * @generated from field: uint32 limit = 7;
+   */
+  limit: number;
+};
+
+/**
+ * Describes the message xyz.aspens.arborter.v1.MyOrdersQuery.
+ * Use `create(MyOrdersQuerySchema)` to create a new message.
+ */
+export const MyOrdersQuerySchema: GenMessage<MyOrdersQuery> = /*@__PURE__*/
+  messageDesc(file_arborter, 13);
+
+/**
+ * Request for `GetMyOrders` and `ListMyOrders`.
+ *
+ * @generated from message xyz.aspens.arborter.v1.MyOrdersRequest
+ */
+export type MyOrdersRequest = Message<"xyz.aspens.arborter.v1.MyOrdersRequest"> & {
+  /**
+   * 1 to 4 delegations, all naming the same delegate key.
+   *
+   * @generated from field: repeated xyz.aspens.arborter.v1.ReadDelegation delegations = 1;
+   */
+  delegations: ReadDelegation[];
+
+  /**
+   * The query being authorized.
+   *
+   * @generated from field: xyz.aspens.arborter.v1.MyOrdersQuery query = 2;
+   */
+  query?: MyOrdersQuery;
+
+  /**
+   * 64-byte Ed25519 signature by the delegate over the prost encoding of `query`.
+   *
+   * @generated from field: bytes query_signature = 3;
+   */
+  querySignature: Uint8Array;
+};
+
+/**
+ * Describes the message xyz.aspens.arborter.v1.MyOrdersRequest.
+ * Use `create(MyOrdersRequestSchema)` to create a new message.
+ */
+export const MyOrdersRequestSchema: GenMessage<MyOrdersRequest> = /*@__PURE__*/
+  messageDesc(file_arborter, 14);
+
+/**
+ * One fill against one of the caller's orders.
+ *
+ * @generated from message xyz.aspens.arborter.v1.MyFill
+ */
+export type MyFill = Message<"xyz.aspens.arborter.v1.MyFill"> & {
+  /**
+   * 32-byte fill identifier.
+   *
+   * @generated from field: bytes fill_id = 1;
+   */
+  fillId: Uint8Array;
+
+  /**
+   * Pair-decimal units, as a decimal integer string.
+   *
+   * @generated from field: string price = 2;
+   */
+  price: string;
+
+  /**
+   * Pair units.
+   *
+   * @generated from field: string qty = 3;
+   */
+  qty: string;
+
+  /**
+   * Unix milliseconds of the match.
+   *
+   * @generated from field: uint64 match_ts_ms = 4;
+   */
+  matchTsMs: bigint;
+
+  /**
+   * The caller's role in this fill.
+   *
+   * @generated from field: xyz.aspens.arborter.v1.FillRole role = 5;
+   */
+  role: FillRole;
+};
+
+/**
+ * Describes the message xyz.aspens.arborter.v1.MyFill.
+ * Use `create(MyFillSchema)` to create a new message.
+ */
+export const MyFillSchema: GenMessage<MyFill> = /*@__PURE__*/
+  messageDesc(file_arborter, 15);
+
+/**
+ * One of the caller's orders, as the venue reports it.
+ *
+ * @generated from message xyz.aspens.arborter.v1.MyOrder
+ */
+export type MyOrder = Message<"xyz.aspens.arborter.v1.MyOrder"> & {
+  /**
+   * The 32-byte order id this entry answers for.
+   *
+   * @generated from field: bytes order_id = 1;
+   */
+  orderId: Uint8Array;
+
+  /**
+   * False when the venue has no record of the id for this caller; every
+   * other field is then its default.
+   *
+   * @generated from field: bool found = 2;
+   */
+  found: boolean;
+
+  /**
+   * @generated from field: string market_id = 3;
+   */
+  marketId: string;
+
+  /**
+   * @generated from field: xyz.aspens.arborter.v1.Side side = 4;
+   */
+  side: Side;
+
+  /**
+   * @generated from field: xyz.aspens.arborter.v1.MyOrderKind kind = 5;
+   */
+  kind: MyOrderKind;
+
+  /**
+   * @generated from field: bool is_hidden = 6;
+   */
+  isHidden: boolean;
+
+  /**
+   * @generated from field: bool is_post_only = 7;
+   */
+  isPostOnly: boolean;
+
+  /**
+   * Pair-decimal units; empty for a market order.
+   *
+   * @generated from field: string price = 8;
+   */
+  price: string;
+
+  /**
+   * False when the order has no initial quantity to report: a
+   * `MY_ORDER_STATE_TRADED` order (known from its fills alone), or a market
+   * bid, whose signed quantity bounds nothing (its quote budget does). A
+   * closed market bid is FILLED if anything filled, else EXPIRED.
+   *
+   * @generated from field: bool initial_qty_known = 9;
+   */
+  initialQtyKnown: boolean;
+
+  /**
+   * Pair units; meaningful when `initial_qty_known`.
+   *
+   * @generated from field: string initial_qty = 10;
+   */
+  initialQty: string;
+
+  /**
+   * Pair units.
+   *
+   * @generated from field: string filled_qty = 11;
+   */
+  filledQty: string;
+
+  /**
+   * Pair units; empty when `initial_qty_known` is false.
+   *
+   * @generated from field: string remaining_qty = 12;
+   */
+  remainingQty: string;
+
+  /**
+   * @generated from field: xyz.aspens.arborter.v1.MyOrderState state = 13;
+   */
+  state: MyOrderState;
+
+  /**
+   * Unix milliseconds.
+   *
+   * @generated from field: uint64 created_at_ms = 14;
+   */
+  createdAtMs: bigint;
+
+  /**
+   * Unix milliseconds; 0 while the order is open.
+   *
+   * @generated from field: uint64 closed_at_ms = 15;
+   */
+  closedAtMs: bigint;
+
+  /**
+   * The caller's own base-leg address, in canonical form.
+   *
+   * @generated from field: string base_address = 16;
+   */
+  baseAddress: string;
+
+  /**
+   * The caller's own quote-leg address, in canonical form.
+   *
+   * @generated from field: string quote_address = 17;
+   */
+  quoteAddress: string;
+
+  /**
+   * Fills against this order, ascending by `match_ts_ms`, then `fill_id`.
+   *
+   * @generated from field: repeated xyz.aspens.arborter.v1.MyFill fills = 18;
+   */
+  fills: MyFill[];
+};
+
+/**
+ * Describes the message xyz.aspens.arborter.v1.MyOrder.
+ * Use `create(MyOrderSchema)` to create a new message.
+ */
+export const MyOrderSchema: GenMessage<MyOrder> = /*@__PURE__*/
+  messageDesc(file_arborter, 16);
+
+/**
+ * Response for `GetMyOrders` and `ListMyOrders`.
+ *
+ * @generated from message xyz.aspens.arborter.v1.MyOrdersResponse
+ */
+export type MyOrdersResponse = Message<"xyz.aspens.arborter.v1.MyOrdersResponse"> & {
+  /**
+   * @generated from field: repeated xyz.aspens.arborter.v1.MyOrder orders = 1;
+   */
+  orders: MyOrder[];
+
+  /**
+   * Empty means the last page. Set only by `ListMyOrders`.
+   *
+   * @generated from field: bytes next_cursor = 2;
+   */
+  nextCursor: Uint8Array;
+};
+
+/**
+ * Describes the message xyz.aspens.arborter.v1.MyOrdersResponse.
+ * Use `create(MyOrdersResponseSchema)` to create a new message.
+ */
+export const MyOrdersResponseSchema: GenMessage<MyOrdersResponse> = /*@__PURE__*/
+  messageDesc(file_arborter, 17);
+
+/**
  * @generated from enum xyz.aspens.arborter.v1.Side
  */
 export enum Side {
@@ -947,6 +1310,134 @@ export const TradeRoleSchema: GenEnum<TradeRole> = /*@__PURE__*/
   enumDesc(file_arborter, 3);
 
 /**
+ * The lifecycle state of one of the caller's orders.
+ *
+ * @generated from enum xyz.aspens.arborter.v1.MyOrderState
+ */
+export enum MyOrderState {
+  /**
+   * @generated from enum value: MY_ORDER_STATE_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * Resting, nothing filled yet.
+   *
+   * @generated from enum value: MY_ORDER_STATE_OPEN = 1;
+   */
+  OPEN = 1,
+
+  /**
+   * Resting, partially filled.
+   *
+   * @generated from enum value: MY_ORDER_STATE_PARTIALLY_FILLED = 2;
+   */
+  PARTIALLY_FILLED = 2,
+
+  /**
+   * Completely filled.
+   *
+   * @generated from enum value: MY_ORDER_STATE_FILLED = 3;
+   */
+  FILLED = 3,
+
+  /**
+   * Cancelled by its owner before completing.
+   *
+   * @generated from enum value: MY_ORDER_STATE_CANCELLED = 4;
+   */
+  CANCELLED = 4,
+
+  /**
+   * Expired before completing.
+   *
+   * @generated from enum value: MY_ORDER_STATE_EXPIRED = 5;
+   */
+  EXPIRED = 5,
+
+  /**
+   * Dropped when the arborter restarted while the order was resting.
+   *
+   * @generated from enum value: MY_ORDER_STATE_DROPPED_BY_RESTART = 6;
+   */
+  DROPPED_BY_RESTART = 6,
+
+  /**
+   * Closed by matching against other orders.
+   *
+   * @generated from enum value: MY_ORDER_STATE_TRADED = 7;
+   */
+  TRADED = 7,
+}
+
+/**
+ * Describes the enum xyz.aspens.arborter.v1.MyOrderState.
+ */
+export const MyOrderStateSchema: GenEnum<MyOrderState> = /*@__PURE__*/
+  enumDesc(file_arborter, 4);
+
+/**
+ * How the order was placed.
+ *
+ * @generated from enum xyz.aspens.arborter.v1.MyOrderKind
+ */
+export enum MyOrderKind {
+  /**
+   * @generated from enum value: MY_ORDER_KIND_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: MY_ORDER_KIND_LIMIT = 1;
+   */
+  LIMIT = 1,
+
+  /**
+   * @generated from enum value: MY_ORDER_KIND_MARKET = 2;
+   */
+  MARKET = 2,
+
+  /**
+   * @generated from enum value: MY_ORDER_KIND_DISCRETIONARY = 3;
+   */
+  DISCRETIONARY = 3,
+}
+
+/**
+ * Describes the enum xyz.aspens.arborter.v1.MyOrderKind.
+ */
+export const MyOrderKindSchema: GenEnum<MyOrderKind> = /*@__PURE__*/
+  enumDesc(file_arborter, 5);
+
+/**
+ * The caller's role in one fill.
+ *
+ * @generated from enum xyz.aspens.arborter.v1.FillRole
+ */
+export enum FillRole {
+  /**
+   * @generated from enum value: FILL_ROLE_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: FILL_ROLE_MAKER = 1;
+   */
+  MAKER = 1,
+
+  /**
+   * @generated from enum value: FILL_ROLE_TAKER = 2;
+   */
+  TAKER = 2,
+}
+
+/**
+ * Describes the enum xyz.aspens.arborter.v1.FillRole.
+ */
+export const FillRoleSchema: GenEnum<FillRole> = /*@__PURE__*/
+  enumDesc(file_arborter, 6);
+
+/**
  * @generated from service xyz.aspens.arborter.v1.ArborterService
  */
 export const ArborterService: GenService<{
@@ -994,6 +1485,36 @@ export const ArborterService: GenService<{
     methodKind: "unary";
     input: typeof WithdrawRequestSchema;
     output: typeof WithdrawResponseSchema;
+  },
+  /**
+   * Owner-signed read of the caller's own orders, by order id. The caller
+   * proves delegated read access with `MyOrdersRequest.delegations` and a
+   * query signature; every auth failure is UNAUTHENTICATED.
+   *
+   * @generated from rpc xyz.aspens.arborter.v1.ArborterService.GetMyOrders
+   */
+  getMyOrders: {
+    methodKind: "unary";
+    input: typeof MyOrdersRequestSchema;
+    output: typeof MyOrdersResponseSchema;
+  },
+  /**
+   * Owner-signed, paginated listing of the caller's own orders, same auth as
+   * `GetMyOrders`. Pass `MyOrdersQuery.cursor` from the previous page's
+   * `next_cursor` to continue.
+   *
+   * `MY_ORDER_STATE_TRADED` entries (orders the venue knows from their fills
+   * alone, with no order record) are listed whatever `include_closed` is, and
+   * only on the first page (empty `cursor`). They come after that page's
+   * `limit` orders and do not count towards it: at most 500 of them, from
+   * fills matched in the last 7 days, filtered by `market_id` when set.
+   *
+   * @generated from rpc xyz.aspens.arborter.v1.ArborterService.ListMyOrders
+   */
+  listMyOrders: {
+    methodKind: "unary";
+    input: typeof MyOrdersRequestSchema;
+    output: typeof MyOrdersResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_arborter, 0);
